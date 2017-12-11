@@ -158,16 +158,16 @@ private slots:
 
         void rotate                             (int axis);
 
-        void on_pushButton_clicked              ();
-
-        void on_triangleClicked                 (QList<unsigned int> i);
+        void on_triangleClicked                 (unsigned int i);
 
         void on_pointsMeshRadioButton_toggled(bool checked);
 
         void on_flatMeshRadioButton_toggled(bool checked);
         void on_checkPushButton_clicked();
 
-private:
+        void on_saveMeshAxis_clicked();
+
+    private:
 
         cg3::PickableEigenmesh*  meshEigen;
         PolylinesCheck      polyline;

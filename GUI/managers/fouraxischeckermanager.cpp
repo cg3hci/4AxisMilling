@@ -8,6 +8,7 @@
 #include <QDebug>
 
 #include "../fouraxischecker/fouraxischecker.h"
+#include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
 
 #define halfC (M_PI / 180)
 
@@ -21,9 +22,7 @@ FourAxisMillingManager::FourAxisMillingManager(QWidget *parent) :
 
 {
     ui->setupUi(this);
-    //connect(mainWindow, SIGNAL(objectPicked(uint)),this, SLOT(on_triangleClicked(uint)));
-    connect(mainWindow, SIGNAL(objectsPicked(QList<unsigned int>)),
-            this, SLOT(on_triangleClicked(QList<unsigned int>)));
+    connect(mainWindow, SIGNAL(objectPicked(unsigned int)),this, SLOT(on_triangleClicked(unsigned int)));
 }
 
 FourAxisMillingManager::~FourAxisMillingManager(){
@@ -113,12 +112,6 @@ void FourAxisMillingManager::on_loadMesh_clicked(){
     xRot = 0;
     yRot = 0;
     zRot = 0;
-    QColor c;
-    c.setHsv(100,0,255);
-
-    for(unsigned int i = 0 ; i < meshEigen->getNumberFaces(); i++){
-        meshEigen->setFaceColor(c.redF(), c.greenF(), c.blueF(), i);
-    }
 }
 
 void FourAxisMillingManager::on_eigenToCgal_clicked(){
@@ -681,14 +674,10 @@ void FourAxisMillingManager::colorUniqueTriangle(){
     }
 }
 
-void FourAxisMillingManager::on_pushButton_clicked(){
-    mainWindow->updateGlCanvas();
-}
-
-void FourAxisMillingManager::on_triangleClicked(QList<unsigned int> i){
-    color.setHsv(0,255,255);
-    meshEigen->setFaceColor(color.redF(), color.greenF(), color.blueF(), i.back());
-    polyline.addFaceExlude(i.back());
+void FourAxisMillingManager::on_triangleClicked(unsigned int i){
+    QMessageBox b;
+    b.setText(QString::fromStdString("Triangle number: " + std::to_string(i)));
+    b.exec();
 }
 
 void FourAxisMillingManager::on_pointsMeshRadioButton_toggled(bool checked){
@@ -706,12 +695,16 @@ void FourAxisMillingManager::on_flatMeshRadioButton_toggled(bool checked) {
 }
 
 void FourAxisMillingManager::on_checkPushButton_clicked() {
+    meshEigen->setFaceColor(Color(128,128,128));
     cg3::Array2D<int> visibility;
-    std::vector<int> survivedPlanes;
+    //std::vector<int> survivedPlanes;
     int nPlaneUser = ui->nPlane->text().toInt();
     FourAxisChecker::checkVisibilityAllPlanes(*meshEigen, visibility, nPlaneUser);
+    for (unsigned int j = 0; j < meshEigen->getNumberFaces(); j++)
+        if (visibility(visibility.getSizeX()-1, j) == 1)
+            meshEigen->setFaceColor(Color(255,0,0), j);
 
-    FourAxisChecker::minimizeNumberPlanes(survivedPlanes, visibility);
+    //FourAxisChecker::minimizeNumberPlanes(survivedPlanes, visibility);
     #ifdef MULTI_LABEL_OPTIMIZATION_INCLUDED
     std::vector<int> ass = FourAxisChecker::getAssociation(survivedPlanes, visibility, *meshEigen);
     //to know the actual orientation: survivedPlanes[ass[f]]
@@ -726,4 +719,9 @@ void FourAxisMillingManager::on_checkPushButton_clicked() {
     }
     #endif
     mainWindow->updateGlCanvas();
+}
+
+void FourAxisMillingManager::on_saveMeshAxis_clicked() {
+    meshEigen->saveOnObj("rotatedMesh.obj");
+    cg3::EigenMeshAlgorithms::makeCylinder(Pointd(meshEigen->getBoundingBox().minX()-5,0,0), Pointd(meshEigen->getBoundingBox().maxX()+5,0,0), 0.5).saveOnObj("rotationCylinder.obj");
 }

@@ -2,7 +2,6 @@
 #include "cg3/geometry/transformations.h"
 #include "cg3/cgal/cgal_aabbtree.h"
 
-
 #ifdef GUROBI_DEFINED
 #include <gurobi_c++.h>
 #endif
@@ -10,7 +9,7 @@
 /****************************** AleMuntoni ***************************************/
 
 int FourAxisChecker::maxYFace(std::vector<int> &list, const cg3::EigenMesh &mesh) {
-    int max = 0;
+    int max = list[0];
     for(int i : list){
         if(mesh.getVertex(mesh.getFace(i).y()).y() > mesh.getVertex(mesh.getFace(max).y()).y()){
             max = i;
@@ -20,7 +19,7 @@ int FourAxisChecker::maxYFace(std::vector<int> &list, const cg3::EigenMesh &mesh
 }
 
 int FourAxisChecker::minYFace(std::vector<int> &list, const cg3::EigenMesh &mesh) {
-    int min = 0;
+    int min = list[0];
     for(int i : list){
         if(mesh.getVertex(mesh.getFace(i).y()).y() < mesh.getVertex(mesh.getFace(min).y()).y()){
             min = i;
@@ -49,6 +48,10 @@ void FourAxisChecker::checkPlane(cg3::Array2D<int> &visibility, const cg3::Eigen
         //cerco le intersezioni della retta passante per la i-esima faccia
         std::vector<int> blackList;
         eigenTree.getIntersectEigenFaces(cg3::Pointd(bar.x(), max, bar.z()), cg3::Pointd(bar.x(), min, bar.z()), blackList);
+        /*if (indexPlane == 0 && (i == 9 || i == 10)){
+            mw->addDebugCylinder(cg3::Pointd(bar.x(), max, bar.z()), cg3::Pointd(bar.x(), min, bar.z()), 0.05, cg3::Color(255,0,0));
+            mw->updateGlCanvas();
+        }*/
         //Prendo quella che si trova più in alto
         face = maxYFace(blackList, mesh);
         visibility(indexPlane, face) = 1;
@@ -64,6 +67,7 @@ void FourAxisChecker::checkVisibilityAllPlanes(const cg3::EigenMesh &mesh, cg3::
     double stepAngle = 180 / numberPlanes;
 
     visibility.resize(numberPlanes*2 + 1, mesh.getNumberFaces());
+    visibility.fill(0);
 
     Eigen::Matrix3d rotation;
     cg3::Vec3 axis(1,0,0);
@@ -71,6 +75,7 @@ void FourAxisChecker::checkVisibilityAllPlanes(const cg3::EigenMesh &mesh, cg3::
 
     for(int i = 0; i < numberPlanes; i++){
         checkPlane(visibility, meshEigen, i, numberPlanes);
+
         meshEigen.rotate(rotation);
     }
 
