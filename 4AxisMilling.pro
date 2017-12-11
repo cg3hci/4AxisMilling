@@ -14,7 +14,7 @@ CONFIG += ALL
 #CONFIG += CONVERTER_MODE
 
 ALL {
-    CONFIG += USE_LIBIGL_EIGEN
+    #CONFIG += USE_LIBIGL_EIGEN
     #CONFIG += MULTI_LABEL_OPTIMIZATION
     CONFIG += CG3_ALL
     include(cg3lib/cg3.pri)
@@ -53,15 +53,15 @@ MULTI_LABEL_OPTIMIZATION {
 }
 
 HEADERS += \
-    fouraxischecker/polylinesCheck.h \
     GUI/managers/fouraxischeckermanager.h \
-    fouraxischecker/fouraxischecker.h
+    fouraxis/fouraxis.h \
+    fouraxis/orientation.h
 
 SOURCES += \
     main.cpp \
-    fouraxischecker/polylinesCheck.cpp \
     GUI/managers/fouraxischeckermanager.cpp \
-    fouraxischecker/fouraxischecker.cpp
+    fouraxis/fouraxis.cpp \
+    fouraxis/orientation.cpp
 
 FORMS += \
     GUI/managers/fouraxischeckermanager.ui

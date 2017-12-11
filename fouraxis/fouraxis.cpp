@@ -1,4 +1,4 @@
-#include "fouraxischecker.h"
+#include "fouraxis.h"
 #include "cg3/geometry/transformations.h"
 #include "cg3/cgal/cgal_aabbtree.h"
 
@@ -6,9 +6,20 @@
 #include <gurobi_c++.h>
 #endif
 
-/****************************** AleMuntoni ***************************************/
+void FourAxisFabrication::findOptimalRotation(cg3::EigenMesh& m) {
+    Eigen::Matrix3d rot = Orientation::optimalOrientation(m);
+    m.rotate(rot);
+    cg3::BoundingBox b = m.getBoundingBox();
+    if (b.getLengthY() > b.getLengthX() && b.getLengthY() > b.getLengthZ()){
+        m.rotate(cg3::getRotationMatrix(cg3::Vec3(0,0,1), M_PI/2));
+    }
+    else if (b.getLengthZ() > b.getLengthX() && b.getLengthZ() > b.getLengthY()){
+        m.rotate(cg3::getRotationMatrix(cg3::Vec3(0,1,0), M_PI/2));
+    }
+    m.translate(-m.getBoundingBox().center());
+}
 
-int FourAxisChecker::maxYFace(std::vector<int> &list, const cg3::EigenMesh &mesh) {
+int FourAxisFabrication::maxYFace(std::vector<int> &list, const cg3::EigenMesh &mesh) {
     int max = list[0];
     for(int i : list){
         if(mesh.getVertex(mesh.getFace(i).y()).y() > mesh.getVertex(mesh.getFace(max).y()).y()){
@@ -18,7 +29,7 @@ int FourAxisChecker::maxYFace(std::vector<int> &list, const cg3::EigenMesh &mesh
     return max;
 }
 
-int FourAxisChecker::minYFace(std::vector<int> &list, const cg3::EigenMesh &mesh) {
+int FourAxisFabrication::minYFace(std::vector<int> &list, const cg3::EigenMesh &mesh) {
     int min = list[0];
     for(int i : list){
         if(mesh.getVertex(mesh.getFace(i).y()).y() < mesh.getVertex(mesh.getFace(min).y()).y()){
@@ -28,7 +39,7 @@ int FourAxisChecker::minYFace(std::vector<int> &list, const cg3::EigenMesh &mesh
     return min;
 }
 
-void FourAxisChecker::checkPlane(cg3::Array2D<int> &visibility, const cg3::EigenMesh &mesh, int indexPlane, int numberPlanes) {
+void FourAxisFabrication::checkPlane(cg3::Array2D<int> &visibility, const cg3::EigenMesh &mesh, int indexPlane, int numberPlanes) {
     cg3::cgal::AABBTree eigenTree(mesh);
     cg3::Pointi f;
 
@@ -61,7 +72,7 @@ void FourAxisChecker::checkPlane(cg3::Array2D<int> &visibility, const cg3::Eigen
     }
 }
 
-void FourAxisChecker::checkVisibilityAllPlanes(const cg3::EigenMesh &mesh, cg3::Array2D<int> &visibility, int numberPlanes) {
+void FourAxisFabrication::checkVisibilityAllPlanes(const cg3::EigenMesh &mesh, cg3::Array2D<int> &visibility, int numberPlanes) {
     cg3::EigenMesh meshEigen = mesh;
 
     double stepAngle = 180 / numberPlanes;
@@ -90,7 +101,7 @@ void FourAxisChecker::checkVisibilityAllPlanes(const cg3::EigenMesh &mesh, cg3::
     }
 }
 
-void FourAxisChecker::minimizeNumberPlanes(std::vector<int>& survivedPlanes, cg3::Array2D<int> &visibility) {
+void FourAxisFabrication::minimizeNumberPlanes(std::vector<int>& survivedPlanes, cg3::Array2D<int> &visibility) {
     survivedPlanes.clear();
     int nOrientations = visibility.getSizeX();
     int nTriangles = visibility.getSizeY();
@@ -212,26 +223,3 @@ std::vector<int> FourAxisChecker::getAssociation(const std::vector<int> &survive
     return segmentation;
 }
 #endif
-
-/**
-    cg3::Array2D<int> visibility;
-    std::vector<int> survivedPlanes;
-    int nPlaneUser = ui->nPlane->text().toInt();
-    FourAxisChecker::checkVisibilityAllPlanes(*meshEigen, visibility, nPlaneUser);
-
-    FourAxisChecker::minimizeNumberPlanes(survivedPlanes, visibility);
-    #ifdef MULTI_LABEL_OPTIMIZATION_INCLUDED
-    std::vector<int> ass = FourAxisChecker::getAssociation(survivedPlanes, visibility, *meshEigen);
-    //to know the actual orientation: survivedPlanes[ass[f]]
-    int subd = 240 / survivedPlanes.size();
-    for (unsigned int i = 0; i < ass.size(); i++){
-        Color c;
-        if (ass[i] == nPlaneUser*2)
-            c = Color(0,0,0);
-        else
-            c.setHsv(subd*ass[i], 255, 255);
-        meshEigen->setFaceColor(c, i);
-    }
-    #endif
-    mainWindow->updateGlCanvas();
-  */

@@ -1,9 +1,12 @@
-#ifndef FOURAXISCHECKER_H
-#define FOURAXISCHECKER_H
+#ifndef FOURAXIS_H
+#define FOURAXIS_H
 #include <cg3/data_structures/arrays/arrays.h>
-#include "cg3/meshes/eigenmesh/eigenmesh.h"
+#include <cg3/meshes/eigenmesh/eigenmesh.h>
+#include "orientation.h"
 
-namespace FourAxisChecker {
+namespace FourAxisFabrication {
+
+void findOptimalRotation(cg3::EigenMesh &m);
 
 int maxYFace(std::vector<int> &list, const cg3::EigenMesh& mesh);
 int minYFace(std::vector<int>& list, const cg3::EigenMesh& mesh);
@@ -16,4 +19,4 @@ std::vector<int> getAssociation(const std::vector<int> &survivedPlanes, cg3::Arr
 
 }
 
-#endif // FOURAXISCHECKER_H
+#endif // FOURAXIS_H
