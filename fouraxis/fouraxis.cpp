@@ -6,17 +6,21 @@
 #include <gurobi_c++.h>
 #endif
 
-void FourAxisFabrication::findOptimalRotation(cg3::EigenMesh& m) {
+void FourAxisFabrication::findOptimalRotation(cg3::EigenMesh& m, cg3::EigenMesh& m2) {
     Eigen::Matrix3d rot = Orientation::optimalOrientation(m);
     m.rotate(rot);
+    m2.rotate(rot);
     cg3::BoundingBox b = m.getBoundingBox();
     if (b.getLengthY() > b.getLengthX() && b.getLengthY() > b.getLengthZ()){
         m.rotate(cg3::getRotationMatrix(cg3::Vec3(0,0,1), M_PI/2));
+        m2.rotate(cg3::getRotationMatrix(cg3::Vec3(0,0,1), M_PI/2));
     }
     else if (b.getLengthZ() > b.getLengthX() && b.getLengthZ() > b.getLengthY()){
         m.rotate(cg3::getRotationMatrix(cg3::Vec3(0,1,0), M_PI/2));
+        m2.rotate(cg3::getRotationMatrix(cg3::Vec3(0,1,0), M_PI/2));
     }
     m.translate(-m.getBoundingBox().center());
+    m2.translate(-m.getBoundingBox().center());
 }
 
 int FourAxisFabrication::maxYFace(std::vector<int> &list, const cg3::EigenMesh &mesh) {
@@ -40,7 +44,7 @@ int FourAxisFabrication::minYFace(std::vector<int> &list, const cg3::EigenMesh &
 }
 
 void FourAxisFabrication::checkPlane(cg3::Array2D<int> &visibility, const cg3::EigenMesh &mesh, int indexPlane, int numberPlanes) {
-    cg3::cgal::AABBTree eigenTree(mesh);
+    cg3::cgal::AABBTree tree(mesh);
     cg3::Pointi f;
 
     cg3::Vec3 e1, e2, e3;
@@ -58,11 +62,7 @@ void FourAxisFabrication::checkPlane(cg3::Array2D<int> &visibility, const cg3::E
         cg3::Pointd bar((e1+e2+e3)/3);
         //cerco le intersezioni della retta passante per la i-esima faccia
         std::vector<int> blackList;
-        eigenTree.getIntersectEigenFaces(cg3::Pointd(bar.x(), max, bar.z()), cg3::Pointd(bar.x(), min, bar.z()), blackList);
-        /*if (indexPlane == 0 && (i == 9 || i == 10)){
-            mw->addDebugCylinder(cg3::Pointd(bar.x(), max, bar.z()), cg3::Pointd(bar.x(), min, bar.z()), 0.05, cg3::Color(255,0,0));
-            mw->updateGlCanvas();
-        }*/
+        tree.getIntersectEigenFaces(cg3::Pointd(bar.x(), max, bar.z()), cg3::Pointd(bar.x(), min, bar.z()), blackList);
         //Prendo quella che si trova più in alto
         face = maxYFace(blackList, mesh);
         visibility(indexPlane, face) = 1;

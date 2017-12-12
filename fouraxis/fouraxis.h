@@ -6,7 +6,7 @@
 
 namespace FourAxisFabrication {
 
-void findOptimalRotation(cg3::EigenMesh &m);
+void findOptimalRotation(cg3::EigenMesh &m, cg3::EigenMesh& m2);
 
 int maxYFace(std::vector<int> &list, const cg3::EigenMesh& mesh);
 int minYFace(std::vector<int>& list, const cg3::EigenMesh& mesh);

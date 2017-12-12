@@ -7,6 +7,7 @@
 #include <cg3/viewer/utilities/loadersaver.h>
 
 #include <cg3/viewer/pickable_objects/pickable_eigenmesh.h>
+#include <cg3/viewer/drawable_objects/drawable_eigenmesh.h>
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
 #include <Eigen/Dense>
 
@@ -78,7 +79,8 @@ private slots:
 
     private:
 
-        cg3::PickableEigenmesh meshEigen;
+        cg3::DrawableEigenMesh originalMesh;
+        cg3::PickableEigenMesh smoothedMesh;
         bool loaded;
         Ui::FourAxisMillingManager*    ui;
         MainWindow&         mainWindow;
