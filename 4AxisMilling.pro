@@ -15,7 +15,7 @@ CONFIG += ALL
 
 ALL {
     #CONFIG += USE_LIBIGL_EIGEN
-    #CONFIG += MULTI_LABEL_OPTIMIZATION
+    CONFIG += MULTI_LABEL_OPTIMIZATION
     CONFIG += CG3_ALL
     include(cg3lib/cg3.pri)
 }
@@ -42,14 +42,13 @@ exists($$(GUROBI_HOME)){
 
 MULTI_LABEL_OPTIMIZATION {
     DEFINES += MULTI_LABEL_OPTIMIZATION_INCLUDED
-    INCLUDEPATH += $$PWD/lib/multi_label_optimization
-    DEPENDPATH += $$PWD/lib/multi_label_optimization
+    INCLUDEPATH += $$PWD/lib/MultiLabelOptimization
     SOURCES += \
-        lib/multi_label_optimization/GCoptimization.cpp \
-        lib/multi_label_optimization/graph.cpp \
-        lib/multi_label_optimization/LinkedBlockList.cpp \
-        lib/multi_label_optimization/maxflow.cpp \
-        lib/multi_label_optimization/example.cpp
+        lib/MultiLabelOptimization/GCoptimization.cpp \
+        lib/MultiLabelOptimization/graph.cpp \
+        lib/MultiLabelOptimization/LinkedBlockList.cpp \
+        lib/MultiLabelOptimization/maxflow.cpp \
+        lib/MultiLabelOptimization/example.cpp
 }
 
 HEADERS += \

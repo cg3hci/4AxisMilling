@@ -77,11 +77,14 @@ private slots:
 
         void on_automaticOrientationPushButton_clicked();
 
+        void on_cutExtremesPushButton_clicked();
+
     private:
 
         cg3::DrawableEigenMesh originalMesh;
         cg3::PickableEigenMesh smoothedMesh;
         bool loaded;
+        std::vector<unsigned int> minExtreme, maxExtreme;
         Ui::FourAxisMillingManager*    ui;
         MainWindow&         mainWindow;
         cg3::viewer::LoaderSaver objls;

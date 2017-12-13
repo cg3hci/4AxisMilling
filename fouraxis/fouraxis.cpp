@@ -1,6 +1,9 @@
 #include "fouraxis.h"
 #include "cg3/geometry/transformations.h"
 #include "cg3/cgal/cgal_aabbtree.h"
+#include <cg3/libigl/libigl.h>
+
+#include "lib/MultiLabelOptimization/GCoptimization.h"
 
 #ifdef GUROBI_DEFINED
 #include <gurobi_c++.h>
@@ -31,6 +34,42 @@ int FourAxisFabrication::maxYFace(std::vector<int> &list, const cg3::EigenMesh &
         }
     }
     return max;
+}
+
+struct triangleComparator {
+    const cg3::EigenMesh& m;
+    triangleComparator(const cg3::EigenMesh& m) : m(m) {}
+    bool operator()(unsigned int f1, unsigned int f2){
+        cg3::Pointi ff1 = m.getFace(f1);
+        cg3::Pointi ff2 = m.getFace(f2);
+        cg3::Pointd c1 = (m.getVertex(ff1.x()) + m.getVertex(ff1.y()) + m.getVertex(ff1.z()))/3;
+        cg3::Pointd c2 = (m.getVertex(ff2.x()) + m.getVertex(ff2.y()) + m.getVertex(ff2.z()))/3;
+        return c1 < c2;
+    }
+};
+
+void FourAxisFabrication::cutExtremes(const cg3::EigenMesh &m, std::vector<unsigned int> &minExtreme, std::vector<unsigned int> &maxExtreme) {
+    std::vector<unsigned int> fIndices(m.getNumberFaces());
+    minExtreme.clear();
+    maxExtreme.clear();
+    for (unsigned int i = 0; i < fIndices.size(); i++)
+        fIndices[i] = i;
+
+    std::sort(fIndices.begin(), fIndices.end(), triangleComparator(m));
+    const cg3::Vec3 minuxX(-1,0,0);
+    const cg3::Vec3 plusX(1,0,0);
+
+    unsigned int i = 0;
+    while(m.getFaceNormal(fIndices[i]).dot(minuxX) >= -std::numeric_limits<double>::epsilon()){
+        minExtreme.push_back(fIndices[i]);
+        i++;
+    }
+
+    i = fIndices.size()-1;
+    while(m.getFaceNormal(fIndices[i]).dot(plusX) >= -std::numeric_limits<double>::epsilon()){
+        maxExtreme.push_back(fIndices[i]);
+        i--;
+    }
 }
 
 int FourAxisFabrication::minYFace(std::vector<int> &list, const cg3::EigenMesh &mesh) {
@@ -101,11 +140,11 @@ void FourAxisFabrication::checkVisibilityAllPlanes(const cg3::EigenMesh &mesh, c
     }
 }
 
-void FourAxisFabrication::minimizeNumberPlanes(std::vector<int>& survivedPlanes, cg3::Array2D<int> &visibility) {
+void FourAxisFabrication::minimizeNumberPlanes(std::vector<int>& survivedPlanes, const cg3::Array2D<int> &visibility) {
     survivedPlanes.clear();
     int nOrientations = visibility.getSizeX();
-    int nTriangles = visibility.getSizeY();
     #ifdef GUROBI_DEFINED
+    int nTriangles = visibility.getSizeY();
     try{
         GRBEnv env = GRBEnv();
 
@@ -153,18 +192,24 @@ void FourAxisFabrication::minimizeNumberPlanes(std::vector<int>& survivedPlanes,
     catch (...) {
         std::cout << "Exception during optimization" << std::endl;
     }
-#endif
+    #else
+    for (unsigned int i = 0; i < (unsigned int)nOrientations; i++)
+        survivedPlanes.push_back(i);
+    #endif
 }
 
 #ifdef MULTI_LABEL_OPTIMIZATION_INCLUDED
 float smoothTerm(int site_1, int site_2, int label_1, int label_2, void *extra_data) {
+    CG3_SUPPRESS_WARNING(site_1);
+    CG3_SUPPRESS_WARNING(site_2);
+    CG3_SUPPRESS_WARNING(extra_data);
     if (label_1 == label_2) return 0.f;
     else return 2.f;
 }
 
 
-std::vector<int> FourAxisChecker::getAssociation(const std::vector<int> &survivedPlanes, cg3::Array2D<int> &visibility, const EigenMesh& mesh) {
-    int n_triangles = mesh.getNumberFaces();
+std::vector<int> FourAxisFabrication::getAssociation(const std::vector<int> &survivedPlanes, cg3::Array2D<int> &visibility, const cg3::EigenMesh& mesh) {
+    unsigned int n_triangles = mesh.getNumberFaces();
     std::vector<int> segmentation(n_triangles);
 
     Eigen::MatrixXi adj = cg3::libigl::getFaceAdjacences(mesh);
@@ -174,7 +219,7 @@ std::vector<int> FourAxisChecker::getAssociation(const std::vector<int> &survive
 
         std::cerr << "Survived Planes: " << survivedPlanes.size() << "\n";
 
-        for (int label = 0; label < survivedPlanes.size(); ++label) {
+        for (unsigned int label = 0; label < survivedPlanes.size(); ++label) {
             int plane = survivedPlanes[label];
             GCoptimizationGeneralGraph::SparseDataCost *data = new GCoptimizationGeneralGraph::SparseDataCost[n_triangles];
             int dataCount = 0;

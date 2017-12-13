@@ -32,23 +32,33 @@ void FourAxisMillingManager::on_checkPushButton_clicked() {
     if (loaded) {
         smoothedMesh.setFaceColor(cg3::Color(128,128,128));
         cg3::Array2D<int> visibility;
-        //std::vector<int> survivedPlanes;
-        int nPlaneUser = 10;
-        //int nPlaneUser = ui->nPlane->text().toInt(); //TODO
+        std::vector<int> survivedPlanes;
+        int nPlaneUser = ui->nPlanesSpinBox->value();
         FourAxisFabrication::checkVisibilityAllPlanes(smoothedMesh, visibility, nPlaneUser);
         for (unsigned int j = 0; j < smoothedMesh.getNumberFaces(); j++)
             if (visibility(visibility.getSizeX()-1, j) == 1)
                 smoothedMesh.setFaceColor(cg3::Color(255,0,0), j);
+        for (unsigned int j : minExtreme){
+            for (unsigned int i = 0; i < visibility.getSizeX()-1; i++)
+                visibility(i, j) = 0;
+            visibility(visibility.getSizeX()-1, j) = 1;
+        }
+        for (unsigned int j : maxExtreme){
+            for (unsigned int i = 0; i < visibility.getSizeX()-1; i++)
+                visibility(i, j) = 0;
+            visibility(visibility.getSizeX()-1, j) = 1;
+        }
 
-        //FourAxisFabrication::minimizeNumberPlanes(survivedPlanes, visibility);
+        FourAxisFabrication::minimizeNumberPlanes(survivedPlanes, visibility);
+        std::cerr << "Number planes: " << survivedPlanes.size() << "\n";
         #ifdef MULTI_LABEL_OPTIMIZATION_INCLUDED
         std::vector<int> ass = FourAxisFabrication::getAssociation(survivedPlanes, visibility, smoothedMesh);
         //to know the actual orientation: survivedPlanes[ass[f]]
         int subd = 240 / survivedPlanes.size();
         for (unsigned int i = 0; i < ass.size(); i++){
-            Color c;
+            cg3::Color c;
             if (ass[i] == nPlaneUser*2)
-                c = Color(0,0,0);
+                c = cg3::Color(0,0,0);
             else
                 c.setHsv(subd*ass[i], 255, 255);
             smoothedMesh.setFaceColor(c, i);
@@ -180,6 +190,8 @@ void FourAxisMillingManager::on_clearMeshPushButton_clicked() {
         mainWindow.deleteObj(&originalMesh);
         mainWindow.deleteObj(&smoothedMesh);
         loaded = false;
+        minExtreme.clear();
+        maxExtreme.clear();
         mainWindow.updateGlCanvas();
     }
 }
@@ -187,6 +199,20 @@ void FourAxisMillingManager::on_clearMeshPushButton_clicked() {
 void FourAxisMillingManager::on_automaticOrientationPushButton_clicked() {
     if (loaded){
         FourAxisFabrication::findOptimalRotation(smoothedMesh, originalMesh);
+        mainWindow.updateGlCanvas();
+    }
+}
+
+
+void FourAxisMillingManager::on_cutExtremesPushButton_clicked() {
+    if (loaded){
+        FourAxisFabrication::cutExtremes(smoothedMesh, minExtreme, maxExtreme);
+        for (unsigned int i : minExtreme){
+            smoothedMesh.setFaceColor(cg3::Color(255,0,0), i);
+        }
+        for (unsigned int i : maxExtreme){
+            smoothedMesh.setFaceColor(cg3::Color(0,0,255), i);
+        }
         mainWindow.updateGlCanvas();
     }
 }
