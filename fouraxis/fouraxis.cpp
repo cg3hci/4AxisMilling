@@ -102,12 +102,14 @@ void FourAxisFabrication::checkPlane(cg3::Array2D<int> &visibility, const cg3::E
         //cerco le intersezioni della retta passante per la i-esima faccia
         std::vector<int> blackList;
         tree.getIntersectEigenFaces(cg3::Pointd(bar.x(), max, bar.z()), cg3::Pointd(bar.x(), min, bar.z()), blackList);
-        //Prendo quella che si trova più in alto
-        face = maxYFace(blackList, mesh);
-        visibility(indexPlane, face) = 1;
-        //Prendo quella che si trova più in basso
-        face = minYFace(blackList, mesh);
-        visibility(numberPlanes + indexPlane, face) = 1;
+        if (blackList.size() > 0){
+            //Prendo quella che si trova più in alto
+            face = maxYFace(blackList, mesh);
+            visibility(indexPlane, face) = 1;
+            //Prendo quella che si trova più in basso
+            face = minYFace(blackList, mesh);
+            visibility(numberPlanes + indexPlane, face) = 1;
+        }
     }
 }
 

@@ -38,10 +38,11 @@ void FourAxisMillingManager::on_checkPushButton_clicked() {
         for (unsigned int j = 0; j < smoothedMesh.getNumberFaces(); j++)
             if (visibility(visibility.getSizeX()-1, j) == 1)
                 smoothedMesh.setFaceColor(cg3::Color(255,0,0), j);
+        visibility.conservativeResize(visibility.getSizeX()+2, visibility.getSizeY());
         for (unsigned int j : minExtreme){
             for (unsigned int i = 0; i < visibility.getSizeX()-1; i++)
                 visibility(i, j) = 0;
-            visibility(visibility.getSizeX()-1, j) = 1;
+            visibility(visibility.getSizeX()-2, j) = 1;
         }
         for (unsigned int j : maxExtreme){
             for (unsigned int i = 0; i < visibility.getSizeX()-1; i++)
@@ -54,11 +55,15 @@ void FourAxisMillingManager::on_checkPushButton_clicked() {
         #ifdef MULTI_LABEL_OPTIMIZATION_INCLUDED
         std::vector<int> ass = FourAxisFabrication::getAssociation(survivedPlanes, visibility, smoothedMesh);
         //to know the actual orientation: survivedPlanes[ass[f]]
-        int subd = 240 / survivedPlanes.size();
+        int subd = 240 / survivedPlanes.size() - 3;
         for (unsigned int i = 0; i < ass.size(); i++){
             cg3::Color c;
-            if (ass[i] == nPlaneUser*2)
-                c = cg3::Color(0,0,0);
+            if (ass[i] >= nPlaneUser*2){
+                if (ass[i] == nPlaneUser*2)
+                    c = cg3::Color(0,0,0);
+                else
+                    c = cg3::Color(128,128,128);
+            }
             else
                 c.setHsv(subd*ass[i], 255, 255);
             smoothedMesh.setFaceColor(c, i);
