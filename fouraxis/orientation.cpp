@@ -15,7 +15,7 @@ void Orientation::define_rotation(const cinolib::vec3d& Z_axis, cinolib::vec3d& 
 
 
 Eigen::Matrix3d Orientation::optimalOrientation(const EigenMesh& inputMesh, unsigned int n_dirs) {
-    Trimesh m;
+    Trimesh<> m;
     MeshConversions::eigenMeshToTrimesh(m, inputMesh);
 
     std::vector<vec3d> dir_pool;
