@@ -53,14 +53,12 @@ MULTI_LABEL_OPTIMIZATION {
 
 HEADERS += \
     GUI/managers/fouraxischeckermanager.h \
-    fouraxis/fouraxis.h \
-    fouraxis/orientation.h
+    fouraxis/fouraxis.h
 
 SOURCES += \
     main.cpp \
     GUI/managers/fouraxischeckermanager.cpp \
-    fouraxis/fouraxis.cpp \
-    fouraxis/orientation.cpp
+    fouraxis/fouraxis.cpp
 
 FORMS += \
     GUI/managers/fouraxischeckermanager.ui

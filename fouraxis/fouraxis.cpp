@@ -1,7 +1,8 @@
 #include "fouraxis.h"
-#include "cg3/geometry/transformations.h"
-#include "cg3/cgal/cgal_aabbtree.h"
+#include <cg3/geometry/transformations.h>
+#include <cg3/cgal/cgal_aabbtree.h>
 #include <cg3/libigl/libigl.h>
+#include <cg3/algorithms/global_optimal_rotation_matrix.h>
 
 #include "lib/MultiLabelOptimization/GCoptimization.h"
 
@@ -10,7 +11,7 @@
 #endif
 
 void FourAxisFabrication::findOptimalRotation(cg3::EigenMesh& m, cg3::EigenMesh& m2) {
-    Eigen::Matrix3d rot = Orientation::optimalOrientation(m);
+    Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(m);
     m.rotate(rot);
     m2.rotate(rot);
     cg3::BoundingBox b = m.getBoundingBox();

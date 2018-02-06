@@ -16,11 +16,10 @@
 FourAxisMillingManager::FourAxisMillingManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FourAxisMillingManager),
-    mainWindow((MainWindow&)*parent)
+    mainWindow((cg3::viewer::MainWindow&)*parent)
 
 {
     ui->setupUi(this);
-    connect(&mainWindow, SIGNAL(objectPicked(unsigned int)),this, SLOT(on_triangleClicked(unsigned int)));
     objls.addSupportedExtension("obj");
 }
 

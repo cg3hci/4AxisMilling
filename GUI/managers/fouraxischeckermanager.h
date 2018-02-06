@@ -82,11 +82,11 @@ private slots:
     private:
 
         cg3::DrawableEigenMesh originalMesh;
-        cg3::PickableEigenMesh smoothedMesh;
+        cg3::DrawableEigenMesh smoothedMesh;
         bool loaded;
         std::vector<unsigned int> minExtreme, maxExtreme;
         Ui::FourAxisMillingManager*    ui;
-        MainWindow&         mainWindow;
+        cg3::viewer::MainWindow& mainWindow;
         cg3::viewer::LoaderSaver objls;
 
 };

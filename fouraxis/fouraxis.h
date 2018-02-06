@@ -2,7 +2,6 @@
 #define FOURAXIS_H
 #include <cg3/data_structures/arrays/arrays.h>
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
-#include "orientation.h"
 
 namespace FourAxisFabrication {
 
