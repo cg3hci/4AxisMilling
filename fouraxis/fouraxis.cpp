@@ -24,7 +24,7 @@ void FourAxisFabrication::findOptimalRotation(cg3::EigenMesh& m, cg3::EigenMesh&
         m2.rotate(cg3::getRotationMatrix(cg3::Vec3(0,1,0), M_PI/2));
     }
     m.translate(-m.getBoundingBox().center());
-    m2.translate(-m.getBoundingBox().center());
+    m2.translate(-m2.getBoundingBox().center());
 }
 
 int FourAxisFabrication::maxYFace(std::vector<int> &list, const cg3::EigenMesh &mesh) {

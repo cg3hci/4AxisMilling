@@ -204,6 +204,7 @@ void FourAxisMillingManager::on_automaticOrientationPushButton_clicked() {
     if (loaded){
         FourAxisFabrication::findOptimalRotation(smoothedMesh, originalMesh);
         mainWindow.updateGlCanvas();
+        mainWindow.fitScene();
     }
 }
 
