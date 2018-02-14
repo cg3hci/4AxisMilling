@@ -3,40 +3,38 @@
  * @copyright Alessandro Muntoni 2016.
  */
 
-#include <cg3/viewer/mainwindow.h>
-#include <cg3/viewer/managers/dcel_manager.h>
-#include <GUI/managers/fouraxischeckermanager.h>
 #include <QApplication>
 
-#include <cg3/viewer/managers/eigenmesh_manager.h>
-#include <cg3/viewer/managers/booleans_manager.h>
-#include <cg3/utilities/string.h>
-#include <cg3/utilities/system.h>
+#include <cg3/viewer/mainwindow.h>
 
-#include <typeinfo>       // operator typeid
+#include <cg3/viewer/managers/booleans_manager.h>
+#include <cg3/viewer/managers/eigenmesh_manager.h>
+#include <GUI/managers/fouraxisfabricationmanager.h>
 
 using namespace cg3;
 
 int main(int argc, char *argv[]) {
-
     QApplication app(argc, argv);
 
-    cg3::viewer::MainWindow gui;  // finestra principale, contiene la canvas di QGLViewer
+    cg3::viewer::MainWindow gui;
 
-    // Creo un dcel manager e lo aggiungo alla mainwindow
-    cg3::viewer::DcelManager d(&gui);
-    gui.addManager(&d, "Dcel");
+    //Add four-axis-fabrication manager
+    FourAxisFabricationManager fm(&gui);
+    const int fmId = gui.addManager(&fm, "Four Axis Fabrication Manager");
+    CG3_SUPPRESS_WARNING(fmId);
 
-    FourAxisMillingManager fm(&gui);
-    const int FAM_M_ID = gui.addManager(&fm, "Four Axis Milling Manager");
-
+    //Add boolean manager manager
     cg3::viewer::BooleansManager bm(&gui);
-    gui.addManager(&bm, "Booleans Manager");
+    const int bmId = gui.addManager(&bm, "Booleans Manager");
+    CG3_SUPPRESS_WARNING(bmId);
 
+    //Add eigen mesh manager
     cg3::viewer::EigenMeshManager em(&gui);
-    gui.addManager(&em, "EigenMesh Manager");
+    const int emId = gui.addManager(&em, "EigenMesh Manager");
+    CG3_SUPPRESS_WARNING(emId);
 
-    gui.setCurrentIndexToolBox(FAM_M_ID); // il dcel manager sarà quello visualizzato di default
+    //Open boolean manager as default manager
+    gui.setCurrentIndexToolBox(fmId);
     gui.updateGlCanvas();
     gui.show();
 

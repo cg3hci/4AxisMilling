@@ -35,7 +35,7 @@ FINAL_RELEASE {
 exists($$(GUROBI_HOME)){
     message (Gurobi)
     INCLUDEPATH += $$(GUROBI_HOME)/include
-    LIBS += -L$$(GUROBI_HOME)/lib -lgurobi_g++5.2 -lgurobi70
+    LIBS += -L$$(GUROBI_HOME)/lib -lgurobi_g++5.2 -lgurobi75
     DEFINES += GUROBI_DEFINED
 }
 
@@ -52,16 +52,26 @@ MULTI_LABEL_OPTIMIZATION {
 }
 
 HEADERS += \
-    GUI/managers/fouraxischeckermanager.h \
-    fouraxis/fouraxis.h
+    methods/fouraxisfabrication.h \
+    methods/faf/faf_data.h \
+    methods/faf/faf_utilities.h \
+    methods/faf/faf_visibilitycheck.h \
+    methods/faf/faf_minimization.h \
+    GUI/managers/fouraxisfabricationmanager.h \
+    methods/faf/faf_optimization.h
 
 SOURCES += \
     main.cpp \
-    GUI/managers/fouraxischeckermanager.cpp \
-    fouraxis/fouraxis.cpp
+    methods/fouraxisfabrication.cpp \
+    methods/faf/faf_data.cpp \
+    methods/faf/faf_utilities.cpp \
+    methods/faf/faf_visibilitycheck.cpp \
+    methods/faf/faf_minimization.cpp \
+    GUI/managers/fouraxisfabricationmanager.cpp \
+    methods/faf/faf_optimization.cpp
 
 FORMS += \
-    GUI/managers/fouraxischeckermanager.ui
+    GUI/managers/fouraxisfabricationmanager.ui
 
 DISTFILES += \
     README.txt
