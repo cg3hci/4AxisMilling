@@ -56,6 +56,7 @@ private:
     bool isVisibilityChecked;
     bool areTargetDirectionsFound;
     bool isAssociationComputed;
+    bool areFrequenciesRestored;
 
 
     /* Data fields */
@@ -80,6 +81,7 @@ private:
     void checkVisibility();
     void getTargetDirections();
     void getAssociation();
+    void restoreFrequencies();
 
 
     /* Visualization methods */
@@ -115,6 +117,7 @@ private slots:
     void on_checkVisibilityButton_clicked();
     void on_targetDirectionsButton_clicked();
     void on_getAssociationButton_clicked();
+    void on_restoreFrequenciesButton_clicked();
 
 
     /* UI slots Transformations */

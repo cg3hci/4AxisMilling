@@ -490,13 +490,17 @@
       <string>Four Axis Fabrication</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="4" column="1" colspan="4">
-       <widget class="QCheckBox" name="fixExtremeAssociationCheckBox">
+      <item row="5" column="3">
+       <widget class="QLabel" name="nDirectionsLabel">
         <property name="text">
-         <string>Fix extreme association to the x-axis directions</string>
+         <string>Directions:</string>
         </property>
-        <property name="checked">
-         <bool>true</bool>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="6">
+       <widget class="QPushButton" name="computeEntireAlgorithmButton">
+        <property name="text">
+         <string>Compute entire algorithm</string>
         </property>
        </widget>
       </item>
@@ -510,88 +514,13 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1" colspan="6">
-       <widget class="QPushButton" name="computeEntireAlgorithmButton">
+      <item row="4" column="1" colspan="4">
+       <widget class="QCheckBox" name="fixExtremeAssociationCheckBox">
         <property name="text">
-         <string>Compute entire algorithm</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="6">
-       <widget class="QPushButton" name="checkVisibilityButton">
-        <property name="text">
-         <string>Check visibility</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="6">
-       <widget class="QPushButton" name="getAssociationButton">
-        <property name="text">
-         <string>Get association</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="4">
-       <widget class="QSpinBox" name="nOrientationSpinBox">
-        <property name="minimum">
-         <number>4</number>
-        </property>
-        <property name="maximum">
-         <number>10000</number>
-        </property>
-        <property name="value">
-         <number>1000</number>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="6">
-       <widget class="QPushButton" name="optimalOrientationButton">
-        <property name="text">
-         <string>Optimal orientation</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="6">
-       <widget class="QPushButton" name="targetDirectionsButton">
-        <property name="text">
-         <string>Target directions</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QCheckBox" name="deterministicCheckBox">
-        <property name="layoutDirection">
-         <enum>Qt::LeftToRight</enum>
-        </property>
-        <property name="text">
-         <string>Deterministic</string>
+         <string>Fix extreme association to the x-axis directions</string>
         </property>
         <property name="checked">
          <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3">
-       <widget class="QLabel" name="nOrientationLabel">
-        <property name="text">
-         <string>Orientations:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="6">
-       <widget class="QPushButton" name="cutExtremesButton">
-        <property name="text">
-         <string>Cut extremes</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="4">
-       <widget class="QSpinBox" name="nDirectionsSpinBox">
-        <property name="maximum">
-         <number>360</number>
-        </property>
-        <property name="value">
-         <number>20</number>
         </property>
        </widget>
       </item>
@@ -624,10 +553,91 @@
         </layout>
        </widget>
       </item>
-      <item row="5" column="3">
-       <widget class="QLabel" name="nDirectionsLabel">
+      <item row="1" column="3">
+       <widget class="QLabel" name="nOrientationLabel">
         <property name="text">
-         <string>Directions:</string>
+         <string>Orientations:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="deterministicCheckBox">
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="text">
+         <string>Deterministic</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="4">
+       <widget class="QSpinBox" name="nDirectionsSpinBox">
+        <property name="maximum">
+         <number>360</number>
+        </property>
+        <property name="singleStep">
+         <number>1</number>
+        </property>
+        <property name="value">
+         <number>10</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4">
+       <widget class="QSpinBox" name="nOrientationSpinBox">
+        <property name="minimum">
+         <number>4</number>
+        </property>
+        <property name="maximum">
+         <number>10000</number>
+        </property>
+        <property name="value">
+         <number>1000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5" colspan="2">
+       <widget class="QPushButton" name="optimalOrientationButton">
+        <property name="text">
+         <string>Optimal orientation</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="5" colspan="2">
+       <widget class="QPushButton" name="cutExtremesButton">
+        <property name="text">
+         <string>Cut extremes</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="5" colspan="2">
+       <widget class="QPushButton" name="checkVisibilityButton">
+        <property name="text">
+         <string>Check visibility</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="5" colspan="2">
+       <widget class="QPushButton" name="targetDirectionsButton">
+        <property name="text">
+         <string>Target directions</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="5" colspan="2">
+       <widget class="QPushButton" name="getAssociationButton">
+        <property name="text">
+         <string>Get association</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="5" colspan="2">
+       <widget class="QPushButton" name="restoreFrequenciesButton">
+        <property name="text">
+         <string>Restore frequencies</string>
         </property>
        </widget>
       </item>

@@ -50,12 +50,7 @@ FourAxisFabricationManager::~FourAxisFabricationManager(){
  */
 void FourAxisFabricationManager::initialize() {
     loaderSaverObj.addSupportedExtension("obj");
-    isMeshLoaded = false;
-    isMeshOriented = false;
-    areExtremesCut = false;
-    isVisibilityChecked = false;
-    areTargetDirectionsFound = false;
-    isAssociationComputed = false;
+    clearData();
 
     updateUI();
 }
@@ -82,21 +77,24 @@ void FourAxisFabricationManager::updateUI() {
     ui->deterministicCheckBox->setEnabled(!isMeshOriented);
 
     //Cut extremes
-    ui->cutExtremesButton->setEnabled(isMeshOriented && !areExtremesCut);
+    ui->cutExtremesButton->setEnabled(!areExtremesCut);
     ui->fixExtremeAssociationCheckBox->setEnabled(!isVisibilityChecked);
 
     //Check visibility
-    ui->checkVisibilityButton->setEnabled(areExtremesCut && !isVisibilityChecked);
+    ui->checkVisibilityButton->setEnabled(!isVisibilityChecked);
     ui->nDirectionsLabel->setEnabled(!isVisibilityChecked);
     ui->nDirectionsSpinBox->setEnabled(!isVisibilityChecked);
     ui->visibilityMethodFrame->setEnabled(!isVisibilityChecked);
 
     //Get the target directions
-    ui->targetDirectionsButton->setEnabled(isVisibilityChecked && !areTargetDirectionsFound);
+    ui->targetDirectionsButton->setEnabled(!areTargetDirectionsFound);
     ui->setCoverageCheckBox->setEnabled(!areTargetDirectionsFound);
 
-    //Graph cut    
-    ui->getAssociationButton->setEnabled(areTargetDirectionsFound && !isAssociationComputed);
+    //Get association
+    ui->getAssociationButton->setEnabled(!isAssociationComputed);
+
+    //Restore frequencies
+    ui->restoreFrequenciesButton->setEnabled(!areFrequenciesRestored);
 
 
     // ----- Visualization -----
@@ -123,7 +121,8 @@ void FourAxisFabricationManager::clearData() {
     areExtremesCut = false;
     isVisibilityChecked = false;
     areTargetDirectionsFound = false;
-    isAssociationComputed = false;
+    isAssociationComputed = false;    
+    areFrequenciesRestored = false;
 
     data.clear();
 
@@ -141,150 +140,207 @@ void FourAxisFabricationManager::clearData() {
  * @brief Compute entire algorithm
  */
 void FourAxisFabricationManager::computeEntireAlgorithm() {
-    //Get UI data
-    unsigned int nOrientation = (unsigned int) ui->nOrientationSpinBox->value();
-    bool deterministic = ui->deterministicCheckBox->isChecked();
-    unsigned int nDirections = (unsigned int) ui->nDirectionsSpinBox->value();
-    bool fixExtremeAssociation = ui->fixExtremeAssociationCheckBox->isChecked();
-    FourAxisFabrication::CheckMode checkMode = (ui->rayShootingRadio->isChecked() ?
-            FourAxisFabrication::RAYSHOOTING :
-            FourAxisFabrication::PROJECTION);
-    bool setCoverageFlag = ui->setCoverageCheckBox->isChecked();
+    if (!isMeshOriented) {
+        std::cout << std::endl << "#######################################################################" << std::endl << std::endl;
 
-    cg3::Timer t("Entire algorithm");
+        //Get UI data
+        unsigned int nOrientation = (unsigned int) ui->nOrientationSpinBox->value();
+        bool deterministic = ui->deterministicCheckBox->isChecked();
+        unsigned int nDirections = (unsigned int) ui->nDirectionsSpinBox->value();
+        bool fixExtremeAssociation = ui->fixExtremeAssociationCheckBox->isChecked();
+        FourAxisFabrication::CheckMode checkMode = (ui->rayShootingRadio->isChecked() ?
+                FourAxisFabrication::RAYSHOOTING :
+                FourAxisFabrication::PROJECTION);
+        bool setCoverageFlag = ui->setCoverageCheckBox->isChecked();
 
-    //Get optimal mesh orientation
-    FourAxisFabrication::computeEntireAlgorithm(
-                originalMesh,
-                smoothedMesh,
-                nOrientation,
-                deterministic,
-                nDirections,
-                fixExtremeAssociation,
-                setCoverageFlag,
-                data,
-                checkMode);
+        cg3::Timer t("Entire algorithm");
+
+        //Get optimal mesh orientation
+        FourAxisFabrication::computeEntireAlgorithm(
+                    originalMesh,
+                    smoothedMesh,
+                    nOrientation,
+                    deterministic,
+                    nDirections,
+                    fixExtremeAssociation,
+                    setCoverageFlag,
+                    data,
+                    checkMode);
 
 
-    t.stopAndPrint();
+        t.stopAndPrint();
 
-    isMeshOriented = true;
-    areExtremesCut = true;
-    isVisibilityChecked = true;
-    areTargetDirectionsFound = true;
-    isAssociationComputed = true;
+        double meshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
+        std::cout << "Mesh Hausdorff distance: " << meshDistance << std::endl;
+
+        isMeshOriented = true;
+        areExtremesCut = true;
+        isVisibilityChecked = true;
+        areTargetDirectionsFound = true;
+        isAssociationComputed = true;
+    }
 }
 
 /**
  * @brief Compute optimal orientation
  */
 void FourAxisFabricationManager::optimalOrientation() {
-    //Get UI data
-    unsigned int nOrientation = (unsigned int) ui->nOrientationSpinBox->value();
-    bool deterministic = ui->deterministicCheckBox->isChecked();
+    if (!isMeshOriented) {
+        std::cout << std::endl << "#######################################################################" << std::endl << std::endl;
 
-    cg3::Timer t("Optimal orientation");
+        //Get UI data
+        unsigned int nOrientation = (unsigned int) ui->nOrientationSpinBox->value();
+        bool deterministic = ui->deterministicCheckBox->isChecked();
 
-    //Get optimal mesh orientation
-    FourAxisFabrication::rotateToOptimalOrientation(
-                originalMesh,
-                smoothedMesh,
-                nOrientation,
-                deterministic);
+        cg3::Timer t("Optimal orientation");
 
-    t.stopAndPrint();
+        //Get optimal mesh orientation
+        FourAxisFabrication::rotateToOptimalOrientation(
+                    originalMesh,
+                    smoothedMesh,
+                    nOrientation,
+                    deterministic);
 
-    isMeshOriented = true;
+        t.stopAndPrint();
+
+        isMeshOriented = true;
+    }
 }
 
 /**
  * @brief Cut extremes
  */
 void FourAxisFabricationManager::cutExtremes() {
-    cg3::Timer t("Cut extremes");
+    if (!areExtremesCut) {
+        optimalOrientation();
 
-    //Get extremes on x-axis to be cut
-    FourAxisFabrication::getExtremesOnXAxis(smoothedMesh, data);
+        cg3::Timer t("Cut extremes");
 
-    t.stopAndPrint();
+        //Get extremes on x-axis to be cut
+        FourAxisFabrication::getExtremesOnXAxis(smoothedMesh, data);
 
-    areExtremesCut = true;
+        t.stopAndPrint();
+
+        areExtremesCut = true;
+    }
 }
 
 /**
  * @brief Check visibility from various directions
  */
 void FourAxisFabricationManager::checkVisibility() {
-    //Get UI data
-    unsigned int nDirections = (unsigned int) ui->nDirectionsSpinBox->value();
-    bool fixExtremeAssociation = ui->fixExtremeAssociationCheckBox->isChecked();
-    FourAxisFabrication::CheckMode checkMode = (ui->rayShootingRadio->isChecked() ?
-            FourAxisFabrication::RAYSHOOTING :
-            FourAxisFabrication::PROJECTION);
+    if (!isVisibilityChecked) {
+        optimalOrientation();
+        cutExtremes();
+
+        //Get UI data
+        unsigned int nDirections = (unsigned int) ui->nDirectionsSpinBox->value();
+        bool fixExtremeAssociation = ui->fixExtremeAssociationCheckBox->isChecked();
+        FourAxisFabrication::CheckMode checkMode = (ui->rayShootingRadio->isChecked() ?
+                FourAxisFabrication::RAYSHOOTING :
+                FourAxisFabrication::PROJECTION);
 
 
-    cg3::Timer t("Visibility check");
+        cg3::Timer t("Visibility check");
 
-    //Initialize data before visibility check
-    FourAxisFabrication::initializeDataForVisibilityCheck(
-                smoothedMesh,
-                nDirections,
-                fixExtremeAssociation,
-                data);
+        //Initialize data before visibility check
+        FourAxisFabrication::initializeDataForVisibilityCheck(
+                    smoothedMesh,
+                    nDirections,
+                    fixExtremeAssociation,
+                    data);
 
-    //Visibility check
-    FourAxisFabrication::checkVisibility(
-                smoothedMesh,
-                nDirections,
-                data,
-                checkMode);
+        //Visibility check
+        FourAxisFabrication::checkVisibility(
+                    smoothedMesh,
+                    nDirections,
+                    data,
+                    checkMode);
 
-    //Detect non-visible faces
-    FourAxisFabrication::detectNonVisibleFaces(
-                data);
+        //Detect non-visible faces
+        FourAxisFabrication::detectNonVisibleFaces(
+                    data);
 
-    t.stopAndPrint();
+        t.stopAndPrint();
 
-    isVisibilityChecked = true;
+        isVisibilityChecked = true;
+    }
 }
 
 /**
  * @brief Get the target directions
  */
 void FourAxisFabricationManager::getTargetDirections() {
-    //Get UI data
-    bool setCoverageFlag = ui->setCoverageCheckBox->isChecked();
+    if (!areTargetDirectionsFound) {
+        optimalOrientation();
+        cutExtremes();
+        checkVisibility();
 
-    cg3::Timer t("Get target directions");
+        //Get UI data
+        bool setCoverageFlag = ui->setCoverageCheckBox->isChecked();
 
-    //Get the target fabrication directions
-    FourAxisFabrication::getTargetDirections(
-                setCoverageFlag,
-                data);
+        cg3::Timer t("Get target directions");
 
-    t.stopAndPrint();
+        //Get the target fabrication directions
+        FourAxisFabrication::getTargetDirections(
+                    setCoverageFlag,
+                    data);
 
-    areTargetDirectionsFound = true;
+        t.stopAndPrint();
+
+        areTargetDirectionsFound = true;
+    }
 }
 
 /**
  * @brief Get optimized association
  */
 void FourAxisFabricationManager::getAssociation() {
-    //Get UI data
+    if (!isAssociationComputed) {
+        optimalOrientation();
+        cutExtremes();
+        checkVisibility();
+        getTargetDirections();
 
-    cg3::Timer t("Get association");
 
-    //Get association
-    FourAxisFabrication::getOptimizedAssociation(
-                smoothedMesh,
-                data);
+        cg3::Timer t("Get association");
 
-    t.stopAndPrint();
+        //Get association
+        FourAxisFabrication::getOptimizedAssociation(
+                    smoothedMesh,
+                    data);
 
-    isAssociationComputed = true;
+        t.stopAndPrint();
+
+        isAssociationComputed = true;
+    }
 }
 
+/**
+ * @brief Restore frequencies
+ */
+void FourAxisFabricationManager::restoreFrequencies() {
+    if (!areFrequenciesRestored) {
+        optimalOrientation();
+        cutExtremes();
+        checkVisibility();
+        getTargetDirections();
+        getAssociation();
+
+
+        cg3::Timer t("Restore frequencies");
+
+        //Restore frequencies
+        //TODO
+
+        t.stopAndPrint();
+
+        double meshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
+        std::cout << "Mesh Hausdorff distance: " << meshDistance << std::endl;
+
+        areFrequenciesRestored = true;
+    }
+}
 
 
 
@@ -565,7 +621,7 @@ void FourAxisFabricationManager::visualizeAssociation() {
             color.setHsv(subd * positionInTargetDirections, 255, 255);
 
             if (sliderValue == 0 ||
-                    data.targetDirections[sliderValue-1] == associatedDirectionIndex)
+                    data.targetDirections[sliderValue-1] == (unsigned int) associatedDirectionIndex)
             {
                 //Set the color
                 smoothedMesh.setFaceColor(color, faceId);
@@ -653,7 +709,15 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
                     mainWindow.updateGlCanvas();
                     mainWindow.fitScene();
 
-                    std::cout << std::endl << "Mesh file \"" << meshName << "\" loaded. Number of faces: " << originalMesh.getNumberFaces() << std::endl;
+                    std::cout << std::endl;
+
+                    std::cout << "Mesh file: \"" << meshFile << "\"" << std::endl <<
+                                 "Number of faces: " << originalMesh.getNumberFaces() << std::endl;
+                    std::cout << "Smoothed mesh file: \"" << loadedSmoothedMeshFile << "\"" << std::endl <<
+                                 "Number of faces: " << originalMesh.getNumberFaces() << std::endl;
+
+                    double meshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
+                    std::cout << "Initial mesh Hausdorff distance: " << meshDistance << std::endl;
                 }
                 else {
                     clearData();
@@ -741,8 +805,6 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
 
 void FourAxisFabricationManager::on_computeEntireAlgorithmButton_clicked() {
     if (isMeshLoaded){
-        std::cout << std::endl;
-
         //Compute the entire algorithm
         computeEntireAlgorithm();
 
@@ -760,94 +822,99 @@ void FourAxisFabricationManager::on_computeEntireAlgorithmButton_clicked() {
 
 
 void FourAxisFabricationManager::on_optimalOrientationButton_clicked() {
-    if (isMeshLoaded){
-        std::cout << std::endl;
+    //Get optimal mesh orientation
+    optimalOrientation();
 
-        //Get optimal mesh orientation
-        optimalOrientation();
+    //Visualize mesh
+    ui->meshRadio->setChecked(true);
+    initializeVisualizationSlider();
 
-        //Visualize mesh
-        ui->meshRadio->setChecked(true);
-        initializeVisualizationSlider();
+    //Update canvas and fit the scene
+    mainWindow.updateGlCanvas();
+    mainWindow.fitScene();
 
-        //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
-
-        updateUI();
-    }
+    updateUI();
 }
 
 void FourAxisFabricationManager::on_cutExtremesButton_clicked()
 {
-    if (isMeshLoaded && isMeshOriented){
-        //Get extremes on x-axis to be cut
-        cutExtremes();
+    //Get extremes on x-axis to be cut
+    cutExtremes();
 
-        //Visualize extremes
-        ui->extremesRadio->setChecked(true);
-        initializeVisualizationSlider();
+    //Visualize extremes
+    ui->extremesRadio->setChecked(true);
+    initializeVisualizationSlider();
 
-        //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
+    //Update canvas and fit the scene
+    mainWindow.updateGlCanvas();
+    mainWindow.fitScene();
 
-        updateUI();
-    }
+    updateUI();
 }
 
 void FourAxisFabricationManager::on_checkVisibilityButton_clicked()
 {
-    if (isMeshLoaded && areExtremesCut){
-        //Check visibility by the chosen directions
-        checkVisibility();
+    //Check visibility by the chosen directions
+    checkVisibility();
 
-        //Visualize visibility
-        ui->visibilityRadio->setChecked(true);
-        initializeVisualizationSlider();
+    //Visualize visibility
+    ui->visibilityRadio->setChecked(true);
+    initializeVisualizationSlider();
 
-        //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
+    //Update canvas and fit the scene
+    mainWindow.updateGlCanvas();
+    mainWindow.fitScene();
 
-        updateUI();
-    }
+    updateUI();
 }
 
 
 void FourAxisFabricationManager::on_targetDirectionsButton_clicked()
 {
-    if (isMeshLoaded && areExtremesCut && isVisibilityChecked){
-        //Get target milling directions
-        getTargetDirections();
+    //Get target milling directions
+    getTargetDirections();
 
-        //Visualize target directions
-        ui->targetDirectionsRadio->setChecked(true);
-        initializeVisualizationSlider();
+    //Visualize target directions
+    ui->targetDirectionsRadio->setChecked(true);
+    initializeVisualizationSlider();
 
-        //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
+    //Update canvas and fit the scene
+    mainWindow.updateGlCanvas();
+    mainWindow.fitScene();
 
-        updateUI();
-    }
+    updateUI();
 }
 
 void FourAxisFabricationManager::on_getAssociationButton_clicked()
 {
-    if (isMeshLoaded && areExtremesCut && isVisibilityChecked && areTargetDirectionsFound){
-        //Check visibility by the chosen directions
-        getAssociation();
+    //Check visibility by the chosen directions
+    getAssociation();
 
-        //Visualize association
-        ui->associationRadio->setChecked(true);
-        initializeVisualizationSlider();
+    //Visualize association
+    ui->associationRadio->setChecked(true);
+    initializeVisualizationSlider();
 
-        //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
+    //Update canvas and fit the scene
+    mainWindow.updateGlCanvas();
+    mainWindow.fitScene();
 
-        updateUI();
-    }
+    updateUI();
 }
 
+void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
+    //Check visibility by the chosen directions
+    restoreFrequencies();
 
+    //Visualize visibility
+    ui->associationRadio->setChecked(true);
+    initializeVisualizationSlider();
+
+    //Update canvas and fit the scene
+    mainWindow.updateGlCanvas();
+    mainWindow.fitScene();
+
+    updateUI();
+}
 
 
 

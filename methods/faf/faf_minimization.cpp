@@ -51,7 +51,13 @@ void getTargetDirections(
         try {
             //Initialize gurobi
             GRBEnv env = GRBEnv();
+
+#ifndef MINIMIZATION_VERBOSE
+            env.set("OutputFlag", "0");
+#endif
+
             GRBModel model = GRBModel(env);
+
             GRBVar *orientation = model.addVars(nOrientations, GRB_BINARY);
 
             //Create variables for orientations and triangles

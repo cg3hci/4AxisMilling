@@ -36,18 +36,40 @@ namespace FourAxisFabrication {
 
 namespace internal {
 
-/* Check visibility */
+/* Check visibility (ray shooting) */
 
 void checkVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
+        const unsigned int nDirections,
+        const unsigned int directionIndex,
+        cg3::Array2D<int>& visibility);
+
+void checkVisibilityRayShootingOnZ(
+        const cg3::EigenMesh& mesh,
+        const unsigned int faceId,
+        const unsigned int directionIndex,
+        const cg3::Vec3& direction,
+        cg3::cgal::AABBTree& aabbTree,
+        cg3::Array2D<int>& visibility);
+
+
+
+/* Check visibility (projection) */
+
+void checkVisibilityProjectionOnZ(
+        const cg3::EigenMesh& mesh,
+        const std::vector<unsigned int>& faces,
+        const unsigned int nDirections,
         const unsigned int directionIndex,
         cg3::Array2D<int>& visibility);
 
 void checkVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
-        const std::vector<unsigned int>& faces,
+        const unsigned int faceId,
         const unsigned int directionIndex,
+        const cg3::Vec3& direction,
+        cg3::AABBTree<2, cg3::Segment2Dd>& aabbTree,
         cg3::Array2D<int>& visibility);
 
 
@@ -111,7 +133,7 @@ void initializeDataForVisibilityCheck(
 
     //Initialize visibility (number of directions, two for extremes)
     visibility.clear();
-    visibility.resize(nDirections + 2, mesh.getNumberFaces());
+    visibility.resize(2*nDirections + 2, mesh.getNumberFaces());
     visibility.fill(0);
 
     //Initialize to -1 direction association for each face
@@ -121,13 +143,13 @@ void initializeDataForVisibilityCheck(
 
     //Initialize direction vector
     directions.clear();
-    directions.resize(nDirections + 2);
+    directions.resize(2*nDirections + 2);
 
 
 
     //Index for min, max extremes
-    unsigned int minIndex = nDirections;
-    unsigned int maxIndex = nDirections + 1;
+    unsigned int minIndex = 2*nDirections;
+    unsigned int maxIndex = 2*nDirections + 1;
 
 
     //Add min and max extremes directions
@@ -136,20 +158,26 @@ void initializeDataForVisibilityCheck(
 
 
     //Set visibility and association of the min extremes
-    for (unsigned int j : minExtremes){
-        visibility(minIndex, j) = 1;
+    #pragma omp parallel for
+    for (unsigned int i = 0; i < minExtremes.size(); i++){
+        unsigned int faceId = minExtremes[i];
+
+        visibility(minIndex, faceId) = 1;
 
         if (fixExtremeAssociation) {
-            association[j] = (int) minIndex;
+            association[faceId] = (int) minIndex;
         }
     }
 
     //Set visibility and association of the max extremes
-    for (unsigned int j : maxExtremes){
-        visibility(maxIndex, j) = 1;
+    #pragma omp parallel for
+    for (unsigned int i = 0; i < maxExtremes.size(); i++){
+        unsigned int faceId = maxExtremes[i];
+
+        visibility(maxIndex, faceId) = 1;
 
         if (fixExtremeAssociation) {
-            association[j] = (int) maxIndex;
+            association[faceId] = (int) maxIndex;
         }
     }
 
@@ -177,6 +205,7 @@ void checkVisibility(
 
     //Set target faces to be checked
     std::vector<unsigned int> targetFaces;
+
     for (unsigned int i = 0; i < mesh.getNumberFaces(); i++) {
         //We do not include faces that have already an association
         if (association[i] < 0) {
@@ -188,7 +217,7 @@ void checkVisibility(
     cg3::EigenMesh rotatingMesh = mesh;
 
     //Step angle for getting all the directions (on 180 degrees)
-    double stepAngle = (2*M_PI) / nDirections;
+    double stepAngle = M_PI / nDirections;
 
     //Get rotation matrix
     Eigen::Matrix3d rotationMatrix;
@@ -207,14 +236,16 @@ void checkVisibility(
 
         if (checkMode == RAYSHOOTING) {
             //Check visibility ray shooting
-            internal::checkVisibilityRayShootingOnZ(rotatingMesh, targetFaces, dirIndex, visibility);
+            internal::checkVisibilityRayShootingOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility);
         }
         else {
             //Check visibility with projection
-            internal::checkVisibilityProjectionOnZ(rotatingMesh, targetFaces, dirIndex, visibility);
+            internal::checkVisibilityProjectionOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility);
         }
 
-        directions[dirIndex] = dir; //Add the current direction
+        //Add the current directions
+        directions[dirIndex] = dir;
+        directions[nDirections + dirIndex] = -dir;
 
         //Rotate the direction and the mesh
         rotatingMesh.rotate(rotationMatrix);
@@ -262,80 +293,13 @@ void detectNonVisibleFaces(
 namespace internal {
 
 
-/* ----- CHECK VISIBILITY ----- */
-
-/**
- * @brief Check visibility of each face of the mesh from a given direction.
- * It is implemented by checking the intersection of the projection of the
- * segments from a given direction.
- * @param[in] mesh Input mesh. Normals must be updated before.
- * @param[in] directionIndex Index of the direction
- * @param[out] direction Current direction
- * @param[out] visibility Map the visibility from the given directions
- * to each face.
- */
-void checkVisibilityProjectionOnZ(
-        const cg3::EigenMesh& mesh,
-        const std::vector<unsigned int>& faces,
-        const unsigned int directionIndex,
-        cg3::Array2D<int>& visibility)
-{
-    cg3::AABBTree<2, cg3::Segment2Dd> aabbTree(
-                &internal::segmentAABBExtractor);
-
-    //Order the face by z-coordinate of the barycenter
-    std::vector<unsigned int> orderedZFaces(faces);
-    std::sort(orderedZFaces.begin(), orderedZFaces.end(), internal::BarycenterZComparator(mesh));
-
-    cg3::Vec3 zDir(0,0,1);
-
-    //Start from the max z-coordinate face
-    for (int i = orderedZFaces.size()-1; i >= 0; i--) {
-        unsigned int faceId = orderedZFaces[i];
-
-        //If it is visible checking the angle
-        if (zDir.dot(mesh.getFaceNormal(faceId)) >= 0) {
-            const cg3::Pointi& faceData = mesh.getFace(faceId);
-            const cg3::Pointd& v1 = mesh.getVertex(faceData.x());
-            const cg3::Pointd& v2 = mesh.getVertex(faceData.y());
-            const cg3::Pointd& v3 = mesh.getVertex(faceData.z());
-
-            //Project on the z plane
-            cg3::Point2Dd v1Projected(v1.x(), v1.y());
-            cg3::Point2Dd v2Projected(v2.x(), v2.y());
-            cg3::Point2Dd v3Projected(v3.x(), v3.y());
-
-            //Create segments
-            cg3::Segment2Dd seg1(std::min(v1Projected, v2Projected), std::max(v1Projected, v2Projected));
-            cg3::Segment2Dd seg2(std::min(v2Projected, v3Projected), std::max(v2Projected, v3Projected));
-            cg3::Segment2Dd seg3(std::min(v3Projected, v1Projected), std::max(v3Projected, v1Projected));
-//            cg3::Segment2Dd seg1(v1Projected, v2Projected);
-//            cg3::Segment2Dd seg2(v2Projected, v3Projected);
-//            cg3::Segment2Dd seg3(v3Projected, v1Projected);
-
-            //Check for intersections
-            bool intersectionFound =
-                    aabbTree.aabbOverlapCheck(seg1, &internal::segmentIntersectionChecker) |
-                    aabbTree.aabbOverlapCheck(seg2, &internal::segmentIntersectionChecker) |
-                    aabbTree.aabbOverlapCheck(seg3, &internal::segmentIntersectionChecker);
-
-            //If no intersections have been found
-            if (!intersectionFound) {
-                //Set visibility
-                visibility(directionIndex, faceId) = 1;
-
-                aabbTree.insert(seg1);
-                aabbTree.insert(seg2);
-                aabbTree.insert(seg3);
-            }
-        }
-    }
-}
+/* ----- CHECK VISIBILITY (RAY SHOOTING) ----- */
 
 /**
  * @brief Check visibility of each face of the mesh from a given direction.
  * It is implemented by a ray casting algorithm.
  * @param[in] mesh Input mesh. Normals must be updated before.
+ * @param[in] nDirection Total number of directions
  * @param[in] directionIndex Index of the direction
  * @param[out] direction Current direction
  * @param[out] visibility Map the visibility from the given directions
@@ -344,6 +308,7 @@ void checkVisibilityProjectionOnZ(
 void checkVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
+        const unsigned int nDirections,
         const unsigned int directionIndex,
         cg3::Array2D<int>& visibility)
 {
@@ -366,6 +331,7 @@ void checkVisibilityRayShootingOnZ(
 
         //Calculate the intersection in the mesh
         std::vector<int> barIntersection;
+
         tree.getIntersectEigenFaces(
                     cg3::Pointd(bar.x(), bar.y(), maxZ),
                     cg3::Pointd(bar.x(), bar.y(), minZ),
@@ -380,12 +346,19 @@ void checkVisibilityRayShootingOnZ(
         }
 #endif
 
-        cg3::Vec3 zDir(0,0,1);
+        //Directions to be checked
+        cg3::Vec3 zDirMax(0,0,1);
+        cg3::Vec3 zDirMin(0,0,-1);
 
         //Set the visibility of the face which has
         //the highest z-coordinate barycenter
         double maxZCoordinate = minZ;
         int maxZFace = -1;
+
+        //Set the visibility of the face which has
+        //the lowest z-coordinate barycenter
+        double minZCoordinate = maxZ;
+        int minZFace = -1;
 
         for (int intersectedFace : barIntersection) {
             //Get the face data
@@ -399,19 +372,34 @@ void checkVisibilityRayShootingOnZ(
 
 
             //Save face with the maximum Z barycenter and that is visible
-            //(the normal is in the given direction)
+            //from (0,0,1)
             if (currentBarycenter.z() > maxZCoordinate &&
-                    zDir.dot(mesh.getFaceNormal(intersectedFace)) >= 0)
+                    zDirMax.dot(mesh.getFaceNormal(intersectedFace)) >= 0)
             {
                 maxZFace = intersectedFace;
                 maxZCoordinate = currentBarycenter.z();
             }
+
+            //Save face with the minimum Z barycenter and that is visible
+            //from (0,0,-1) direction
+            if (currentBarycenter.z() < minZCoordinate &&
+                    zDirMin.dot(mesh.getFaceNormal(intersectedFace)) >= 0)
+            {
+                minZFace = intersectedFace;
+                minZCoordinate = currentBarycenter.z();
+            }
         }
 
-        assert(zDir.dot(mesh.getFaceNormal(maxZFace)) >= 0);
+        //Set the visibility
+        visibility(directionIndex, maxZFace) = 1;
+        visibility(nDirections + directionIndex, minZFace) = 1;
+
+
+
+        assert(zDirMax.dot(mesh.getFaceNormal(maxZFace)) >= 0);
 #ifdef RELEASECHECK
         //TO BE DELETED ON FINAL RELEASE
-        if (zDir.dot(mesh.getFaceNormal(maxZFace)) < 0) {
+        if (zDirMax.dot(mesh.getFaceNormal(maxZFace)) < 0) {
             std::cout << "ERROR: not visible triangle, dot product with z-axis is less than 0 for the direction " << mesh.getFaceNormal(maxZFace) << std::endl;
             exit(1);
         }
@@ -421,16 +409,138 @@ void checkVisibilityRayShootingOnZ(
 #ifdef RELEASECHECK
         //TO BE DELETED ON FINAL RELEASE
         if (maxZFace < 0) {
-            std::cout << "ERROR: no candidate face has been found " << mesh.getFaceNormal(maxZFace) << std::endl;
+            std::cout << "ERROR: no candidate max face has been found" << std::endl;
             exit(1);
         }
 #endif
 
-        //Set the visibility
-        visibility(directionIndex, maxZFace) = 1;
+        assert(zDirMin.dot(mesh.getFaceNormal(minZFace)) >= 0);
+#ifdef RELEASECHECK
+        //TO BE DELETED ON FINAL RELEASE
+        if (zDirMin.dot(mesh.getFaceNormal(minZFace)) < 0) {
+            std::cout << "ERROR: not visible triangle, dot product with opposite of z-axis is less than 0 for the direction " << mesh.getFaceNormal(minZFace) << std::endl;
+            exit(1);
+        }
+#endif
+
+        assert(minZFace >= 0);
+#ifdef RELEASECHECK
+        //TO BE DELETED ON FINAL RELEASE
+        if (minZFace < 0) {
+            std::cout << "ERROR: no candidate min face has been found" << std::endl;
+            exit(1);
+        }
+#endif
     }
 }
 
+
+
+
+/* ----- CHECK VISIBILITY (PROJECTION) ----- */
+
+/**
+ * @brief Check visibility of each face of the mesh from a given direction.
+ * It is implemented by checking the intersection of the projection of the
+ * segments from a given direction.
+ * @param[in] mesh Input mesh. Normals must be updated before.
+ * @param[in] nDirection Total number of directions
+ * @param[in] directionIndex Index of the direction
+ * @param[out] direction Current direction
+ * @param[out] visibility Map the visibility from the given directions
+ * to each face.
+ */
+void checkVisibilityProjectionOnZ(
+        const cg3::EigenMesh& mesh,
+        const std::vector<unsigned int>& faces,
+        const unsigned int nDirections,
+        const unsigned int directionIndex,
+        cg3::Array2D<int>& visibility)
+{
+    cg3::AABBTree<2, cg3::Segment2Dd> aabbTreeMax(
+                &internal::segmentAABBExtractor);
+    cg3::AABBTree<2, cg3::Segment2Dd> aabbTreeMin(
+                &internal::segmentAABBExtractor);
+
+    //Order the face by z-coordinate of the barycenter
+    std::vector<unsigned int> orderedZFaces(faces);
+    std::sort(orderedZFaces.begin(), orderedZFaces.end(), internal::BarycenterZComparator(mesh));
+
+    //Directions to be checked
+    cg3::Vec3 zDirMax(0,0,1);
+    cg3::Vec3 zDirMin(0,0,-1);
+
+    //Start from the max z-coordinate face
+    for (int i = orderedZFaces.size()-1; i >= 0; i--) {
+        unsigned int faceId = orderedZFaces[i];        
+
+        internal::checkVisibilityProjectionOnZ(
+                    mesh, faceId, directionIndex, zDirMax, aabbTreeMax, visibility);
+    }
+
+    //Start from the min z-coordinate face
+    for (unsigned int i = 0; i < orderedZFaces.size(); i++) {
+        unsigned int faceId = orderedZFaces[i];
+
+        internal::checkVisibilityProjectionOnZ(
+                    mesh, faceId, nDirections + directionIndex, zDirMin, aabbTreeMin, visibility);
+    }
+}
+
+/**
+ * @brief Check visibility of a face from a given direction.
+ * It is implemented by checking the intersection of the projection of the
+ * segments from a given direction.
+ * @param[in] mesh Input mesh
+ * @param[in] faceId Id of the face of the mesh
+ * @param[in] directionIndex Current direction index
+ * @param[in] direction Direction
+ * @param[out] aabbTree AABB tree with projections
+ * @param[out] visibility Map the visibility from the given directions
+ */
+void checkVisibilityProjectionOnZ(
+        const cg3::EigenMesh& mesh,
+        const unsigned int faceId,
+        const unsigned int directionIndex,
+        const cg3::Vec3& direction,
+        cg3::AABBTree<2, cg3::Segment2Dd>& aabbTree,
+        cg3::Array2D<int>& visibility)
+{
+    //If it is visible checking the angle
+    if (direction.dot(mesh.getFaceNormal(faceId)) >= 0) {
+        const cg3::Pointi& faceData = mesh.getFace(faceId);
+        const cg3::Pointd& v1 = mesh.getVertex(faceData.x());
+        const cg3::Pointd& v2 = mesh.getVertex(faceData.y());
+        const cg3::Pointd& v3 = mesh.getVertex(faceData.z());
+
+        //Project on the z plane
+        cg3::Point2Dd v1Projected(v1.x(), v1.y());
+        cg3::Point2Dd v2Projected(v2.x(), v2.y());
+        cg3::Point2Dd v3Projected(v3.x(), v3.y());
+
+        //Create segments
+        cg3::Segment2Dd seg1(std::min(v1Projected, v2Projected), std::max(v1Projected, v2Projected));
+        cg3::Segment2Dd seg2(std::min(v2Projected, v3Projected), std::max(v2Projected, v3Projected));
+        cg3::Segment2Dd seg3(std::min(v3Projected, v1Projected), std::max(v3Projected, v1Projected));
+
+        //Check for intersections
+        bool intersectionFound =
+                aabbTree.aabbOverlapCheck(seg1, &internal::segmentIntersectionChecker) |
+                aabbTree.aabbOverlapCheck(seg2, &internal::segmentIntersectionChecker) |
+                aabbTree.aabbOverlapCheck(seg3, &internal::segmentIntersectionChecker);
+
+        //If no intersections have been found
+        if (!intersectionFound) {
+            //Set visibility
+            visibility(directionIndex, faceId) = 1;
+
+            aabbTree.insert(seg1);
+            aabbTree.insert(seg2);
+            aabbTree.insert(seg3);
+        }
+    }
+
+}
 
 
 
