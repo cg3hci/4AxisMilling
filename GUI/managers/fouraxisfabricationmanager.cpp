@@ -327,11 +327,14 @@ void FourAxisFabricationManager::restoreFrequencies() {
         getTargetDirections();
         getAssociation();
 
+        double previousMeshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
+        std::cout << "Previous mesh Hausdorff distance: " << previousMeshDistance << std::endl;
 
         cg3::Timer t("Restore frequencies");
 
         //Restore frequencies
-        //TODO
+        FourAxisFabrication::restoreFrequencies(smoothedMesh, data, originalMesh, 5);
+        //TODO CHOOSE NUMBER OF ITERATIONS FROM UI
 
         t.stopAndPrint();
 
@@ -715,9 +718,6 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
                                  "Number of faces: " << originalMesh.getNumberFaces() << std::endl;
                     std::cout << "Smoothed mesh file: \"" << loadedSmoothedMeshFile << "\"" << std::endl <<
                                  "Number of faces: " << originalMesh.getNumberFaces() << std::endl;
-
-                    double meshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
-                    std::cout << "Initial mesh Hausdorff distance: " << meshDistance << std::endl;
                 }
                 else {
                     clearData();

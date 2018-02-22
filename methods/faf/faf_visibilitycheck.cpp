@@ -4,25 +4,17 @@
  */
 #include "faf_visibilitycheck.h"
 
-#ifdef CG3_CGAL_DEFINED
-/* Uncomment to use CGAL intersection system */
-//#define USE_CGAL_INTERSECTIONS
-#endif
+#include <cg3/utilities/const.h>
 
 #include <cg3/geometry/transformations.h>
 #include <cg3/geometry/2d/point2d.h>
 #include <cg3/geometry/point.h>
-#include <cg3/geometry/2d/segment2d.h>
+#include <cg3/geometry/2d/triangle2d.h>
+#include <cg3/geometry/2d/triangle2d_utils.h>
 
 #include <cg3/data_structures/trees/aabbtree.h>
 
 #include <cg3/cgal/cgal_aabbtree.h>
-
-#ifdef USE_CGAL_INTERSECTIONS
-#include <cg3/cgal/2d/cgal_intersections2d.h>
-#else
-#include <cg3/geometry/2d/intersections2d.h>
-#endif
 
 //Uncomment if you want to check conditions
 //(more efficient when uncommented)
@@ -69,24 +61,25 @@ void checkVisibilityProjectionOnZ(
         const unsigned int faceId,
         const unsigned int directionIndex,
         const cg3::Vec3& direction,
-        cg3::AABBTree<2, cg3::Segment2Dd>& aabbTree,
+        cg3::AABBTree<2, cg3::Triangle2Dd>& aabbTree,
         cg3::Array2D<int>& visibility);
 
 
-/* Segment intersection and AABB functions */
+/* Triangle overlap and AABB functions */
 
-double segmentAABBExtractor(
-        const cg3::Segment2Dd& triangle,
+double triangleAABBExtractor(
+        const cg3::Triangle2Dd& triangle,
         const cg3::AABBValueType& valueType,
         const int& dim);
-
-bool segmentIntersectionChecker(
-        const cg3::Segment2Dd& s1,
-        const cg3::Segment2Dd& s2);
 
 
 /* Comparators */
 
+bool triangleComparator(const cg3::Triangle2Dd& t1, const cg3::Triangle2Dd& t2);
+
+/**
+ * @brief Comparator for Z-value of points of a mesh
+ */
 struct BarycenterZComparator {
     const cg3::EigenMesh& m;
     BarycenterZComparator(const cg3::EigenMesh& m) : m(m) {}
@@ -457,10 +450,10 @@ void checkVisibilityProjectionOnZ(
         const unsigned int directionIndex,
         cg3::Array2D<int>& visibility)
 {
-    cg3::AABBTree<2, cg3::Segment2Dd> aabbTreeMax(
-                &internal::segmentAABBExtractor);
-    cg3::AABBTree<2, cg3::Segment2Dd> aabbTreeMin(
-                &internal::segmentAABBExtractor);
+    cg3::AABBTree<2, cg3::Triangle2Dd> aabbTreeMax(
+                &internal::triangleAABBExtractor, &internal::triangleComparator);
+    cg3::AABBTree<2, cg3::Triangle2Dd> aabbTreeMin(
+                &internal::triangleAABBExtractor, &internal::triangleComparator);
 
     //Order the face by z-coordinate of the barycenter
     std::vector<unsigned int> orderedZFaces(faces);
@@ -503,7 +496,7 @@ void checkVisibilityProjectionOnZ(
         const unsigned int faceId,
         const unsigned int directionIndex,
         const cg3::Vec3& direction,
-        cg3::AABBTree<2, cg3::Segment2Dd>& aabbTree,
+        cg3::AABBTree<2, cg3::Triangle2Dd>& aabbTree,
         cg3::Array2D<int>& visibility)
 {
     //If it is visible checking the angle
@@ -519,24 +512,19 @@ void checkVisibilityProjectionOnZ(
         cg3::Point2Dd v3Projected(v3.x(), v3.y());
 
         //Create segments
-        cg3::Segment2Dd seg1(std::min(v1Projected, v2Projected), std::max(v1Projected, v2Projected));
-        cg3::Segment2Dd seg2(std::min(v2Projected, v3Projected), std::max(v2Projected, v3Projected));
-        cg3::Segment2Dd seg3(std::min(v3Projected, v1Projected), std::max(v3Projected, v1Projected));
+        cg3::Triangle2Dd triangle(v1Projected, v2Projected, v3Projected);        
+        cg3::sortTriangle2DPointsAndReorderCounterClockwise(triangle);
 
         //Check for intersections
         bool intersectionFound =
-                aabbTree.aabbOverlapCheck(seg1, &internal::segmentIntersectionChecker) |
-                aabbTree.aabbOverlapCheck(seg2, &internal::segmentIntersectionChecker) |
-                aabbTree.aabbOverlapCheck(seg3, &internal::segmentIntersectionChecker);
+                aabbTree.aabbOverlapCheck(triangle, &cg3::triangleOverlap);
 
         //If no intersections have been found
         if (!intersectionFound) {
             //Set visibility
             visibility(directionIndex, faceId) = 1;
 
-            aabbTree.insert(seg1);
-            aabbTree.insert(seg2);
-            aabbTree.insert(seg3);
+            aabbTree.insert(triangle);
         }
     }
 
@@ -544,59 +532,65 @@ void checkVisibilityProjectionOnZ(
 
 
 
-/* ----- SEGMENT INTERSECTION AND AABB FUNCTIONS ----- */
+/* ----- TRIANGLE OVERLAP AND AABB FUNCTIONS ----- */
 
 /**
  * @brief Extract a 2D segment AABB
- * @param[in] segment Input segment
+ * @param[in] triangle Input triangle
  * @param[in] valueType Type of the value requested (MIN or MAX)
  * @param[in] dim Dimension requested of the value (0 for x, 1 for y)
  * @return Requested coordinate of the AABB
  */
-double segmentAABBExtractor(
-        const cg3::Segment2Dd& segment,
+double triangleAABBExtractor(
+        const cg3::Triangle2Dd& triangle,
         const cg3::AABBValueType& valueType,
         const int& dim)
 {
     if (valueType == cg3::AABBValueType::MIN) {
         switch (dim) {
         case 1:
-            return (double) std::min(segment.getP1().x(), segment.getP2().x());
+            return (double) std::min(std::min(triangle.v1().x(), triangle.v2().x()), triangle.v3().x());
         case 2:
-            return (double) std::min(segment.getP1().y(), segment.getP2().y());
+            return (double) std::min(std::min(triangle.v1().y(), triangle.v2().y()), triangle.v3().y());
         }
     }
     else if (valueType == cg3::AABBValueType::MAX) {
         switch (dim) {
         case 1:
-            return (double) std::max(segment.getP1().x(), segment.getP2().x());
+            return (double) std::max(std::max(triangle.v1().x(), triangle.v2().x()), triangle.v3().x());
         case 2:
-            return (double) std::max(segment.getP1().y(), segment.getP2().y());
+            return (double) std::max(std::max(triangle.v1().y(), triangle.v2().y()), triangle.v3().y());
         }
     }
     throw new std::runtime_error("Impossible to extract an AABB value.");
 }
 
+
+
+
+
+/* ----- COMPARATORS ----- */
+
 /**
- * @brief Check if two segment have an (internal) intersection.
- * Intersections of segments with same endpoints are not included.
- *
- * Note also that CGAL intersection checker could report as intersection
- * the segments having a vertex which lie in the other segment line.
- *
- * @param[in] s1 Segment 1
- * @param[in] s2 Segment 2
- * @return True if the segment have an intersection.
+ * @brief Comparator for triangles
+ * @param t1 Triangle 1
+ * @param t2 Triangle 2
+ * @return True if triangle 1 is less than triangle 2
  */
-bool segmentIntersectionChecker(
-        const cg3::Segment2Dd& s1, const cg3::Segment2Dd& s2)
-{
-#ifdef USE_CGAL_INTERSECTIONS
-    return cg3::cgal::checkSegmentIntersection2D(s1, s2, true);
-#else
-    return cg3::checkSegmentIntersection2D(s1, s2, true);
-#endif
+bool triangleComparator(const cg3::Triangle2Dd& t1, const cg3::Triangle2Dd& t2) {
+    if (t1.v1() < t2.v1())
+        return true;
+    if (t2.v1() < t1.v1())
+        return false;
+
+    if (t1.v2() < t2.v2())
+        return true;
+    if (t2.v2() < t1.v2())
+        return false;
+
+    return t1.v3() < t2.v3();
 }
+
 
 }
 

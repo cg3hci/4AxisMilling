@@ -7,6 +7,7 @@
 
 #ifdef CG3_LIBIGL_DEFINED
 #include <cg3/libigl/mesh_distance.h>
+#include <cg3/libigl/vertex_adjacencies.h>
 #endif
 
 namespace FourAxisFabrication {
@@ -16,15 +17,33 @@ namespace FourAxisFabrication {
 
 namespace internal {
 
+std::vector<cg3::Vec3> computeDifferentialCoordinates(const cg3::EigenMesh& mesh);
 
 }
 
 /* ----- RESTORE FREQUENCIES ----- */
 
+/**
+ * @brief Restore frequencies of a smoothed mesh.
+ * Note that the meshes must have the same number of vertices and faces.
+ * @param[in] originalMesh Original detailed mesh
+ * @param[in] data Four axis fabrication data
+ * @param[out] targetMesh Target mesh
+ * @param[in] iterations Number of iterations (default is 5)
+ */
 void restoreFrequencies(
-        const cg3::EigenMesh& mesh,
+        const cg3::EigenMesh& originalMesh,
+        const Data& data,
         cg3::EigenMesh& targetMesh,
-        Data& data);
+        const int iterations)
+{
+    assert(originalMesh.getNumberVertices() == targetMesh.getNumberVertices());
+    assert(originalMesh.getNumberFaces() == targetMesh.getNumberFaces());
+
+    std::vector<cg3::Vec3> differentialCoordinates =
+            internal::computeDifferentialCoordinates(originalMesh);
+
+}
 
 /* ----- DISTANCE COMPUTATION ----- */
 
@@ -42,6 +61,40 @@ double getHausdorffDistance(
 /* ----- RESTORE FREQUENCIES ----- */
 
 namespace internal {
+
+/**
+ * @brief Compute differential coordinates for the vertices of a mesh
+ * @param[in] mesh Input mesh
+ * @param differentialCoordinates Vector of differential coordinates for each vertex
+ */
+std::vector<cg3::Vec3> computeDifferentialCoordinates(const cg3::EigenMesh& mesh)
+{
+    //Resulting vector
+    std::vector<cg3::Vec3> differentialCoordinates;
+    differentialCoordinates.resize(mesh.getNumberVertices());
+
+    //Get vertex adjacencies
+    std::vector<std::vector<int>> vertexAdjacencies = cg3::libigl::getVertexAdjacencies(mesh);
+
+    #pragma omp parallel for
+    for(unsigned int vId = 0; vId < mesh.getNumberVertices(); ++vId) {
+        //Calculate differential coordinates for each point
+        cg3::Pointd currentPoint = mesh.getVertex(vId);
+        cg3::Vec3 delta(0,0,0);
+
+        std::vector<int>& neighbors = vertexAdjacencies[vId];
+
+        for(int neighborId : neighbors) {
+            delta += currentPoint - mesh.getVertex(neighborId);
+        }
+
+        delta /= neighbors.size();
+
+        differentialCoordinates[vId] = delta;
+    }
+
+    return differentialCoordinates;
+}
 
 }
 
