@@ -63,6 +63,7 @@ void FourAxisFabricationManager::updateUI() {
     ui->loadMeshButton->setEnabled(!isMeshLoaded);
     ui->clearMeshButton->setEnabled(isMeshLoaded);
     ui->reloadMeshButton->setEnabled(isMeshLoaded);
+    ui->saveMeshButton->setEnabled(isMeshLoaded);
 
 
     // ----- Four axis fabrication -----
@@ -95,6 +96,8 @@ void FourAxisFabricationManager::updateUI() {
 
     //Restore frequencies
     ui->restoreFrequenciesButton->setEnabled(!areFrequenciesRestored);
+    ui->nIterationsLabel->setEnabled(!areFrequenciesRestored);
+    ui->nIterationsSpinBox->setEnabled(!areFrequenciesRestored);
 
 
     // ----- Visualization -----
@@ -152,6 +155,7 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
                 FourAxisFabrication::RAYSHOOTING :
                 FourAxisFabrication::PROJECTION);
         bool setCoverageFlag = ui->setCoverageCheckBox->isChecked();
+        unsigned int nIterations = (unsigned int) ui->nIterationsSpinBox->value();
 
         cg3::Timer t("Entire algorithm");
 
@@ -164,11 +168,14 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
                     nDirections,
                     fixExtremeAssociation,
                     setCoverageFlag,
+                    nIterations,
                     data,
                     checkMode);
 
 
         t.stopAndPrint();
+
+        smoothedMesh.updateFacesAndVerticesNormals();
 
         double meshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
         std::cout << "Mesh Hausdorff distance: " << meshDistance << std::endl;
@@ -178,6 +185,7 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
         isVisibilityChecked = true;
         areTargetDirectionsFound = true;
         isAssociationComputed = true;
+        areFrequenciesRestored = true;
     }
 }
 
@@ -327,16 +335,20 @@ void FourAxisFabricationManager::restoreFrequencies() {
         getTargetDirections();
         getAssociation();
 
+        //Get UI data
+        unsigned int nIterations = (unsigned int) ui->nIterationsSpinBox->value();
+
         double previousMeshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
         std::cout << "Previous mesh Hausdorff distance: " << previousMeshDistance << std::endl;
 
         cg3::Timer t("Restore frequencies");
 
         //Restore frequencies
-        FourAxisFabrication::restoreFrequencies(smoothedMesh, data, originalMesh, 5);
-        //TODO CHOOSE NUMBER OF ITERATIONS FROM UI
+        FourAxisFabrication::restoreFrequencies(originalMesh, data, nIterations, smoothedMesh);
 
         t.stopAndPrint();
+
+        smoothedMesh.updateFacesAndVerticesNormals();
 
         double meshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
         std::cout << "Mesh Hausdorff distance: " << meshDistance << std::endl;
@@ -717,7 +729,7 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
                     std::cout << "Mesh file: \"" << meshFile << "\"" << std::endl <<
                                  "Number of faces: " << originalMesh.getNumberFaces() << std::endl;
                     std::cout << "Smoothed mesh file: \"" << loadedSmoothedMeshFile << "\"" << std::endl <<
-                                 "Number of faces: " << originalMesh.getNumberFaces() << std::endl;
+                                 "Number of faces: " << smoothedMesh.getNumberFaces() << std::endl;
                 }
                 else {
                     clearData();
@@ -796,6 +808,23 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
 
         updateUI();
         resetCameraDirection();
+    }
+}
+
+void FourAxisFabricationManager::on_saveMeshButton_clicked() {
+    //Get saving dialog
+    std::string selectedExtension;
+    std::string saveFileName = loaderSaverObj.saveDialog("Save mesh", selectedExtension);
+    saveFileName += "." + selectedExtension;
+
+    smoothedMesh.updateFacesAndVerticesNormals();
+
+    if (saveFileName != "") {
+        std::string rawname, ext;
+        cg3::separateExtensionFromFilename(saveFileName, rawname, ext);
+
+        originalMesh.saveOnObj(rawname + "_original.obj");
+        smoothedMesh.saveOnObj(rawname + "_result.obj");
     }
 }
 
@@ -1019,8 +1048,8 @@ void FourAxisFabricationManager::on_rotateButton_clicked() {
         originalMesh.rotate(m);
         smoothedMesh.rotate(m);
 
-        originalMesh.updateFaceNormals();
-        smoothedMesh.updateFaceNormals();
+        originalMesh.updateFacesAndVerticesNormals();
+        smoothedMesh.updateFacesAndVerticesNormals();
 
         //Update canvas and fit the scene
         mainWindow.updateGlCanvas();

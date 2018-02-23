@@ -18,8 +18,8 @@ namespace FourAxisFabrication {
 void restoreFrequencies(
         const cg3::EigenMesh& originalMesh,
         const Data& data,
-        cg3::EigenMesh& targetMesh,
-        const int iterations = 5);
+        const int iterations,
+        cg3::EigenMesh& targetMesh);
 
 /* Distance computation */
 

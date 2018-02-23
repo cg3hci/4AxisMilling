@@ -26,6 +26,7 @@ void computeEntireAlgorithm(
         const unsigned int nDirections,
         const bool fixExtremeAssociation,
         const bool setCoverage,
+        const int frequenciesIterations,
         Data& data,
         CheckMode checkMode = PROJECTION);
 }

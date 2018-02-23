@@ -106,6 +106,7 @@ private slots:
     void on_loadMeshButton_clicked();
     void on_clearMeshButton_clicked();
     void on_reloadMeshButton_clicked();
+    void on_saveMeshButton_clicked();
 
 
     /* UI slots Four Axis Fabrication */

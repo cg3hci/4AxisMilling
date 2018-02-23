@@ -20,6 +20,7 @@ namespace FourAxisFabrication {
  * @param nDirections Number of directions
  * @param fixExtremeAssociation Set if faces in the extremes must be already and unconditionally
  * assigned to the x-axis directions
+ * @param[in] Number of iterations of the algorithm
  * @param data Four axis fabrication data
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  */
@@ -31,6 +32,7 @@ void computeEntireAlgorithm(
         const unsigned int nDirections,
         const bool fixExtremeAssociation,
         const bool setCoverage,
+        const int frequenciesIterations,
         Data& data,
         CheckMode checkMode)
 {
@@ -77,6 +79,13 @@ void computeEntireAlgorithm(
     FourAxisFabrication::getOptimizedAssociation(
                 smoothedMesh,
                 data);
+
+    //Restore frequencies
+    FourAxisFabrication::restoreFrequencies(
+                mesh,
+                data,
+                frequenciesIterations,
+                smoothedMesh);
 
 }
 

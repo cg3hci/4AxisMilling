@@ -80,8 +80,8 @@ void rotateToOptimalOrientation(
     mesh.translate(-mesh.getBoundingBox().center());
     smoothedMesh.translate(-smoothedMesh.getBoundingBox().center());
 
-    mesh.updateFaceNormals();
-    smoothedMesh.updateFaceNormals();
+    mesh.updateFacesAndVerticesNormals();
+    smoothedMesh.updateFacesAndVerticesNormals();
 }
 
 
