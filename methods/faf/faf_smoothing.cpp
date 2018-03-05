@@ -186,7 +186,7 @@ bool validateMove(
         cg3::Triangle3Dd triangle(p1, p2, p3);
         cg3::Vec3 faceNormal = triangle.normal();
 
-        const cg3::Vec3& associatedDirection = data.association[fId];
+        const cg3::Vec3& associatedDirection = data.directions[data.association[fId]];
         if (faceNormal.dot(associatedDirection) < 0)
             return false;
     }
