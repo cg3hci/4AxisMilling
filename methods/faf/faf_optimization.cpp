@@ -18,7 +18,7 @@
 //#define OPTIMIZATION_VERBOSE
 
 
-#define MAXCOST 10000000
+#define MAXCOST 1e+9
 
 namespace FourAxisFabrication {
 
@@ -33,14 +33,17 @@ float smoothTerm(int site_1, int site_2, int label_1, int label_2, void *extra_d
 
 /**
  * @brief Associate each face of the mesh to a direction
- * @param[in] Input mesh.
+ * @param[in] Input mesh
+ * @param[in] compactness Compactness
+ * @param[in] limitAngle Limit angle
  * @param[out] data Four axis fabrication data
  */
 void getOptimizedAssociation(
         const cg3::EigenMesh& mesh,
+        const double compactness,
+        const double limitAngle,
         Data& data)
 {
-
     //Get fabrication data
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
     const cg3::Array2D<int> &visibility = data.visibility;
@@ -52,6 +55,9 @@ void getOptimizedAssociation(
     Eigen::MatrixXi adj = cg3::libigl::getFaceAdjacences(mesh);
 
     std::vector<bool> usedLabels(targetDirections.size(), false);
+
+
+    const double limitAngleCos = cos(limitAngle);
 
     try {
         GCoptimizationGeneralGraph *gc = new GCoptimizationGeneralGraph(nFaces, targetDirections.size());
@@ -73,8 +79,19 @@ void getOptimizedAssociation(
 
                 if (association[faceId] < 0) {
                     //Visible
-                    if (visibility(directionIndex, faceId) == 1){
-                        record.cost = 0;
+                    if (visibility(directionIndex, faceId) == 1) {
+                        const cg3::Vec3& faceNormal = mesh.getFaceNormal(faceId);
+                        const cg3::Vec3& labelNormal = data.directions[directionIndex];
+
+                        double dot = faceNormal.dot(labelNormal);
+
+                        double cost = 0;
+
+                        if (dot < limitAngleCos) {
+                            cost = 1 - dot;
+                        }
+
+                        record.cost = cost;
                     }
                     //Not visibile
                     else {
@@ -102,7 +119,7 @@ void getOptimizedAssociation(
             delete [] gcData;
         }
 
-        gc->setSmoothCost(internal::smoothTerm, nullptr);
+        gc->setSmoothCost(internal::smoothTerm, (void*) &compactness);
 
         //Set adjacencies
         std::vector<bool> visited(nFaces, false);
@@ -153,12 +170,13 @@ namespace internal {
 float smoothTerm(int site_1, int site_2, int label_1, int label_2, void *extra_data) {
     CG3_SUPPRESS_WARNING(site_1);
     CG3_SUPPRESS_WARNING(site_2);
-    CG3_SUPPRESS_WARNING(extra_data);
+
+    const double compactness = *((double*) extra_data);
 
     if (label_1 == label_2)
         return 0.f;
     else
-        return 2.f;
+        return compactness;
 }
 
 #else

@@ -21,14 +21,6 @@ void restoreFrequencies(
         const int iterations,
         cg3::EigenMesh& targetMesh);
 
-/* Distance computation */
-
-#ifdef CG3_LIBIGL_DEFINED
-double getHausdorffDistance(
-        const cg3::SimpleEigenMesh& mesh1,
-        const cg3::SimpleEigenMesh& mesh2);
-#endif
-
 }
 
 #endif // FAF_SMOOTHING_H

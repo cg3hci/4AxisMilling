@@ -93,6 +93,10 @@ void FourAxisFabricationManager::updateUI() {
 
     //Get association
     ui->getAssociationButton->setEnabled(!isAssociationComputed);
+    ui->compactnessLabel->setEnabled(!isAssociationComputed);
+    ui->compactnessSpinBox->setEnabled(!isAssociationComputed);
+    ui->limitAngleSpinBox->setEnabled(!isAssociationComputed);
+    ui->limitAngleLabel->setEnabled(!isAssociationComputed);
 
     //Restore frequencies
     ui->restoreFrequenciesButton->setEnabled(!areFrequenciesRestored);
@@ -155,6 +159,8 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
                 FourAxisFabrication::RAYSHOOTING :
                 FourAxisFabrication::PROJECTION);
         bool setCoverageFlag = ui->setCoverageCheckBox->isChecked();
+        double compactness = ui->compactnessSpinBox->value();
+        double limitAngle = ui->limitAngleSpinBox->value() / 180.0 * M_PI;
         unsigned int nIterations = (unsigned int) ui->nIterationsSpinBox->value();
 
         cg3::Timer t("Entire algorithm");
@@ -168,6 +174,8 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
                     nDirections,
                     fixExtremeAssociation,
                     setCoverageFlag,
+                    compactness,
+                    limitAngle,
                     nIterations,
                     data,
                     checkMode);
@@ -176,9 +184,6 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
         t.stopAndPrint();
 
         smoothedMesh.updateFacesAndVerticesNormals();
-
-        double meshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
-        std::cout << "Mesh Hausdorff distance: " << meshDistance << std::endl;
 
         isMeshOriented = true;
         areExtremesCut = true;
@@ -310,12 +315,17 @@ void FourAxisFabricationManager::getAssociation() {
         checkVisibility();
         getTargetDirections();
 
+        //Get UI data
+        double compactness = ui->compactnessSpinBox->value();
+        double limitAngle = ui->limitAngleSpinBox->value() / 180.0 * M_PI;
 
         cg3::Timer t("Get association");
 
         //Get association
         FourAxisFabrication::getOptimizedAssociation(
                     smoothedMesh,
+                    compactness,
+                    limitAngle,
                     data);
 
         t.stopAndPrint();
@@ -338,9 +348,6 @@ void FourAxisFabricationManager::restoreFrequencies() {
         //Get UI data
         unsigned int nIterations = (unsigned int) ui->nIterationsSpinBox->value();
 
-        double previousMeshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
-        std::cout << "Previous mesh Hausdorff distance: " << previousMeshDistance << std::endl;
-
         cg3::Timer t("Restore frequencies");
 
         //Restore frequencies
@@ -349,9 +356,6 @@ void FourAxisFabricationManager::restoreFrequencies() {
         t.stopAndPrint();
 
         smoothedMesh.updateFacesAndVerticesNormals();
-
-        double meshDistance = FourAxisFabrication::getHausdorffDistance(originalMesh, smoothedMesh);
-        std::cout << "Mesh Hausdorff distance: " << meshDistance << std::endl;
 
         areFrequenciesRestored = true;
     }

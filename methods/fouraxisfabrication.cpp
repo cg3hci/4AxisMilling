@@ -17,10 +17,13 @@ namespace FourAxisFabrication {
  * @param[out] smoothedMesh Smoothed mesh
  * @param[in] nDirections Number of directions to check
  * @param[in] deterministic Deterministic approach (if false it is randomized)
- * @param nDirections Number of directions
- * @param fixExtremeAssociation Set if faces in the extremes must be already and unconditionally
+ * @param[in] nDirections Number of directions
+ * @param[in] fixExtremeAssociation Set if faces in the extremes must be already and unconditionally
  * assigned to the x-axis directions
- * @param[in] Number of iterations of the algorithm
+ * @param[in] setCoverage Flag to resolve set coverage problem or not
+ * @param[in] compactness Compactness
+ * @param[in] limitAngle Limit angle
+ * @param[in] Number of iterations of the algorithm for restoring frequencies
  * @param data Four axis fabrication data
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  */
@@ -32,6 +35,8 @@ void computeEntireAlgorithm(
         const unsigned int nDirections,
         const bool fixExtremeAssociation,
         const bool setCoverage,
+        const double compactness,
+        const double limitAngle,
         const int frequenciesIterations,
         Data& data,
         CheckMode checkMode)
@@ -78,6 +83,8 @@ void computeEntireAlgorithm(
     //Get optimized association
     FourAxisFabrication::getOptimizedAssociation(
                 smoothedMesh,
+                compactness,
+                limitAngle,
                 data);
 
     //Restore frequencies
