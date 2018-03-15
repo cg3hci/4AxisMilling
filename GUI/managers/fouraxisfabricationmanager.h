@@ -38,7 +38,24 @@ public:
     ~FourAxisFabricationManager();
 
 
-private:
+private:    
+
+    /* Data fields */
+
+    cg3::EigenMesh originalMesh;
+    cg3::EigenMesh smoothedMesh;
+
+    FourAxisFabrication::Data data;
+
+
+    /* Drawable objects */
+
+    cg3::DrawableEigenMesh drawableOriginalMesh;
+    cg3::DrawableEigenMesh drawableSmoothedMesh;
+    cg3::DrawableEigenMesh drawableMinResult;
+    cg3::DrawableEigenMesh drawableMaxResult;
+    cg3::DrawableEigenMesh drawableFourAxisResult;
+
 
     /* UI Fields */
 
@@ -52,19 +69,13 @@ private:
 
     bool isMeshLoaded;
     bool isMeshOriented;
-    bool areExtremesCut;
+    bool areExtremesSelected;
     bool isVisibilityChecked;
     bool areTargetDirectionsFound;
     bool isAssociationComputed;
     bool areFrequenciesRestored;
+    bool areComponentsCut;
 
-
-    /* Data fields */
-
-    cg3::DrawableEigenMesh originalMesh;
-    cg3::DrawableEigenMesh smoothedMesh;
-
-    FourAxisFabrication::Data data;
 
     /* UI methods */
 
@@ -77,14 +88,18 @@ private:
     void computeEntireAlgorithm();
 
     void optimalOrientation();
-    void cutExtremes();
+    void selectExtremes();
     void checkVisibility();
     void getTargetDirections();
     void getAssociation();
     void restoreFrequencies();
+    void cutComponents();
 
 
     /* Visualization methods */
+
+    void updateDrawableMeshes();
+    void addDrawableResults();
 
     void resetCameraDirection();
     void setCameraDirection(cg3::Vec3 dir);
@@ -114,11 +129,12 @@ private slots:
     void on_computeEntireAlgorithmButton_clicked();
 
     void on_optimalOrientationButton_clicked();
-    void on_cutExtremesButton_clicked();
+    void on_selectExtremesButton_clicked();
     void on_checkVisibilityButton_clicked();
     void on_targetDirectionsButton_clicked();
     void on_getAssociationButton_clicked();
     void on_restoreFrequenciesButton_clicked();
+    void on_cutComponentsButton_clicked();
 
 
     /* UI slots Transformations */

@@ -26,7 +26,7 @@ void rotateToOptimalOrientation(
 
 /* Extremes */
 
-void getExtremesOnXAxis(
+void selectExtremesOnXAxis(
         const cg3::EigenMesh &mesh,
         Data& data);
 

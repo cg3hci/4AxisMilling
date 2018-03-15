@@ -59,7 +59,8 @@ HEADERS += \
     methods/faf/faf_minimization.h \
     GUI/managers/fouraxisfabricationmanager.h \
     methods/faf/faf_optimization.h \
-    methods/faf/faf_smoothing.h
+    methods/faf/faf_smoothing.h \
+    methods/faf/faf_boolean.h
 
 SOURCES += \
     main.cpp \
@@ -70,7 +71,8 @@ SOURCES += \
     methods/faf/faf_minimization.cpp \
     GUI/managers/fouraxisfabricationmanager.cpp \
     methods/faf/faf_optimization.cpp \
-    methods/faf/faf_smoothing.cpp
+    methods/faf/faf_smoothing.cpp \
+    methods/faf/faf_boolean.cpp
 
 FORMS += \
     GUI/managers/fouraxisfabricationmanager.ui

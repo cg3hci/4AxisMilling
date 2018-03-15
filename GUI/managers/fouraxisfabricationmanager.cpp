@@ -77,8 +77,8 @@ void FourAxisFabricationManager::updateUI() {
     ui->nOrientationSpinBox->setEnabled(!isMeshOriented);
     ui->deterministicCheckBox->setEnabled(!isMeshOriented);
 
-    //Cut extremes
-    ui->cutExtremesButton->setEnabled(!areExtremesCut);
+    //Select extremes
+    ui->selectExtremesButton->setEnabled(!areExtremesSelected);
     ui->fixExtremeAssociationCheckBox->setEnabled(!isVisibilityChecked);
 
     //Check visibility
@@ -103,13 +103,16 @@ void FourAxisFabricationManager::updateUI() {
     ui->nIterationsLabel->setEnabled(!areFrequenciesRestored);
     ui->nIterationsSpinBox->setEnabled(!areFrequenciesRestored);
 
+    //Cut components
+    ui->cutComponentsButton->setEnabled(!areComponentsCut);
+
 
     // ----- Visualization -----
     ui->visualizationGroup->setEnabled(isMeshLoaded);
 
     //Radio
     ui->meshRadio->setEnabled(isMeshLoaded);
-    ui->extremesRadio->setEnabled(areExtremesCut);
+    ui->extremesRadio->setEnabled(areExtremesSelected);
     ui->visibilityRadio->setEnabled(isVisibilityChecked);
     ui->targetDirectionsRadio->setEnabled(areTargetDirectionsFound);
     ui->associationRadio->setEnabled(isAssociationComputed);
@@ -125,16 +128,24 @@ void FourAxisFabricationManager::updateUI() {
 void FourAxisFabricationManager::clearData() {
     isMeshLoaded = false;
     isMeshOriented = false;   
-    areExtremesCut = false;
+    areExtremesSelected = false;
     isVisibilityChecked = false;
     areTargetDirectionsFound = false;
-    isAssociationComputed = false;    
+    isAssociationComputed = false;
     areFrequenciesRestored = false;
+    areComponentsCut = false;
 
     data.clear();
 
     originalMesh.clear();
     smoothedMesh.clear();
+
+    drawableOriginalMesh.clear();
+    drawableSmoothedMesh.clear();
+
+    drawableMinResult.clear();
+    drawableMaxResult.clear();
+    drawableFourAxisResult.clear();
 }
 
 
@@ -183,14 +194,16 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
 
         t.stopAndPrint();
 
-        smoothedMesh.updateFacesAndVerticesNormals();
-
         isMeshOriented = true;
-        areExtremesCut = true;
+        areExtremesSelected = true;
         isVisibilityChecked = true;
         areTargetDirectionsFound = true;
         isAssociationComputed = true;
         areFrequenciesRestored = true;
+        areComponentsCut = true;
+
+        updateDrawableMeshes();
+        addDrawableResults();
     }
 }
 
@@ -217,24 +230,26 @@ void FourAxisFabricationManager::optimalOrientation() {
         t.stopAndPrint();
 
         isMeshOriented = true;
+
+        updateDrawableMeshes();
     }
 }
 
 /**
- * @brief Cut extremes
+ * @brief Select extremes
  */
-void FourAxisFabricationManager::cutExtremes() {
-    if (!areExtremesCut) {
+void FourAxisFabricationManager::selectExtremes() {
+    if (!areExtremesSelected) {
         optimalOrientation();
 
-        cg3::Timer t("Cut extremes");
+        cg3::Timer t("Select extremes");
 
-        //Get extremes on x-axis to be cut
-        FourAxisFabrication::getExtremesOnXAxis(smoothedMesh, data);
+        //Get extremes on x-axis to be selected
+        FourAxisFabrication::selectExtremesOnXAxis(smoothedMesh, data);
 
         t.stopAndPrint();
 
-        areExtremesCut = true;
+        areExtremesSelected = true;
     }
 }
 
@@ -244,7 +259,7 @@ void FourAxisFabricationManager::cutExtremes() {
 void FourAxisFabricationManager::checkVisibility() {
     if (!isVisibilityChecked) {
         optimalOrientation();
-        cutExtremes();
+        selectExtremes();
 
         //Get UI data
         unsigned int nDirections = (unsigned int) ui->nDirectionsSpinBox->value();
@@ -286,7 +301,7 @@ void FourAxisFabricationManager::checkVisibility() {
 void FourAxisFabricationManager::getTargetDirections() {
     if (!areTargetDirectionsFound) {
         optimalOrientation();
-        cutExtremes();
+        selectExtremes();
         checkVisibility();
 
         //Get UI data
@@ -311,7 +326,7 @@ void FourAxisFabricationManager::getTargetDirections() {
 void FourAxisFabricationManager::getAssociation() {
     if (!isAssociationComputed) {
         optimalOrientation();
-        cutExtremes();
+        selectExtremes();
         checkVisibility();
         getTargetDirections();
 
@@ -340,7 +355,7 @@ void FourAxisFabricationManager::getAssociation() {
 void FourAxisFabricationManager::restoreFrequencies() {
     if (!areFrequenciesRestored) {
         optimalOrientation();
-        cutExtremes();
+        selectExtremes();
         checkVisibility();
         getTargetDirections();
         getAssociation();
@@ -355,9 +370,36 @@ void FourAxisFabricationManager::restoreFrequencies() {
 
         t.stopAndPrint();
 
-        smoothedMesh.updateFacesAndVerticesNormals();
-
         areFrequenciesRestored = true;
+
+        updateDrawableMeshes();
+    }
+}
+
+
+/**
+ * @brief Cut components
+ */
+void FourAxisFabricationManager::cutComponents() {
+    if (!areComponentsCut) {
+        optimalOrientation();
+        selectExtremes();
+        checkVisibility();
+        getTargetDirections();
+        getAssociation();
+        restoreFrequencies();
+
+
+        cg3::Timer t("Cut components");
+
+        //Cut components
+        FourAxisFabrication::cutComponents(smoothedMesh, data);
+
+        t.stopAndPrint();
+
+        areComponentsCut = true;
+
+        addDrawableResults();
     }
 }
 
@@ -365,6 +407,32 @@ void FourAxisFabricationManager::restoreFrequencies() {
 
 
 /* ----- VISUALIZATION METHODS ------ */
+
+/**
+ * @brief Update drawable meshes
+ */
+void FourAxisFabricationManager::updateDrawableMeshes() {
+    //Update drawable meshes
+    drawableOriginalMesh = cg3::DrawableEigenMesh(originalMesh);
+    drawableSmoothedMesh = cg3::DrawableEigenMesh(smoothedMesh);
+}
+
+/**
+ * @brief Add drawable results to the canvas
+ */
+void FourAxisFabricationManager::addDrawableResults() {
+    //Create drawable meshes
+    drawableMinResult = cg3::DrawableEigenMesh(data.minResult);
+    drawableMaxResult = cg3::DrawableEigenMesh(data.maxResult);
+    drawableFourAxisResult = cg3::DrawableEigenMesh(data.fourAxisResult);
+
+    //Draw components
+    mainWindow.pushObj(&drawableMinResult, "Min result");
+    mainWindow.pushObj(&drawableMaxResult, "Max result");
+    mainWindow.pushObj(&drawableFourAxisResult, "4-axis result");
+}
+
+
 
 /**
  * @brief Reset camera pointing to the z-axis direction
@@ -452,7 +520,10 @@ void FourAxisFabricationManager::updateVisualization() {
  */
 void FourAxisFabricationManager::visualizeMesh() {
     //Default color
-    smoothedMesh.setFaceColor(cg3::Color(128,128,128));
+    drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
+    drawableMinResult.setFaceColor(cg3::Color(128,128,128));
+    drawableMaxResult.setFaceColor(cg3::Color(128,128,128));
+    drawableFourAxisResult.setFaceColor(cg3::Color(128,128,128));
 
     ui->descriptionLabel->setText(""); //Empty description text
 }
@@ -463,7 +534,7 @@ void FourAxisFabricationManager::visualizeMesh() {
  */
 void FourAxisFabricationManager::visualizeExtremes() {
     //Default color
-    smoothedMesh.setFaceColor(cg3::Color(128,128,128));
+    drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
 
 
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
@@ -471,12 +542,12 @@ void FourAxisFabricationManager::visualizeExtremes() {
     //Color the min and max extremes
     if (sliderValue == 0 || sliderValue == 1) {
         for (unsigned int i : data.minExtremes){
-            smoothedMesh.setFaceColor(cg3::Color(0,0,255), i);
+            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,255), i);
         }
     }
     if (sliderValue == 0 || sliderValue == 2) {
         for (unsigned int i : data.maxExtremes){
-            smoothedMesh.setFaceColor(cg3::Color(255,0,0), i);
+            drawableSmoothedMesh.setFaceColor(cg3::Color(255,0,0), i);
         }
     }
 
@@ -507,14 +578,14 @@ void FourAxisFabricationManager::visualizeVisibility() {
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
 
     //Set default color
-    smoothedMesh.setFaceColor(cg3::Color(128,128,128));
+    drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
 
     std::stringstream ss;
 
     //Color the not visible
     if (sliderValue == 0) {
         for (unsigned int faceId : data.nonVisibleFaces) {
-            smoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
+            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
         }
 
         ss << "Visibility: " << data.directions.size() << " directions. ";
@@ -540,7 +611,7 @@ void FourAxisFabricationManager::visualizeVisibility() {
         for (unsigned int j = 0; j < data.visibility.getSizeY(); j++) {
             if (data.visibility(chosenDirectionIndex, j) == 1) {
                 //Set the color
-                smoothedMesh.setFaceColor(color, j);
+                drawableSmoothedMesh.setFaceColor(color, j);
             }
         }
 
@@ -560,14 +631,14 @@ void FourAxisFabricationManager::visualizeTargetDirections() {
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
 
     //Set default color
-    smoothedMesh.setFaceColor(cg3::Color(128,128,128));
+    drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
 
     std::stringstream ss;
 
     //Color the not visible
     if (sliderValue == 0) {
         for (unsigned int faceId : data.nonVisibleFaces) {
-            smoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
+            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
         }
 
         //Description
@@ -594,7 +665,7 @@ void FourAxisFabricationManager::visualizeTargetDirections() {
         for (unsigned int j = 0; j < data.visibility.getSizeY(); j++) {
             if (data.visibility(chosenDirectionIndex, j) == 1) {
                 //Set the color
-                smoothedMesh.setFaceColor(color, j);
+                drawableSmoothedMesh.setFaceColor(color, j);
             }
         }
 
@@ -613,18 +684,15 @@ void FourAxisFabricationManager::visualizeTargetDirections() {
 void FourAxisFabricationManager::visualizeAssociation() {
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
 
-    //Set default color
-    smoothedMesh.setFaceColor(cg3::Color(128,128,128));
+    std::stringstream ss;    
 
-    std::stringstream ss;
-
-
-    //Subdivisions for colors
+    //Variables for colors
+    cg3::Color color;
     int subd = 255 / (data.targetDirections.size()-1);
 
 
-    //For each face check if it is visible by that plane
-    for (unsigned int faceId = 0; faceId < smoothedMesh.getNumberFaces(); faceId++) {
+    //For each face of the drawable smoothed mesh
+    for (unsigned int faceId = 0; faceId < drawableSmoothedMesh.getNumberFaces(); faceId++) {
         //Get direction index associated to the current face
         int associatedDirectionIndex = data.association[faceId];
 
@@ -636,20 +704,56 @@ void FourAxisFabricationManager::visualizeAssociation() {
 
             int positionInTargetDirections = std::distance(data.targetDirections.begin(), it);
 
-            cg3::Color color;
             color.setHsv(subd * positionInTargetDirections, 255, 255);
 
             if (sliderValue == 0 ||
                     data.targetDirections[sliderValue-1] == (unsigned int) associatedDirectionIndex)
             {
                 //Set the color
-                smoothedMesh.setFaceColor(color, faceId);
+                drawableSmoothedMesh.setFaceColor(color, faceId);
             }
         }
         else {
             //Black color for non-visible faces
-            smoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
+            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
         }
+    }    
+
+    //Coloring results
+    if (areComponentsCut) {
+        //For each face check if it is visible by that plane
+        for (unsigned int faceId = 0; faceId < drawableFourAxisResult.getNumberFaces(); faceId++) {
+            //Get direction index associated to the current face
+            int associatedDirectionIndex = data.fourAxisResultAssociation[faceId];
+
+            //If it has an associated fabrication direction
+            if (associatedDirectionIndex >= 0) {
+                //Find position in target directions to set the color
+                std::vector<unsigned int>::iterator it =
+                        std::find(data.targetDirections.begin(), data.targetDirections.end(), associatedDirectionIndex);
+
+                int positionInTargetDirections = std::distance(data.targetDirections.begin(), it);
+
+                color.setHsv(subd * positionInTargetDirections, 255, 255);
+
+                if (sliderValue == 0 ||
+                        data.targetDirections[sliderValue-1] == (unsigned int) associatedDirectionIndex)
+                {
+                    //Set the color
+                    drawableFourAxisResult.setFaceColor(color, faceId);
+                }
+            }
+            else {
+                //Black color for non-visible faces
+                drawableFourAxisResult.setFaceColor(cg3::Color(0,0,0), faceId);
+            }
+        }
+
+        //Colorize extremes
+        color.setHsv(subd * (data.targetDirections.size()-2), 255, 255);
+        drawableMinResult.setFaceColor(color);
+        color.setHsv(subd * (data.targetDirections.size()-1), 255, 255);
+        drawableMaxResult.setFaceColor(color);
     }
 
     //Description
@@ -674,6 +778,7 @@ void FourAxisFabricationManager::visualizeAssociation() {
     std::string description = ss.str();
     ui->descriptionLabel->setText(QString::fromStdString(description));
 }
+
 
 
 
@@ -711,11 +816,13 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
 
                 //If a smoothed mesh has been found
                 if (isMeshLoaded) {
+                    updateDrawableMeshes();
+
                     //Add meshes to the canvas, hiding the original one
                     std::string meshName = meshFile.substr(meshFile.find_last_of("/") + 1);
-                    mainWindow.pushObj(&originalMesh, meshName);
-                    mainWindow.pushObj(&smoothedMesh, "Smoothed mesh");
-                    mainWindow.setObjVisibility(&originalMesh, false);
+                    mainWindow.pushObj(&drawableOriginalMesh, meshName);
+                    mainWindow.pushObj(&drawableSmoothedMesh, "Smoothed mesh");
+                    mainWindow.setObjVisibility(&drawableOriginalMesh, false);
 
                     loadedMeshFile = meshFile;
                     loadedSmoothedMeshFile = smoothedFile;
@@ -757,9 +864,13 @@ void FourAxisFabricationManager::on_clearMeshButton_clicked()
         loadedSmoothedMeshFile = "";
 
         //Delete objects and update canvas
-        mainWindow.deleteObj(&originalMesh);
-        mainWindow.deleteObj(&smoothedMesh);
-
+        mainWindow.deleteObj(&drawableOriginalMesh);
+        mainWindow.deleteObj(&drawableSmoothedMesh);
+        if (areComponentsCut) {
+            mainWindow.deleteObj(&drawableMinResult);
+            mainWindow.deleteObj(&drawableMaxResult);
+            mainWindow.deleteObj(&drawableFourAxisResult);
+        }
 
         //Update canvas and fit the scene
         mainWindow.updateGlCanvas();
@@ -776,10 +887,15 @@ void FourAxisFabricationManager::on_clearMeshButton_clicked()
 
 void FourAxisFabricationManager::on_reloadMeshButton_clicked()
 {
-    if (isMeshLoaded) {
-        //Delete objects and update canvas
-        mainWindow.deleteObj(&originalMesh);
-        mainWindow.deleteObj(&smoothedMesh);
+    if (isMeshLoaded) {       
+        //Delete objects
+        mainWindow.deleteObj(&drawableOriginalMesh);
+        mainWindow.deleteObj(&drawableSmoothedMesh);
+        if (areComponentsCut) {
+            mainWindow.deleteObj(&drawableMinResult);
+            mainWindow.deleteObj(&drawableMaxResult);
+            mainWindow.deleteObj(&drawableFourAxisResult);
+        }
 
         //Clear four axis fabrication data
         clearData();
@@ -792,11 +908,13 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
 
         //If the meshes have been successfully loaded
         if (isMeshLoaded){
+            updateDrawableMeshes();
+
             //Add meshes to the canvas, hiding the original one
             std::string meshName = loadedMeshFile.substr(loadedMeshFile.find_last_of("/") + 1);
-            mainWindow.pushObj(&originalMesh, meshName);
-            mainWindow.pushObj(&smoothedMesh, "Smoothed mesh");
-            mainWindow.setObjVisibility(&originalMesh, false);
+            mainWindow.pushObj(&drawableOriginalMesh, meshName);
+            mainWindow.pushObj(&drawableSmoothedMesh, "Smoothed mesh");
+            mainWindow.setObjVisibility(&drawableOriginalMesh, false);
         }
         else {
             clearData();
@@ -821,14 +939,16 @@ void FourAxisFabricationManager::on_saveMeshButton_clicked() {
     std::string saveFileName = loaderSaverObj.saveDialog("Save mesh", selectedExtension);
     saveFileName += "." + selectedExtension;
 
-    smoothedMesh.updateFacesAndVerticesNormals();
-
     if (saveFileName != "") {
         std::string rawname, ext;
         cg3::separateExtensionFromFilename(saveFileName, rawname, ext);
 
+        //Save on obj files
         originalMesh.saveOnObj(rawname + "_original.obj");
         smoothedMesh.saveOnObj(rawname + "_result.obj");
+        data.minResult.saveOnObj(rawname + "_min.obj");
+        data.maxResult.saveOnObj(rawname + "_max.obj");
+        data.fourAxisResult.saveOnObj(rawname + "_fouraxis.obj");
     }
 }
 
@@ -869,10 +989,10 @@ void FourAxisFabricationManager::on_optimalOrientationButton_clicked() {
     updateUI();
 }
 
-void FourAxisFabricationManager::on_cutExtremesButton_clicked()
+void FourAxisFabricationManager::on_selectExtremesButton_clicked()
 {
-    //Get extremes on x-axis to be cut
-    cutExtremes();
+    //Get extremes on x-axis to be selected
+    selectExtremes();
 
     //Visualize extremes
     ui->extremesRadio->setChecked(true);
@@ -938,7 +1058,7 @@ void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
     //Check visibility by the chosen directions
     restoreFrequencies();
 
-    //Visualize visibility
+    //Visualize association
     ui->associationRadio->setChecked(true);
     initializeVisualizationSlider();
 
@@ -949,6 +1069,20 @@ void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
     updateUI();
 }
 
+void FourAxisFabricationManager::on_cutComponentsButton_clicked() {
+    //Check visibility by the chosen directions
+    cutComponents();
+
+    //Visualize association
+    ui->associationRadio->setChecked(true);
+    initializeVisualizationSlider();
+
+    //Update canvas and fit the scene
+    mainWindow.updateGlCanvas();
+    mainWindow.fitScene();
+
+    updateUI();
+}
 
 
 /* ----- UI SLOTS TRANSFORMATIONS ------ */
@@ -1051,9 +1185,6 @@ void FourAxisFabricationManager::on_rotateButton_clicked() {
 
         originalMesh.rotate(m);
         smoothedMesh.rotate(m);
-
-        originalMesh.updateFacesAndVerticesNormals();
-        smoothedMesh.updateFacesAndVerticesNormals();
 
         //Update canvas and fit the scene
         mainWindow.updateGlCanvas();
@@ -1161,4 +1292,3 @@ void FourAxisFabricationManager::on_visualizationSlider_valueChanged(int value) 
 void FourAxisFabricationManager::on_resetCameraButton_clicked() {
     resetCameraDirection();
 }
-

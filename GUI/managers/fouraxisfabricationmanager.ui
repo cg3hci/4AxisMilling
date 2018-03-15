@@ -593,9 +593,9 @@
        </widget>
       </item>
       <item row="4" column="5" colspan="2">
-       <widget class="QPushButton" name="cutExtremesButton">
+       <widget class="QPushButton" name="selectExtremesButton">
         <property name="text">
-         <string>Cut extremes</string>
+         <string>Select extremes</string>
         </property>
        </widget>
       </item>
@@ -603,19 +603,6 @@
        <widget class="QPushButton" name="targetDirectionsButton">
         <property name="text">
          <string>Target directions</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="4">
-       <widget class="QSpinBox" name="nOrientationSpinBox">
-        <property name="minimum">
-         <number>4</number>
-        </property>
-        <property name="maximum">
-         <number>10000</number>
-        </property>
-        <property name="value">
-         <number>1000</number>
         </property>
        </widget>
       </item>
@@ -652,13 +639,6 @@
         </property>
         <property name="value">
          <number>20</number>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3">
-       <widget class="QLabel" name="nOrientationLabel">
-        <property name="text">
-         <string>Orientations:</string>
         </property>
        </widget>
       </item>
@@ -702,6 +682,33 @@
         </property>
         <property name="value">
          <double>80.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="5" colspan="2">
+       <widget class="QPushButton" name="cutComponentsButton">
+        <property name="text">
+         <string>Cut components</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4">
+       <widget class="QSpinBox" name="nOrientationSpinBox">
+        <property name="minimum">
+         <number>4</number>
+        </property>
+        <property name="maximum">
+         <number>10000</number>
+        </property>
+        <property name="value">
+         <number>1000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QLabel" name="nOrientationLabel">
+        <property name="text">
+         <string>Orientations:</string>
         </property>
        </widget>
       </item>

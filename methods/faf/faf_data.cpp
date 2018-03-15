@@ -18,7 +18,14 @@ void Data::clear() {
 
     nonVisibleFaces.clear();
 
+    targetDirections.clear();
+
     association.clear();
+
+    minResult.clear();
+    maxResult.clear();
+    fourAxisResult.clear();
+    fourAxisResultAssociation.clear();
 }
 
 }

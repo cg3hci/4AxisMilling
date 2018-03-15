@@ -11,13 +11,14 @@
 
 #include <cg3/geometry/point.h>
 
+#include <cg3/meshes/eigenmesh/eigenmesh.h>
+
 namespace FourAxisFabrication {
 
 
 /* Data for four axis fabrication */
 
 struct Data {
-
     std::vector<unsigned int> minExtremes;
     std::vector<unsigned int> maxExtremes;
 
@@ -30,6 +31,11 @@ struct Data {
     std::vector<unsigned int> nonVisibleFaces;
 
     std::vector<unsigned int> targetDirections;
+
+    cg3::EigenMesh minResult;
+    cg3::EigenMesh maxResult;
+    cg3::EigenMesh fourAxisResult;
+    std::vector<int> fourAxisResultAssociation;
 
     void clear();
 };

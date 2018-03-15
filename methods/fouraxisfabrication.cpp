@@ -51,7 +51,7 @@ void computeEntireAlgorithm(
 
 
     //Get extremes on x-axis to be cut
-    FourAxisFabrication::getExtremesOnXAxis(smoothedMesh, data);
+    FourAxisFabrication::selectExtremesOnXAxis(smoothedMesh, data);
 
 
     //Initialize data before visibility check
@@ -93,6 +93,11 @@ void computeEntireAlgorithm(
                 data,
                 frequenciesIterations,
                 smoothedMesh);
+
+    //Cut components
+    FourAxisFabrication::cutComponents(
+                smoothedMesh,
+                data);
 
 }
 

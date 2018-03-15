@@ -94,6 +94,9 @@ void restoreFrequencies(
             }
         }
     }
+
+    targetMesh.updateFacesAndVerticesNormals();
+    targetMesh.updateBoundingBox();
 }
 
 

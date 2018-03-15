@@ -225,8 +225,6 @@ void checkVisibility(
 
     //For each direction
     for(unsigned int dirIndex = 0; dirIndex < nDirections; dirIndex++){
-        rotatingMesh.updateFaceNormals();
-
         if (checkMode == RAYSHOOTING) {
             //Check visibility ray shooting
             internal::checkVisibilityRayShootingOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility);
