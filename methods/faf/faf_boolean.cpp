@@ -10,6 +10,15 @@
 
 namespace FourAxisFabrication {
 
+/* Useful function declaration */
+
+void resetAssociationData(
+        const cg3::libigl::CSGTree& csgMesh,
+        const cg3::libigl::CSGTree& csgResult,
+        const std::vector<int>& association,
+        std::vector<int>& resultAssociation,
+        const int fixedAssociation = -1);
+
 /**
  * @brief Cut components (min and max extremes)
  * @param mesh Input mesh
@@ -64,43 +73,33 @@ void cutComponents(
 
 
     //Cut min extreme
+    CSGTree csgMinResult = cg3::libigl::intersection(csgMesh, csgMinBB);
     cg3::EigenMesh minResult =
-            cg3::libigl::CSGTreeToEigenMesh(cg3::libigl::intersection(csgMesh, csgMinBB));
+            cg3::libigl::CSGTreeToEigenMesh(csgMinResult);
 
     //Cut max extreme
+    CSGTree csgMaxResult = cg3::libigl::intersection(csgMesh, csgMaxBB);
     cg3::EigenMesh maxResult =
-            cg3::libigl::CSGTreeToEigenMesh(cg3::libigl::intersection(csgMesh, csgMaxBB));
+            cg3::libigl::CSGTreeToEigenMesh(csgMaxResult);
+
 
     //Cut four axis resulting mesh
     CSGTree csgUnion = cg3::libigl::union_(csgMaxBB, csgMinBB);
-    CSGTree csgResult = cg3::libigl::difference(csgMesh, csgUnion);
-    cg3::EigenMesh fourAxisResult = cg3::libigl::CSGTreeToEigenMesh(csgResult);
+    CSGTree csgFourAxisResult = cg3::libigl::difference(csgMesh, csgUnion);
+    cg3::EigenMesh fourAxisResult = cg3::libigl::CSGTreeToEigenMesh(csgFourAxisResult);
 
 
-    //TODO: NOT WORKING!
+    //Restore association of cut components
+    std::vector<int>& minAssociation = data.minAssociation;
+    std::vector<int>& maxAssociation = data.maxAssociation;
+    std::vector<int>& fourAxisAssociation = data.fourAxisAssociation;
 
-    //Reassociate target directions to the 4-axis result
-    std::vector<int>& fourAxisResultAssociation = data.fourAxisResultAssociation;
+    int minIndex = data.targetDirections[data.targetDirections.size()-2];
+    int maxIndex = data.targetDirections[data.targetDirections.size()-1];
 
-    CSGTree::VectorJ birthFaces = csgResult.J();
-
-    unsigned int nFaces = csgResult.F().rows();
-    unsigned int nA = csgUnion.F().rows();
-
-    fourAxisResultAssociation.resize(nFaces);
-
-    for (unsigned int i = 0; i < nFaces; i++) {
-        unsigned int birthFace = birthFaces[i];
-
-        //If the birth face is in the first mesh
-        if (birthFace < nA) {
-            fourAxisResultAssociation[i] = data.association[birthFace];
-        }
-        //If the birth face is in the second mesh
-        else {
-            fourAxisResultAssociation[i] = -1;
-        }
-    }
+    resetAssociationData(csgMesh, csgMinResult, data.association, minAssociation, minIndex);
+    resetAssociationData(csgMesh, csgMaxResult, data.association, maxAssociation, maxIndex);
+    resetAssociationData(csgMesh, csgFourAxisResult, data.association, fourAxisAssociation);
 
 
     //Update normals and everything
@@ -115,6 +114,44 @@ void cutComponents(
     data.minResult = minResult;
     data.maxResult = maxResult;
     data.fourAxisResult = fourAxisResult;
+}
+
+/**
+ * @brief Reassociate association data after a boolean operation
+ * @param csgMesh First mesh (the main mesh)
+ * @param csgResult Resulting mesh
+ * @param association Association of the full mesh
+ * @param resultAssociation Resulting association
+ */
+void resetAssociationData(
+        const cg3::libigl::CSGTree& csgMesh,
+        const cg3::libigl::CSGTree& csgResult,
+        const std::vector<int>& association,
+        std::vector<int>& resultAssociation,
+        const int fixedAssociation)
+{
+    typedef cg3::libigl::CSGTree CSGTree;
+
+    CSGTree::VectorJ birthFaces = csgResult.J();
+
+    unsigned int nFaces = csgResult.F().rows();
+    unsigned int nA = csgMesh.F().rows();
+
+    resultAssociation.resize(nFaces);
+
+    for (unsigned int i = 0; i < nFaces; i++) {
+        unsigned int birthFace = birthFaces[i];
+
+        //If the birth face is in the first mesh
+        if (birthFace < nA) {            
+            resultAssociation[i] =
+                    (fixedAssociation >= 0 ? fixedAssociation : association[birthFace]);
+        }
+        //If the birth face is in the second mesh
+        else {
+            resultAssociation[i] = -1;
+        }
+    }
 }
 
 }

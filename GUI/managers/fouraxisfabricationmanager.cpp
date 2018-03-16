@@ -678,83 +678,26 @@ void FourAxisFabricationManager::visualizeTargetDirections() {
     ui->descriptionLabel->setText(QString::fromStdString(description));
 }
 
+
+
 /**
- * @brief Colorize optmized association
+ * @brief Colorize association
  */
 void FourAxisFabricationManager::visualizeAssociation() {
-    unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
-
     std::stringstream ss;    
 
-    //Variables for colors
-    cg3::Color color;
-    int subd = 255 / (data.targetDirections.size()-1);
-
-
-    //For each face of the drawable smoothed mesh
-    for (unsigned int faceId = 0; faceId < drawableSmoothedMesh.getNumberFaces(); faceId++) {
-        //Get direction index associated to the current face
-        int associatedDirectionIndex = data.association[faceId];
-
-        //If it has an associated fabrication direction
-        if (associatedDirectionIndex >= 0) {
-            //Find position in target directions to set the color
-            std::vector<unsigned int>::iterator it =
-                    std::find(data.targetDirections.begin(), data.targetDirections.end(), associatedDirectionIndex);
-
-            int positionInTargetDirections = std::distance(data.targetDirections.begin(), it);
-
-            color.setHsv(subd * positionInTargetDirections, 255, 255);
-
-            if (sliderValue == 0 ||
-                    data.targetDirections[sliderValue-1] == (unsigned int) associatedDirectionIndex)
-            {
-                //Set the color
-                drawableSmoothedMesh.setFaceColor(color, faceId);
-            }
-        }
-        else {
-            //Black color for non-visible faces
-            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
-        }
-    }    
+    //Coloring drawable mesh
+    visualizeAssociation(drawableSmoothedMesh, data.association, data.targetDirections);
 
     //Coloring results
     if (areComponentsCut) {
-        //For each face check if it is visible by that plane
-        for (unsigned int faceId = 0; faceId < drawableFourAxisResult.getNumberFaces(); faceId++) {
-            //Get direction index associated to the current face
-            int associatedDirectionIndex = data.fourAxisResultAssociation[faceId];
-
-            //If it has an associated fabrication direction
-            if (associatedDirectionIndex >= 0) {
-                //Find position in target directions to set the color
-                std::vector<unsigned int>::iterator it =
-                        std::find(data.targetDirections.begin(), data.targetDirections.end(), associatedDirectionIndex);
-
-                int positionInTargetDirections = std::distance(data.targetDirections.begin(), it);
-
-                color.setHsv(subd * positionInTargetDirections, 255, 255);
-
-                if (sliderValue == 0 ||
-                        data.targetDirections[sliderValue-1] == (unsigned int) associatedDirectionIndex)
-                {
-                    //Set the color
-                    drawableFourAxisResult.setFaceColor(color, faceId);
-                }
-            }
-            else {
-                //Black color for non-visible faces
-                drawableFourAxisResult.setFaceColor(cg3::Color(0,0,0), faceId);
-            }
-        }
-
-        //Colorize extremes
-        color.setHsv(subd * (data.targetDirections.size()-2), 255, 255);
-        drawableMinResult.setFaceColor(color);
-        color.setHsv(subd * (data.targetDirections.size()-1), 255, 255);
-        drawableMaxResult.setFaceColor(color);
+        visualizeAssociation(drawableMinResult, data.minAssociation, data.targetDirections);
+        visualizeAssociation(drawableMaxResult, data.maxAssociation, data.targetDirections);
+        visualizeAssociation(drawableFourAxisResult, data.fourAxisAssociation, data.targetDirections);
     }
+
+    //Get UI data
+    unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
 
     //Description
     if (sliderValue > 0) {
@@ -780,6 +723,52 @@ void FourAxisFabricationManager::visualizeAssociation() {
 }
 
 
+/**
+ * @brief Colorize association for a given mesh
+ * @param drawableMesh Drawable mesh to be colorized
+ * @param association Association of the target directions
+ * @param targetDirections Target directions
+ */
+void FourAxisFabricationManager::visualizeAssociation(
+        cg3::DrawableEigenMesh& drawableMesh,
+        const std::vector<int>& association,
+        const std::vector<unsigned int>& targetDirections)
+{
+    unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
+
+    //Variables for colors
+    cg3::Color color;
+    int subd = 255 / (data.targetDirections.size()-1);
+
+
+    //For each face of the drawable smoothed mesh
+    for (unsigned int faceId = 0; faceId < drawableMesh.getNumberFaces(); faceId++) {
+        //Get direction index associated to the current face
+        int associatedDirectionIndex = association[faceId];
+
+        //If it has an associated fabrication direction
+        if (associatedDirectionIndex >= 0) {
+            //Find position in target directions to set the color
+            std::vector<unsigned int>::const_iterator it =
+                    std::find(targetDirections.begin(), targetDirections.end(), associatedDirectionIndex);
+
+            int positionInTargetDirections = std::distance(targetDirections.begin(), it);
+
+            color.setHsv(subd * positionInTargetDirections, 255, 255);
+
+            if (sliderValue == 0 ||
+                    data.targetDirections[sliderValue-1] == (unsigned int) associatedDirectionIndex)
+            {
+                //Set the color
+                drawableMesh.setFaceColor(color, faceId);
+            }
+        }
+        else {
+            //Black color for non-visible faces
+            drawableMesh.setFaceColor(cg3::Color(0,0,0), faceId);
+        }
+    }
+}
 
 
 /* ----- UI SLOTS MESH ------ */

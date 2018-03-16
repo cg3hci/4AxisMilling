@@ -25,7 +25,7 @@ void Data::clear() {
     minResult.clear();
     maxResult.clear();
     fourAxisResult.clear();
-    fourAxisResultAssociation.clear();
+    fourAxisAssociation.clear();
 }
 
 }

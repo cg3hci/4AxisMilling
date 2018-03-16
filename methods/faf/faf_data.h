@@ -35,7 +35,10 @@ struct Data {
     cg3::EigenMesh minResult;
     cg3::EigenMesh maxResult;
     cg3::EigenMesh fourAxisResult;
-    std::vector<int> fourAxisResultAssociation;
+
+    std::vector<int> minAssociation;
+    std::vector<int> maxAssociation;
+    std::vector<int> fourAxisAssociation;
 
     void clear();
 };

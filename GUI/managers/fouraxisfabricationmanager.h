@@ -112,6 +112,10 @@ private:
     void visualizeVisibility();
     void visualizeTargetDirections();
     void visualizeAssociation();
+    void visualizeAssociation(
+            cg3::DrawableEigenMesh& drawableMesh,
+            const std::vector<int>& association,
+            const std::vector<unsigned int>& targetDirections);
 
 
 private slots:
