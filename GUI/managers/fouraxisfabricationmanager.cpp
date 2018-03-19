@@ -63,7 +63,7 @@ void FourAxisFabricationManager::updateUI() {
     ui->loadMeshButton->setEnabled(!isMeshLoaded);
     ui->clearMeshButton->setEnabled(isMeshLoaded);
     ui->reloadMeshButton->setEnabled(isMeshLoaded);
-    ui->saveMeshButton->setEnabled(isMeshLoaded);
+    ui->saveResultsButton->setEnabled(isMeshLoaded);
 
 
     // ----- Four axis fabrication -----
@@ -106,6 +106,9 @@ void FourAxisFabricationManager::updateUI() {
     //Cut components
     ui->cutComponentsButton->setEnabled(!areComponentsCut);
 
+    //Extract results
+    ui->extractResultsButton->setEnabled(!areResultExtracted);
+
 
     // ----- Visualization -----
     ui->visualizationGroup->setEnabled(isMeshLoaded);
@@ -134,18 +137,12 @@ void FourAxisFabricationManager::clearData() {
     isAssociationComputed = false;
     areFrequenciesRestored = false;
     areComponentsCut = false;
+    areResultExtracted = false;
 
     data.clear();
 
     originalMesh.clear();
     smoothedMesh.clear();
-
-    drawableOriginalMesh.clear();
-    drawableSmoothedMesh.clear();
-
-    drawableMinResult.clear();
-    drawableMaxResult.clear();
-    drawableFourAxisResult.clear();
 }
 
 
@@ -201,8 +198,10 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
         isAssociationComputed = true;
         areFrequenciesRestored = true;
         areComponentsCut = true;
+        areResultExtracted = true;
 
         updateDrawableMeshes();
+        addDrawableCutComponents();
         addDrawableResults();
     }
 }
@@ -399,6 +398,33 @@ void FourAxisFabricationManager::cutComponents() {
 
         areComponentsCut = true;
 
+        addDrawableCutComponents();
+    }
+}
+
+/**
+ * @brief Extract result
+ */
+void FourAxisFabricationManager::extractResults() {
+    if (!areResultExtracted) {
+        optimalOrientation();
+        selectExtremes();
+        checkVisibility();
+        getTargetDirections();
+        getAssociation();
+        restoreFrequencies();
+        cutComponents();
+
+
+        cg3::Timer t("Extract results");
+
+        //Extract results
+        FourAxisFabrication::extractResults(data);
+
+        t.stopAndPrint();
+
+        areResultExtracted = true;
+
         addDrawableResults();
     }
 }
@@ -412,24 +438,79 @@ void FourAxisFabricationManager::cutComponents() {
  * @brief Update drawable meshes
  */
 void FourAxisFabricationManager::updateDrawableMeshes() {
-    //Update drawable meshes
+    //Create drawable meshes (already in the canvas)
     drawableOriginalMesh = cg3::DrawableEigenMesh(originalMesh);
     drawableSmoothedMesh = cg3::DrawableEigenMesh(smoothedMesh);
 }
 
 /**
- * @brief Add drawable results to the canvas
+ * @brief Add drawable cut components to the canvas
+ */
+void FourAxisFabricationManager::addDrawableCutComponents() {
+    //Hide smoothed mesh
+    mainWindow.setObjVisibility(&drawableSmoothedMesh, false);
+
+    //Create drawable meshes
+    drawableMinComponent = cg3::DrawableEigenMesh(data.minComponent);
+    drawableMaxComponent = cg3::DrawableEigenMesh(data.maxComponent);
+    drawableFourAxisComponent = cg3::DrawableEigenMesh(data.fourAxisComponent);
+
+    //Push in the canvas
+    mainWindow.pushObj(&drawableMinComponent, "Min component");
+    mainWindow.pushObj(&drawableMaxComponent, "Max component");
+    mainWindow.pushObj(&drawableFourAxisComponent, "4-axis component");
+}
+
+/**
+ * @brief Add drawable results
  */
 void FourAxisFabricationManager::addDrawableResults() {
-    //Create drawable meshes
-    drawableMinResult = cg3::DrawableEigenMesh(data.minResult);
-    drawableMaxResult = cg3::DrawableEigenMesh(data.maxResult);
-    drawableFourAxisResult = cg3::DrawableEigenMesh(data.fourAxisResult);
+    //Hide previoous mesh results
+    mainWindow.setObjVisibility(&drawableMinComponent, false);
+    mainWindow.setObjVisibility(&drawableMaxComponent, false);
+    mainWindow.setObjVisibility(&drawableFourAxisComponent, false);
 
     //Draw components
-    mainWindow.pushObj(&drawableMinResult, "Min result");
-    mainWindow.pushObj(&drawableMaxResult, "Max result");
-    mainWindow.pushObj(&drawableFourAxisResult, "4-axis result");
+    drawableComponents.resize(data.results.size());
+    for (size_t i = 0; i < data.results.size(); i++) {
+        drawableComponents[i] = cg3::DrawableEigenMesh(data.results[i]);
+        mainWindow.pushObj(&drawableComponents[i], "4-axis " + std::to_string(i));
+    }
+}
+
+
+
+/**
+ * @brief Delte all drawable objects from the canvas
+ */
+void FourAxisFabricationManager::deleteDrawableObjects() {
+    if (isMeshLoaded) {
+        //Delete meshes
+        mainWindow.deleteObj(&drawableOriginalMesh);
+        mainWindow.deleteObj(&drawableSmoothedMesh);
+
+        //Delete results
+        if (areComponentsCut) {
+            mainWindow.deleteObj(&drawableMinComponent);
+            mainWindow.deleteObj(&drawableMaxComponent);
+            mainWindow.deleteObj(&drawableFourAxisComponent);
+
+            if (areResultExtracted) {
+                for (cg3::DrawableEigenMesh& drawableEigenMesh : drawableComponents) {
+                    mainWindow.deleteObj(&drawableEigenMesh);
+                }
+            }
+        }
+    }
+
+    drawableOriginalMesh.clear();
+    drawableSmoothedMesh.clear();
+
+    drawableMinComponent.clear();
+    drawableMaxComponent.clear();
+    drawableFourAxisComponent.clear();
+
+    drawableComponents.clear();
 }
 
 
@@ -521,9 +602,9 @@ void FourAxisFabricationManager::updateVisualization() {
 void FourAxisFabricationManager::visualizeMesh() {
     //Default color
     drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
-    drawableMinResult.setFaceColor(cg3::Color(128,128,128));
-    drawableMaxResult.setFaceColor(cg3::Color(128,128,128));
-    drawableFourAxisResult.setFaceColor(cg3::Color(128,128,128));
+    drawableMinComponent.setFaceColor(cg3::Color(128,128,128));
+    drawableMaxComponent.setFaceColor(cg3::Color(128,128,128));
+    drawableFourAxisComponent.setFaceColor(cg3::Color(128,128,128));
 
     ui->descriptionLabel->setText(""); //Empty description text
 }
@@ -689,11 +770,11 @@ void FourAxisFabricationManager::visualizeAssociation() {
     //Coloring drawable mesh
     visualizeAssociation(drawableSmoothedMesh, data.association, data.targetDirections);
 
-    //Coloring results
+    //Coloring cut components
     if (areComponentsCut) {
-        visualizeAssociation(drawableMinResult, data.minAssociation, data.targetDirections);
-        visualizeAssociation(drawableMaxResult, data.maxAssociation, data.targetDirections);
-        visualizeAssociation(drawableFourAxisResult, data.fourAxisAssociation, data.targetDirections);
+        visualizeAssociation(drawableMinComponent, data.minComponentAssociation, data.targetDirections);
+        visualizeAssociation(drawableMaxComponent, data.maxComponentAssociation, data.targetDirections);
+        visualizeAssociation(drawableFourAxisComponent, data.fourAxisComponentAssociation, data.targetDirections);
     }
 
     //Get UI data
@@ -844,22 +925,16 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
 
 void FourAxisFabricationManager::on_clearMeshButton_clicked()
 {
-    if (isMeshLoaded) {
+    if (isMeshLoaded) {        
+        //Delete objects from the canvas
+        deleteDrawableObjects();
+
         //Clear four axis fabrication data
         clearData();
 
         //Clear file names
         loadedMeshFile = "";
         loadedSmoothedMeshFile = "";
-
-        //Delete objects and update canvas
-        mainWindow.deleteObj(&drawableOriginalMesh);
-        mainWindow.deleteObj(&drawableSmoothedMesh);
-        if (areComponentsCut) {
-            mainWindow.deleteObj(&drawableMinResult);
-            mainWindow.deleteObj(&drawableMaxResult);
-            mainWindow.deleteObj(&drawableFourAxisResult);
-        }
 
         //Update canvas and fit the scene
         mainWindow.updateGlCanvas();
@@ -877,14 +952,8 @@ void FourAxisFabricationManager::on_clearMeshButton_clicked()
 void FourAxisFabricationManager::on_reloadMeshButton_clicked()
 {
     if (isMeshLoaded) {       
-        //Delete objects
-        mainWindow.deleteObj(&drawableOriginalMesh);
-        mainWindow.deleteObj(&drawableSmoothedMesh);
-        if (areComponentsCut) {
-            mainWindow.deleteObj(&drawableMinResult);
-            mainWindow.deleteObj(&drawableMaxResult);
-            mainWindow.deleteObj(&drawableFourAxisResult);
-        }
+        //Delete drawable Objects
+        deleteDrawableObjects();
 
         //Clear four axis fabrication data
         clearData();
@@ -922,7 +991,7 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
     }
 }
 
-void FourAxisFabricationManager::on_saveMeshButton_clicked() {
+void FourAxisFabricationManager::on_saveResultsButton_clicked() {
     //Get saving dialog
     std::string selectedExtension;
     std::string saveFileName = loaderSaverObj.saveDialog("Save mesh", selectedExtension);
@@ -933,11 +1002,61 @@ void FourAxisFabricationManager::on_saveMeshButton_clicked() {
         cg3::separateExtensionFromFilename(saveFileName, rawname, ext);
 
         //Save on obj files
+        originalMesh.setVertexColor(128,128,128);
+        smoothedMesh.setVertexColor(128,128,128);
+
         originalMesh.saveOnObj(rawname + "_original.obj");
         smoothedMesh.saveOnObj(rawname + "_result.obj");
-        data.minResult.saveOnObj(rawname + "_min.obj");
-        data.maxResult.saveOnObj(rawname + "_max.obj");
-        data.fourAxisResult.saveOnObj(rawname + "_fouraxis.obj");
+
+        if (areComponentsCut) {
+            data.minComponent.setVertexColor(128,128,128);
+            data.maxComponent.setVertexColor(128,128,128);
+            data.fourAxisComponent.setVertexColor(128,128,128);
+
+            data.minComponent.saveOnObj(rawname + "_min.obj");
+            data.maxComponent.saveOnObj(rawname + "_max.obj");
+            data.fourAxisComponent.saveOnObj(rawname + "_fouraxis.obj");
+
+            if (areResultExtracted) {
+                for (size_t i = 0; i < data.results.size(); i++) {
+                    cg3::EigenMesh& mesh = data.results[i];
+                    mesh.setVertexColor(128,128,128);
+                    mesh.saveOnObj(rawname + "_component_" + std::to_string(i) + ".obj");
+
+                    cg3::EigenMesh copyMesh = mesh;
+
+                    Eigen::Matrix3d rotationMatrix;
+                    cg3::Vec3 xAxis(1,0,0);
+                    cg3::Vec3 yAxis(0,1,0);
+
+                    if (i < data.results.size() - 2) {
+                        unsigned int label = data.resultsAssociation[i];
+                        double angle = data.directionsAngle[label];
+                        cg3::getRotationMatrix(xAxis, angle, rotationMatrix);
+                    }
+                    //Min
+                    else if (i == data.results.size() - 2) {
+                        cg3::getRotationMatrix(yAxis, M_PI/2, rotationMatrix);
+
+                        //Center mesh
+                        copyMesh.translate(-copyMesh.getBoundingBox().center());
+                    }
+                    //Max
+                    else {
+                        assert(i == data.results.size() - 1);
+                        cg3::getRotationMatrix(yAxis, -M_PI/2, rotationMatrix);
+
+                        //Center mesh
+                        copyMesh.translate(-copyMesh.getBoundingBox().center());
+                    }
+
+                    //Rotate mesh
+                    copyMesh.rotate(rotationMatrix);
+
+                    copyMesh.saveOnObj(rawname + "_rotated_component_" + std::to_string(i) + ".obj");
+                }
+            }
+        }
     }
 }
 
@@ -1059,8 +1178,23 @@ void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
 }
 
 void FourAxisFabricationManager::on_cutComponentsButton_clicked() {
-    //Check visibility by the chosen directions
+    //Cut components
     cutComponents();
+
+    //Visualize association
+    ui->associationRadio->setChecked(true);
+    initializeVisualizationSlider();
+
+    //Update canvas and fit the scene
+    mainWindow.updateGlCanvas();
+    mainWindow.fitScene();
+
+    updateUI();
+}
+
+void FourAxisFabricationManager::on_extractResultsButton_clicked() {
+    //Extract results
+    extractResults();
 
     //Visualize association
     ui->associationRadio->setChecked(true);

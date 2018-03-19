@@ -192,9 +192,13 @@ void checkVisibility(
         Data& data,
         CheckMode checkMode = PROJECTION)
 {
-    const std::vector<int>& association = data.association;
+    //Referencing data
     std::vector<cg3::Vec3>& directions = data.directions;
+    std::vector<double>& directionsAngle = data.directionsAngle;
+
     cg3::Array2D<int>& visibility = data.visibility;
+
+    const std::vector<int>& association = data.association;
 
     //Set target faces to be checked
     std::vector<unsigned int> targetFaces;
@@ -222,6 +226,13 @@ void checkVisibility(
     //Vector that is opposite to the milling direction
     cg3::Vec3 dir(0,0,1);
 
+    //Set angles
+    directionsAngle.resize(nDirections*2);
+    double sum = 0;
+    for(unsigned int i = 0; i < nDirections*2; i++) {
+        directionsAngle[i] = sum;
+        sum += stepAngle;
+    }
 
     //For each direction
     for(unsigned int dirIndex = 0; dirIndex < nDirections; dirIndex++){

@@ -401,7 +401,7 @@
        </widget>
       </item>
       <item row="0" column="4">
-       <widget class="QPushButton" name="saveMeshButton">
+       <widget class="QPushButton" name="saveResultsButton">
         <property name="text">
          <string>Save result</string>
         </property>
@@ -709,6 +709,13 @@
        <widget class="QLabel" name="nOrientationLabel">
         <property name="text">
          <string>Orientations:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="5" colspan="2">
+       <widget class="QPushButton" name="extractResultsButton">
+        <property name="text">
+         <string>Extract results</string>
         </property>
        </widget>
       </item>

@@ -14,6 +14,7 @@
 #include "faf/faf_optimization.h"
 #include "faf/faf_smoothing.h"
 #include "faf/faf_boolean.h"
+#include "faf/faf_extract.h"
 
 namespace FourAxisFabrication {
 

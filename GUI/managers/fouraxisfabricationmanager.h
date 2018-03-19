@@ -52,9 +52,12 @@ private:
 
     cg3::DrawableEigenMesh drawableOriginalMesh;
     cg3::DrawableEigenMesh drawableSmoothedMesh;
-    cg3::DrawableEigenMesh drawableMinResult;
-    cg3::DrawableEigenMesh drawableMaxResult;
-    cg3::DrawableEigenMesh drawableFourAxisResult;
+
+    cg3::DrawableEigenMesh drawableMinComponent;
+    cg3::DrawableEigenMesh drawableMaxComponent;
+    cg3::DrawableEigenMesh drawableFourAxisComponent;
+
+    std::vector<cg3::DrawableEigenMesh> drawableComponents;
 
 
     /* UI Fields */
@@ -75,6 +78,7 @@ private:
     bool isAssociationComputed;
     bool areFrequenciesRestored;
     bool areComponentsCut;
+    bool areResultExtracted;
 
 
     /* UI methods */
@@ -94,12 +98,16 @@ private:
     void getAssociation();
     void restoreFrequencies();
     void cutComponents();
+    void extractResults();
 
 
     /* Visualization methods */
 
     void updateDrawableMeshes();
+    void addDrawableCutComponents();
     void addDrawableResults();
+
+    void deleteDrawableObjects();
 
     void resetCameraDirection();
     void setCameraDirection(cg3::Vec3 dir);
@@ -125,7 +133,7 @@ private slots:
     void on_loadMeshButton_clicked();
     void on_clearMeshButton_clicked();
     void on_reloadMeshButton_clicked();
-    void on_saveMeshButton_clicked();
+    void on_saveResultsButton_clicked();
 
 
     /* UI slots Four Axis Fabrication */
@@ -139,6 +147,7 @@ private slots:
     void on_getAssociationButton_clicked();
     void on_restoreFrequenciesButton_clicked();
     void on_cutComponentsButton_clicked();
+    void on_extractResultsButton_clicked();
 
 
     /* UI slots Transformations */

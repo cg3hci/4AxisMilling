@@ -99,6 +99,11 @@ void computeEntireAlgorithm(
                 smoothedMesh,
                 data);
 
+
+    //Cut components
+    FourAxisFabrication::extractResults(
+                data);
+
 }
 
 

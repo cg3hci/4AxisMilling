@@ -13,6 +13,7 @@ void Data::clear() {
     maxExtremes.clear();
 
     directions.clear();
+    directionsAngle.clear();
 
     visibility.clear();
 
@@ -22,10 +23,13 @@ void Data::clear() {
 
     association.clear();
 
-    minResult.clear();
-    maxResult.clear();
-    fourAxisResult.clear();
-    fourAxisAssociation.clear();
+    minComponent.clear();
+    maxComponent.clear();
+    fourAxisComponent.clear();
+    fourAxisComponentAssociation.clear();
+
+    results.clear();
+    resultsAssociation.clear();
 }
 
 }

@@ -30,10 +30,16 @@ void cutComponents(
 {    
     typedef cg3::libigl::CSGTree CSGTree;
 
+    //Referencing data
+    std::vector<int>& minComponentAssociation = data.minComponentAssociation;
+    std::vector<int>& maxComponentAssociation = data.maxComponentAssociation;
+    std::vector<int>& fourAxisComponentAssociation = data.fourAxisComponentAssociation;
 
-    //Referencing ounding box of the mesh
+    int minLabel = data.targetDirections[data.targetDirections.size()-2];
+    int maxLabel = data.targetDirections[data.targetDirections.size()-1];
+
+    //Referencing bounding box of the mesh
     cg3::BoundingBox bb = mesh.getBoundingBox();
-
 
 
     //Get minimum x in the faces of the max extremes
@@ -74,46 +80,41 @@ void cutComponents(
 
     //Cut min extreme
     CSGTree csgMinResult = cg3::libigl::intersection(csgMesh, csgMinBB);
-    cg3::EigenMesh minResult =
+    cg3::EigenMesh minComponent =
             cg3::libigl::CSGTreeToEigenMesh(csgMinResult);
 
     //Cut max extreme
     CSGTree csgMaxResult = cg3::libigl::intersection(csgMesh, csgMaxBB);
-    cg3::EigenMesh maxResult =
+    cg3::EigenMesh maxComponent =
             cg3::libigl::CSGTreeToEigenMesh(csgMaxResult);
 
 
     //Cut four axis resulting mesh
     CSGTree csgUnion = cg3::libigl::union_(csgMaxBB, csgMinBB);
     CSGTree csgFourAxisResult = cg3::libigl::difference(csgMesh, csgUnion);
-    cg3::EigenMesh fourAxisResult = cg3::libigl::CSGTreeToEigenMesh(csgFourAxisResult);
+    cg3::EigenMesh fourAxisComponent = cg3::libigl::CSGTreeToEigenMesh(csgFourAxisResult);
 
 
     //Restore association of cut components
-    std::vector<int>& minAssociation = data.minAssociation;
-    std::vector<int>& maxAssociation = data.maxAssociation;
-    std::vector<int>& fourAxisAssociation = data.fourAxisAssociation;
-
-    int minIndex = data.targetDirections[data.targetDirections.size()-2];
-    int maxIndex = data.targetDirections[data.targetDirections.size()-1];
-
-    resetAssociationData(csgMesh, csgMinResult, data.association, minAssociation, minIndex);
-    resetAssociationData(csgMesh, csgMaxResult, data.association, maxAssociation, maxIndex);
-    resetAssociationData(csgMesh, csgFourAxisResult, data.association, fourAxisAssociation);
+    resetAssociationData(csgMesh, csgMinResult, data.association, minComponentAssociation,
+                         minLabel); //Set everything to min index
+    resetAssociationData(csgMesh, csgMaxResult, data.association, maxComponentAssociation,
+                         maxLabel); //Set eveyrthing to max index
+    resetAssociationData(csgMesh, csgFourAxisResult, data.association, fourAxisComponentAssociation);
 
 
-    //Update normals and everything
-    minResult.updateFacesAndVerticesNormals();    
-    minResult.updateBoundingBox();
-    maxResult.updateFacesAndVerticesNormals();
-    maxResult.updateBoundingBox();
-    fourAxisResult.updateFacesAndVerticesNormals();
-    fourAxisResult.updateBoundingBox();
+    //Update mesh data
+    minComponent.updateFacesAndVerticesNormals();
+    minComponent.updateBoundingBox();
+    maxComponent.updateFacesAndVerticesNormals();
+    maxComponent.updateBoundingBox();
+    fourAxisComponent.updateFacesAndVerticesNormals();
+    fourAxisComponent.updateBoundingBox();
 
-    //Updating resulting meshes
-    data.minResult = minResult;
-    data.maxResult = maxResult;
-    data.fourAxisResult = fourAxisResult;
+    //Add to components
+    data.minComponent = minComponent;
+    data.maxComponent = maxComponent;
+    data.fourAxisComponent = fourAxisComponent;
 }
 
 /**
