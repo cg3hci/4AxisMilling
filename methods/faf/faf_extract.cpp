@@ -16,8 +16,7 @@ cg3::EigenMesh extractFacesWithALabel(
         unsigned int targetLabel);
 
 /**
- * @brief Cut components (min and max extremes)
- * @param mesh Input mesh
+ * @brief Extract results (surface meshes)
  * @param data Four axis fabrication data
  */
 void extractResults(

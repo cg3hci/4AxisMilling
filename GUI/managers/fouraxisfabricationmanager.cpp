@@ -489,19 +489,20 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
         mainWindow.deleteObj(&drawableOriginalMesh);
         mainWindow.deleteObj(&drawableSmoothedMesh);
 
-        //Delete results
+        //Delete cut components
         if (areComponentsCut) {
             mainWindow.deleteObj(&drawableMinComponent);
             mainWindow.deleteObj(&drawableMaxComponent);
             mainWindow.deleteObj(&drawableFourAxisComponent);
 
+            //Delete results
             if (areResultExtracted) {
                 for (cg3::DrawableEigenMesh& drawableEigenMesh : drawableComponents) {
                     mainWindow.deleteObj(&drawableEigenMesh);
                 }
             }
         }
-    }
+    }    
 
     drawableOriginalMesh.clear();
     drawableSmoothedMesh.clear();
