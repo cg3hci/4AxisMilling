@@ -18,4 +18,4 @@ void extractResults(
 
 }
 
-#endif // FAF_BOOLEAN_H
+#endif // FAF_EXTRACT_H
