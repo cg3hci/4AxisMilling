@@ -7,6 +7,7 @@
 
 #include <sstream>
 #include <string>
+#include <fstream>
 
 #include <cg3/geometry/transformations.h>
 
@@ -1055,6 +1056,24 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
                     copyMesh.rotate(rotationMatrix);
 
                     copyMesh.saveOnObj(rawname + "_rotated_component_" + std::to_string(i) + ".obj");
+
+                    std::ofstream resultFile;
+                    resultFile.open (rawname + "_directions.txt");
+                    for (size_t i = 0; i < data.targetDirections.size(); i++) {
+                        size_t label = data.targetDirections[i];
+                        resultFile << i << " -> " <<
+                                      "Label " << label << ", " <<
+                                      "Direction: " << data.directions[label];
+
+                        if (i < data.targetDirections.size()-2) {
+                            resultFile << ", " <<
+                                      "Angle: " << data.directionsAngle[label] <<
+                                      " (" << data.directionsAngle[label]/M_PI*180 << "°)";
+                        }
+
+                        resultFile << std::endl;
+                    }
+                    resultFile.close();
                 }
             }
         }

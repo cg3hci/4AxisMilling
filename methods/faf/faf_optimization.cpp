@@ -6,11 +6,9 @@
 
 #if defined(CG3_LIBIGL_DEFINED) && defined(MULTI_LABEL_OPTIMIZATION_INCLUDED)
 
-#include <cg3/libigl/libigl.h>
+#include <cg3/libigl/face_adjacences.h>
 
 #include "lib/MultiLabelOptimization/GCoptimization.h"
-
-#else
 
 #endif
 

@@ -14,7 +14,7 @@
 
 #include <cg3/data_structures/trees/aabbtree.h>
 
-#include <cg3/cgal/cgal_aabbtree.h>
+#include <cg3/cgal/aabbtree.h>
 
 //Uncomment if you want to check conditions
 //(more efficient when uncommented)
