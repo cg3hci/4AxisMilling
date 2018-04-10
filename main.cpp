@@ -33,9 +33,9 @@ int main(int argc, char *argv[]) {
     const int emId = gui.addManager(&em, "EigenMesh Manager");
     CG3_SUPPRESS_WARNING(emId);
 
-    //Open boolean manager as default manager
+    //Open four-axis fabrication manager as default manager
     gui.setCurrentIndexToolBox(fmId);
-    gui.updateGlCanvas();
+    gui.update();
     gui.show();
 
     return app.exec();

@@ -521,21 +521,21 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
  * @brief Reset camera pointing to the z-axis direction
  */
 void FourAxisFabricationManager::resetCameraDirection() {
-    mainWindow.setCameraDirection(cg3::Vec3(-1,0,0));
-    mainWindow.setCameraDirection(cg3::Vec3(0,0,-1));
+    mainWindow.canvas.setCameraDirection(cg3::Vec3(1,0,0));
+    mainWindow.canvas.setCameraDirection(cg3::Vec3(0,0,-1));
 
-    mainWindow.fitScene();
-    mainWindow.updateGlCanvas();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 }
 
 /**
  * @brief Set camera direction
  */
 void FourAxisFabricationManager::setCameraDirection(cg3::Vec3 dir) {
-    mainWindow.setCameraDirection(dir);
+    mainWindow.canvas.setCameraDirection(dir);
 
-    mainWindow.fitScene();
-    mainWindow.updateGlCanvas();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 }
 
 /**
@@ -593,7 +593,7 @@ void FourAxisFabricationManager::updateVisualization() {
 
 
     //Update canvas
-    mainWindow.updateGlCanvas();
+    mainWindow.update();
 
     updateUI();
 }
@@ -904,8 +904,8 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
                     initializeVisualizationSlider();
 
                     //Update canvas and fit the scene
-                    mainWindow.updateGlCanvas();
-                    mainWindow.fitScene();
+                    mainWindow.update();
+                    mainWindow.canvas.fitScene();
 
                     std::cout << std::endl;
 
@@ -939,8 +939,8 @@ void FourAxisFabricationManager::on_clearMeshButton_clicked()
         loadedSmoothedMeshFile = "";
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();        
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
 
         //Visualize mesh
         ui->meshRadio->setChecked(true);
@@ -981,8 +981,8 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
         }
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
 
         //Visualize mesh
         ui->meshRadio->setChecked(true);
@@ -1094,8 +1094,8 @@ void FourAxisFabricationManager::on_computeEntireAlgorithmButton_clicked() {
         initializeVisualizationSlider();
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
 
         updateUI();
     }
@@ -1111,8 +1111,8 @@ void FourAxisFabricationManager::on_optimalOrientationButton_clicked() {
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.updateGlCanvas();
-    mainWindow.fitScene();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 
     updateUI();
 }
@@ -1127,8 +1127,8 @@ void FourAxisFabricationManager::on_selectExtremesButton_clicked()
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.updateGlCanvas();
-    mainWindow.fitScene();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 
     updateUI();
 }
@@ -1143,8 +1143,8 @@ void FourAxisFabricationManager::on_checkVisibilityButton_clicked()
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.updateGlCanvas();
-    mainWindow.fitScene();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 
     updateUI();
 }
@@ -1160,8 +1160,8 @@ void FourAxisFabricationManager::on_targetDirectionsButton_clicked()
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.updateGlCanvas();
-    mainWindow.fitScene();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 
     updateUI();
 }
@@ -1176,8 +1176,8 @@ void FourAxisFabricationManager::on_getAssociationButton_clicked()
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.updateGlCanvas();
-    mainWindow.fitScene();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 
     updateUI();
 }
@@ -1191,8 +1191,8 @@ void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.updateGlCanvas();
-    mainWindow.fitScene();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 
     updateUI();
 }
@@ -1206,8 +1206,8 @@ void FourAxisFabricationManager::on_cutComponentsButton_clicked() {
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.updateGlCanvas();
-    mainWindow.fitScene();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 
     updateUI();
 }
@@ -1221,8 +1221,8 @@ void FourAxisFabricationManager::on_extractResultsButton_clicked() {
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.updateGlCanvas();
-    mainWindow.fitScene();
+    mainWindow.update();
+    mainWindow.canvas.fitScene();
 
     updateUI();
 }
@@ -1238,8 +1238,8 @@ void FourAxisFabricationManager::on_centerOnOriginButton_clicked() {
         smoothedMesh.translate(-smoothedMesh.getBoundingBox().center());
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
@@ -1250,8 +1250,8 @@ void FourAxisFabricationManager::on_plusXButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(ui->stepSpinBox->value(), 0, 0));
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
@@ -1262,8 +1262,8 @@ void FourAxisFabricationManager::on_minusXButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(-ui->stepSpinBox->value(), 0, 0));
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
@@ -1274,8 +1274,8 @@ void FourAxisFabricationManager::on_plusYButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(0, ui->stepSpinBox->value(), 0));
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
@@ -1286,8 +1286,8 @@ void FourAxisFabricationManager::on_minusYButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(0, -ui->stepSpinBox->value(), 0));
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
@@ -1298,8 +1298,8 @@ void FourAxisFabricationManager::on_plusZButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(0, 0, ui->stepSpinBox->value()));
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
@@ -1310,8 +1310,8 @@ void FourAxisFabricationManager::on_minusZButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(0, 0, -ui->stepSpinBox->value()));
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
@@ -1330,8 +1330,8 @@ void FourAxisFabricationManager::on_rotateButton_clicked() {
         smoothedMesh.rotate(m);
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
@@ -1347,8 +1347,8 @@ void FourAxisFabricationManager::on_scaleButton_clicked() {
         smoothedMesh.scale(scaleFactor);
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
@@ -1361,8 +1361,8 @@ void FourAxisFabricationManager::on_inverseScaleButton_clicked() {
         smoothedMesh.scale(scaleFactor);
 
         //Update canvas and fit the scene
-        mainWindow.updateGlCanvas();
-        mainWindow.fitScene();
+        mainWindow.update();
+        mainWindow.canvas.fitScene();
     }
 }
 
