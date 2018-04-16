@@ -30,14 +30,14 @@ namespace internal {
 
 /* Check visibility (ray shooting) */
 
-void checkVisibilityRayShootingOnZ(
+void getVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
         const unsigned int nDirections,
         const unsigned int directionIndex,
         cg3::Array2D<int>& visibility);
 
-void checkVisibilityRayShootingOnZ(
+void getVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
         const unsigned int faceId,
         const unsigned int directionIndex,
@@ -49,14 +49,14 @@ void checkVisibilityRayShootingOnZ(
 
 /* Check visibility (projection) */
 
-void checkVisibilityProjectionOnZ(
+void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
         const unsigned int nDirections,
         const unsigned int directionIndex,
         cg3::Array2D<int>& visibility);
 
-void checkVisibilityProjectionOnZ(
+void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
         const unsigned int faceId,
         const unsigned int directionIndex,
@@ -100,8 +100,7 @@ struct BarycenterZComparator {
 
 
 
-/* ----- VISIBILITY CHECK ----- */
-
+/* ----- VISIBILITY METHODS ----- */
 
 /**
  * @brief Initialize data for visibility check
@@ -178,15 +177,16 @@ void initializeDataForVisibilityCheck(
 
 
 /**
- * @brief Check visibility of each face of the mesh from a given number of
+ * @brief Get visibility of each face of the mesh from a given number of
  * different directions.
- * It is implemented by a ray casting algorithm.
+ * It is implemented by a ray casting algorithm or checking the intersections
+ * in a 2D projection from a given direction.
  * @param[in] mesh Input mesh
  * @param[in] numberDirections Number of directions to be checked
  * @param[out] data Four axis fabrication data
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  */
-void checkVisibility(
+void getVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
         Data& data,
@@ -238,11 +238,11 @@ void checkVisibility(
     for(unsigned int dirIndex = 0; dirIndex < nDirections; dirIndex++){
         if (checkMode == RAYSHOOTING) {
             //Check visibility ray shooting
-            internal::checkVisibilityRayShootingOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility);
+            internal::getVisibilityRayShootingOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility);
         }
         else {
             //Check visibility with projection
-            internal::checkVisibilityProjectionOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility);
+            internal::getVisibilityProjectionOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility);
         }
 
         //Add the current directions
@@ -292,6 +292,8 @@ void detectNonVisibleFaces(
 
 
 
+/* ----- INTERNAL FUNCTION DEFINITION ----- */
+
 namespace internal {
 
 
@@ -307,7 +309,7 @@ namespace internal {
  * @param[out] visibility Map the visibility from the given directions
  * to each face.
  */
-void checkVisibilityRayShootingOnZ(
+void getVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
         const unsigned int nDirections,
@@ -452,7 +454,7 @@ void checkVisibilityRayShootingOnZ(
  * @param[out] visibility Map the visibility from the given directions
  * to each face.
  */
-void checkVisibilityProjectionOnZ(
+void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
         const unsigned int nDirections,
@@ -476,7 +478,7 @@ void checkVisibilityProjectionOnZ(
     for (int i = orderedZFaces.size()-1; i >= 0; i--) {
         unsigned int faceId = orderedZFaces[i];        
 
-        internal::checkVisibilityProjectionOnZ(
+        internal::getVisibilityProjectionOnZ(
                     mesh, faceId, directionIndex, zDirMax, aabbTreeMax, visibility);
     }
 
@@ -484,7 +486,7 @@ void checkVisibilityProjectionOnZ(
     for (unsigned int i = 0; i < orderedZFaces.size(); i++) {
         unsigned int faceId = orderedZFaces[i];
 
-        internal::checkVisibilityProjectionOnZ(
+        internal::getVisibilityProjectionOnZ(
                     mesh, faceId, nDirections + directionIndex, zDirMin, aabbTreeMin, visibility);
     }
 }
@@ -500,7 +502,7 @@ void checkVisibilityProjectionOnZ(
  * @param[out] aabbTree AABB tree with projections
  * @param[out] visibility Map the visibility from the given directions
  */
-void checkVisibilityProjectionOnZ(
+void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
         const unsigned int faceId,
         const unsigned int directionIndex,

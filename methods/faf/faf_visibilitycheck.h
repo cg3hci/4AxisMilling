@@ -21,11 +21,12 @@ void initializeDataForVisibilityCheck(
         const bool fixExtremeAssociation,
         Data& data);
 
-void checkVisibility(
+void getVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
         Data& data,
         CheckMode checkMode);
+
 
 void detectNonVisibleFaces(
         Data& data);

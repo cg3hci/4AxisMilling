@@ -63,7 +63,7 @@ void computeEntireAlgorithm(
 
 
     //Visibility check
-    FourAxisFabrication::checkVisibility(
+    FourAxisFabrication::getVisibility(
                 smoothedMesh,
                 nDirections,
                 data,

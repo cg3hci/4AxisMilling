@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     CG3_SUPPRESS_WARNING(emId);
 
     //Open four-axis fabrication manager as default manager
-    gui.setCurrentIndexToolBox(fmId);
+    gui.setCurrentManager(fmId);
     gui.update();
     gui.show();
 

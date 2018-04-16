@@ -279,7 +279,7 @@ void FourAxisFabricationManager::checkVisibility() {
                     data);
 
         //Visibility check
-        FourAxisFabrication::checkVisibility(
+        FourAxisFabrication::getVisibility(
                     smoothedMesh,
                     nDirections,
                     data,
@@ -449,7 +449,7 @@ void FourAxisFabricationManager::updateDrawableMeshes() {
  */
 void FourAxisFabricationManager::addDrawableCutComponents() {
     //Hide smoothed mesh
-    mainWindow.setObjVisibility(&drawableSmoothedMesh, false);
+    mainWindow.setDrawableObjectVisibility(&drawableSmoothedMesh, false);
 
     //Create drawable meshes
     drawableMinComponent = cg3::DrawableEigenMesh(data.minComponent);
@@ -457,9 +457,9 @@ void FourAxisFabricationManager::addDrawableCutComponents() {
     drawableFourAxisComponent = cg3::DrawableEigenMesh(data.fourAxisComponent);
 
     //Push in the canvas
-    mainWindow.pushObj(&drawableMinComponent, "Min component");
-    mainWindow.pushObj(&drawableMaxComponent, "Max component");
-    mainWindow.pushObj(&drawableFourAxisComponent, "4-axis component");
+    mainWindow.pushDrawableObject(&drawableMinComponent, "Min component");
+    mainWindow.pushDrawableObject(&drawableMaxComponent, "Max component");
+    mainWindow.pushDrawableObject(&drawableFourAxisComponent, "4-axis component");
 }
 
 /**
@@ -467,15 +467,15 @@ void FourAxisFabricationManager::addDrawableCutComponents() {
  */
 void FourAxisFabricationManager::addDrawableResults() {
     //Hide previoous mesh results
-    mainWindow.setObjVisibility(&drawableMinComponent, false);
-    mainWindow.setObjVisibility(&drawableMaxComponent, false);
-    mainWindow.setObjVisibility(&drawableFourAxisComponent, false);
+    mainWindow.setDrawableObjectVisibility(&drawableMinComponent, false);
+    mainWindow.setDrawableObjectVisibility(&drawableMaxComponent, false);
+    mainWindow.setDrawableObjectVisibility(&drawableFourAxisComponent, false);
 
     //Draw components
     drawableComponents.resize(data.results.size());
     for (size_t i = 0; i < data.results.size(); i++) {
         drawableComponents[i] = cg3::DrawableEigenMesh(data.results[i]);
-        mainWindow.pushObj(&drawableComponents[i], "4-axis " + std::to_string(i));
+        mainWindow.pushDrawableObject(&drawableComponents[i], "4-axis " + std::to_string(i));
     }
 }
 
@@ -487,19 +487,19 @@ void FourAxisFabricationManager::addDrawableResults() {
 void FourAxisFabricationManager::deleteDrawableObjects() {
     if (isMeshLoaded) {
         //Delete meshes
-        mainWindow.deleteObj(&drawableOriginalMesh);
-        mainWindow.deleteObj(&drawableSmoothedMesh);
+        mainWindow.deleteDrawableObject(&drawableOriginalMesh);
+        mainWindow.deleteDrawableObject(&drawableSmoothedMesh);
 
         //Delete cut components
         if (areComponentsCut) {
-            mainWindow.deleteObj(&drawableMinComponent);
-            mainWindow.deleteObj(&drawableMaxComponent);
-            mainWindow.deleteObj(&drawableFourAxisComponent);
+            mainWindow.deleteDrawableObject(&drawableMinComponent);
+            mainWindow.deleteDrawableObject(&drawableMaxComponent);
+            mainWindow.deleteDrawableObject(&drawableFourAxisComponent);
 
             //Delete results
             if (areResultExtracted) {
                 for (cg3::DrawableEigenMesh& drawableEigenMesh : drawableComponents) {
-                    mainWindow.deleteObj(&drawableEigenMesh);
+                    mainWindow.deleteDrawableObject(&drawableEigenMesh);
                 }
             }
         }
@@ -892,9 +892,9 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
 
                     //Add meshes to the canvas, hiding the original one
                     std::string meshName = meshFile.substr(meshFile.find_last_of("/") + 1);
-                    mainWindow.pushObj(&drawableOriginalMesh, meshName);
-                    mainWindow.pushObj(&drawableSmoothedMesh, "Smoothed mesh");
-                    mainWindow.setObjVisibility(&drawableOriginalMesh, false);
+                    mainWindow.pushDrawableObject(&drawableOriginalMesh, meshName);
+                    mainWindow.pushDrawableObject(&drawableSmoothedMesh, "Smoothed mesh");
+                    mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
 
                     loadedMeshFile = meshFile;
                     loadedSmoothedMeshFile = smoothedFile;
@@ -972,9 +972,9 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
 
             //Add meshes to the canvas, hiding the original one
             std::string meshName = loadedMeshFile.substr(loadedMeshFile.find_last_of("/") + 1);
-            mainWindow.pushObj(&drawableOriginalMesh, meshName);
-            mainWindow.pushObj(&drawableSmoothedMesh, "Smoothed mesh");
-            mainWindow.setObjVisibility(&drawableOriginalMesh, false);
+            mainWindow.pushDrawableObject(&drawableOriginalMesh, meshName);
+            mainWindow.pushDrawableObject(&drawableSmoothedMesh, "Smoothed mesh");
+            mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
         }
         else {
             clearData();
