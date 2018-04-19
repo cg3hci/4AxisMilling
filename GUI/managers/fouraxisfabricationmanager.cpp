@@ -102,6 +102,7 @@ void FourAxisFabricationManager::updateUI() {
     ui->restoreFrequenciesButton->setEnabled(!areFrequenciesRestored);
     ui->nIterationsLabel->setEnabled(!areFrequenciesRestored);
     ui->nIterationsSpinBox->setEnabled(!areFrequenciesRestored);
+    ui->updateAssociationCheckBox->setEnabled(!areFrequenciesRestored);
 
     //Cut components
     ui->cutComponentsButton->setEnabled(!areComponentsCut);
@@ -170,6 +171,7 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
         double compactness = ui->compactnessSpinBox->value();
         double limitAngle = ui->limitAngleSpinBox->value() / 180.0 * M_PI;
         unsigned int nIterations = (unsigned int) ui->nIterationsSpinBox->value();
+        bool updateAssociationAfterFrequencyRestoring = ui->updateAssociationCheckBox->isChecked();
 
         cg3::Timer t("Entire algorithm");
 
@@ -185,6 +187,7 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
                     compactness,
                     limitAngle,
                     nIterations,
+                    updateAssociationAfterFrequencyRestoring,
                     data,
                     checkMode);
 
@@ -355,7 +358,7 @@ void FourAxisFabricationManager::restoreFrequencies() {
         FourAxisFabrication::CheckMode checkMode = (ui->rayShootingRadio->isChecked() ?
                 FourAxisFabrication::RAYSHOOTING :
                 FourAxisFabrication::PROJECTION);
-        bool updateAssociation = ui->updateAssociationCheckBox->isChecked();
+        bool updateAssociationAfterFrequencyRestoring = ui->updateAssociationCheckBox->isChecked();
 
         cg3::Timer t("Restore frequencies");
 
@@ -365,16 +368,16 @@ void FourAxisFabricationManager::restoreFrequencies() {
         t.stopAndPrint();
 
 
-        if (updateAssociation) {
+        if (updateAssociationAfterFrequencyRestoring) {
             cg3::Timer tCheck("Update association after frequencies have been restored");
 
-            bool associationIsValid2 =
+            bool isValidAssociation =
                     FourAxisFabrication::updateAssociationIfNotVisible(smoothedMesh, data, checkMode);
 
             tCheck.stopAndPrint();
 
-            if (!associationIsValid2) {
-                QMessageBox::warning(this, "Warning", "Association is not valid after frequency restore!");
+            if (!isValidAssociation) {
+                QMessageBox::warning(this, "Warning", "Association is not valid after the frequencies have been restored!");
             }
         }
 
@@ -483,6 +486,7 @@ void FourAxisFabricationManager::addDrawableSurfaces() {
     mainWindow.setDrawableObjectVisibility(&drawableMaxComponent, false);
     mainWindow.setDrawableObjectVisibility(&drawableFourAxisComponent, false);
 
+    //TODO CONTAINER
     //Draw components
 //    drawableComponentsContainer.clear();
 //    drawableComponents.resize(data.surfaces.size());
@@ -518,7 +522,12 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
 
             //Delete surfaces
             if (areSurfacesExtracted) {
-                mainWindow.deleteDrawableObject(&drawableComponentsContainer);
+                //TODO CONTAINER
+//                mainWindow.deleteDrawableObject(&drawableComponentsContainer);
+
+                for (cg3::DrawableEigenMesh& drawableMesh : drawableComponents) {
+                    mainWindow.deleteDrawableObject(&drawableMesh);
+                }
             }
         }
     }    
@@ -531,7 +540,9 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
     drawableFourAxisComponent.clear();
 
     drawableComponents.clear();
-    drawableComponentsContainer.clear();
+
+    //TODO CONTAINER
+//    drawableComponentsContainer.clear();
 }
 
 

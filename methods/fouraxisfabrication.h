@@ -31,6 +31,7 @@ void computeEntireAlgorithm(
         const double compactness,
         const double limitAngle,
         const int frequenciesIterations,
+        const bool updateAssociationAfterFrequencyRestoring,
         Data& data,
         CheckMode checkMode = PROJECTION);
 }

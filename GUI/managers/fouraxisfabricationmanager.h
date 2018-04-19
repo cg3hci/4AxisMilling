@@ -59,7 +59,8 @@ private:
     cg3::DrawableEigenMesh drawableFourAxisComponent;
 
     std::vector<cg3::DrawableEigenMesh> drawableComponents;
-    cg3::DrawableContainer drawableComponentsContainer;
+    //TODO CONTAINER
+//    cg3::DrawableContainer drawableComponentsContainer;
 
 
     /* UI Fields */
