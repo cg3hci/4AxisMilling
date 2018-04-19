@@ -26,7 +26,6 @@ FourAxisFabricationManager::FourAxisFabricationManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FourAxisFabricationManager),
     mainWindow((cg3::viewer::MainWindow&)*parent)
-
 {
     ui->setupUi(this);
 
@@ -107,8 +106,8 @@ void FourAxisFabricationManager::updateUI() {
     //Cut components
     ui->cutComponentsButton->setEnabled(!areComponentsCut);
 
-    //Extract results
-    ui->extractResultsButton->setEnabled(!areResultExtracted);
+    //Extract surfaces
+    ui->extractSurfacesButton->setEnabled(!areSurfacesExtracted);
 
 
     // ----- Visualization -----
@@ -138,7 +137,7 @@ void FourAxisFabricationManager::clearData() {
     isAssociationComputed = false;
     areFrequenciesRestored = false;
     areComponentsCut = false;
-    areResultExtracted = false;
+    areSurfacesExtracted = false;
 
     data.clear();
 
@@ -199,11 +198,11 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
         isAssociationComputed = true;
         areFrequenciesRestored = true;
         areComponentsCut = true;
-        areResultExtracted = true;
+        areSurfacesExtracted = true;
 
         updateDrawableMeshes();
         addDrawableCutComponents();
-        addDrawableResults();
+        addDrawableSurfaces();
     }
 }
 
@@ -271,23 +270,14 @@ void FourAxisFabricationManager::checkVisibility() {
 
         cg3::Timer t("Visibility check");
 
-        //Initialize data before visibility check
-        FourAxisFabrication::initializeDataForVisibilityCheck(
-                    smoothedMesh,
-                    nDirections,
-                    fixExtremeAssociation,
-                    data);
-
         //Visibility check
         FourAxisFabrication::getVisibility(
                     smoothedMesh,
                     nDirections,
+                    fixExtremeAssociation,
                     data,
                     checkMode);
 
-        //Detect non-visible faces
-        FourAxisFabrication::detectNonVisibleFaces(
-                    data);
 
         t.stopAndPrint();
 
@@ -362,6 +352,10 @@ void FourAxisFabricationManager::restoreFrequencies() {
 
         //Get UI data
         unsigned int nIterations = (unsigned int) ui->nIterationsSpinBox->value();
+        FourAxisFabrication::CheckMode checkMode = (ui->rayShootingRadio->isChecked() ?
+                FourAxisFabrication::RAYSHOOTING :
+                FourAxisFabrication::PROJECTION);
+        bool updateAssociation = ui->updateAssociationCheckBox->isChecked();
 
         cg3::Timer t("Restore frequencies");
 
@@ -369,6 +363,21 @@ void FourAxisFabricationManager::restoreFrequencies() {
         FourAxisFabrication::restoreFrequencies(originalMesh, data, nIterations, smoothedMesh);
 
         t.stopAndPrint();
+
+
+        if (updateAssociation) {
+            cg3::Timer tCheck("Update association after frequencies have been restored");
+
+            bool associationIsValid2 =
+                    FourAxisFabrication::updateAssociationIfNotVisible(smoothedMesh, data, checkMode);
+
+            tCheck.stopAndPrint();
+
+            if (!associationIsValid2) {
+                QMessageBox::warning(this, "Warning", "Association is not valid after frequency restore!");
+            }
+        }
+
 
         areFrequenciesRestored = true;
 
@@ -404,10 +413,10 @@ void FourAxisFabricationManager::cutComponents() {
 }
 
 /**
- * @brief Extract result
+ * @brief Extract surfaces
  */
-void FourAxisFabricationManager::extractResults() {
-    if (!areResultExtracted) {
+void FourAxisFabricationManager::extractSurfaces() {
+    if (!areSurfacesExtracted) {
         optimalOrientation();
         selectExtremes();
         checkVisibility();
@@ -417,16 +426,16 @@ void FourAxisFabricationManager::extractResults() {
         cutComponents();
 
 
-        cg3::Timer t("Extract results");
+        cg3::Timer t("Extract surfaces");
 
-        //Extract results
-        FourAxisFabrication::extractResults(data);
+        //Extract surfaces
+        FourAxisFabrication::extractSurfaces(data);
 
         t.stopAndPrint();
 
-        areResultExtracted = true;
+        areSurfacesExtracted = true;
 
-        addDrawableResults();
+        addDrawableSurfaces();
     }
 }
 
@@ -442,6 +451,9 @@ void FourAxisFabricationManager::updateDrawableMeshes() {
     //Create drawable meshes (already in the canvas)
     drawableOriginalMesh = cg3::DrawableEigenMesh(originalMesh);
     drawableSmoothedMesh = cg3::DrawableEigenMesh(smoothedMesh);
+
+    mainWindow.refreshDrawableObject(&drawableOriginalMesh);
+    mainWindow.refreshDrawableObject(&drawableSmoothedMesh);
 }
 
 /**
@@ -463,19 +475,27 @@ void FourAxisFabricationManager::addDrawableCutComponents() {
 }
 
 /**
- * @brief Add drawable results
+ * @brief Add drawable surfaces
  */
-void FourAxisFabricationManager::addDrawableResults() {
-    //Hide previoous mesh results
+void FourAxisFabricationManager::addDrawableSurfaces() {
+    //Hide the cut components
     mainWindow.setDrawableObjectVisibility(&drawableMinComponent, false);
     mainWindow.setDrawableObjectVisibility(&drawableMaxComponent, false);
     mainWindow.setDrawableObjectVisibility(&drawableFourAxisComponent, false);
 
     //Draw components
-    drawableComponents.resize(data.results.size());
-    for (size_t i = 0; i < data.results.size(); i++) {
-        drawableComponents[i] = cg3::DrawableEigenMesh(data.results[i]);
-        mainWindow.pushDrawableObject(&drawableComponents[i], "4-axis " + std::to_string(i));
+//    drawableComponentsContainer.clear();
+//    drawableComponents.resize(data.surfaces.size());
+//    for (size_t i = 0; i < data.surfaces.size(); i++) {
+//        drawableComponents[i] = cg3::DrawableEigenMesh(data.surfaces[i]);
+//        drawableComponentsContainer.pushBack(&drawableComponents[i], "Surface " + std::to_string(i));
+//    }
+//    mainWindow.pushDrawableObject(&drawableComponentsContainer, "Surfaces");
+
+    drawableComponents.resize(data.surfaces.size());
+    for (size_t i = 0; i < data.surfaces.size(); i++) {
+        drawableComponents[i] = cg3::DrawableEigenMesh(data.surfaces[i]);
+        mainWindow.pushDrawableObject(&drawableComponents[i], "Surface " + std::to_string(i));
     }
 }
 
@@ -496,11 +516,9 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
             mainWindow.deleteDrawableObject(&drawableMaxComponent);
             mainWindow.deleteDrawableObject(&drawableFourAxisComponent);
 
-            //Delete results
-            if (areResultExtracted) {
-                for (cg3::DrawableEigenMesh& drawableEigenMesh : drawableComponents) {
-                    mainWindow.deleteDrawableObject(&drawableEigenMesh);
-                }
+            //Delete surfaces
+            if (areSurfacesExtracted) {
+                mainWindow.deleteDrawableObject(&drawableComponentsContainer);
             }
         }
     }    
@@ -513,6 +531,7 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
     drawableFourAxisComponent.clear();
 
     drawableComponents.clear();
+    drawableComponentsContainer.clear();
 }
 
 
@@ -524,7 +543,7 @@ void FourAxisFabricationManager::resetCameraDirection() {
     mainWindow.canvas.setCameraDirection(cg3::Vec3(1,0,0));
     mainWindow.canvas.setCameraDirection(cg3::Vec3(0,0,-1));
 
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 }
 
@@ -534,7 +553,7 @@ void FourAxisFabricationManager::resetCameraDirection() {
 void FourAxisFabricationManager::setCameraDirection(cg3::Vec3 dir) {
     mainWindow.canvas.setCameraDirection(dir);
 
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 }
 
@@ -593,7 +612,7 @@ void FourAxisFabricationManager::updateVisualization() {
 
 
     //Update canvas
-    mainWindow.update();
+    mainWindow.canvas.update();
 
     updateUI();
 }
@@ -904,7 +923,7 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
                     initializeVisualizationSlider();
 
                     //Update canvas and fit the scene
-                    mainWindow.update();
+                    mainWindow.canvas.update();
                     mainWindow.canvas.fitScene();
 
                     std::cout << std::endl;
@@ -939,7 +958,7 @@ void FourAxisFabricationManager::on_clearMeshButton_clicked()
         loadedSmoothedMeshFile = "";
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
 
         //Visualize mesh
@@ -981,7 +1000,7 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
         }
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
 
         //Visualize mesh
@@ -1019,9 +1038,9 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
             data.maxComponent.saveOnObj(rawname + "_max.obj");
             data.fourAxisComponent.saveOnObj(rawname + "_fouraxis.obj");
 
-            if (areResultExtracted) {
-                for (size_t i = 0; i < data.results.size(); i++) {
-                    cg3::EigenMesh& mesh = data.results[i];
+            if (areSurfacesExtracted) {
+                for (size_t i = 0; i < data.surfaces.size(); i++) {
+                    cg3::EigenMesh& mesh = data.surfaces[i];
                     mesh.setVertexColor(128,128,128);
                     mesh.saveOnObj(rawname + "_component_" + std::to_string(i) + ".obj");
 
@@ -1031,13 +1050,13 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
                     cg3::Vec3 xAxis(1,0,0);
                     cg3::Vec3 yAxis(0,1,0);
 
-                    if (i < data.results.size() - 2) {
-                        unsigned int label = data.resultsAssociation[i];
-                        double angle = data.directionsAngle[label];
+                    if (i < data.surfaces.size() - 2) {
+                        unsigned int label = data.surfacesAssociation[i];
+                        double angle = data.angles[label];
                         cg3::getRotationMatrix(xAxis, angle, rotationMatrix);
                     }
                     //Min
-                    else if (i == data.results.size() - 2) {
+                    else if (i == data.surfaces.size() - 2) {
                         cg3::getRotationMatrix(yAxis, M_PI/2, rotationMatrix);
 
                         //Center mesh
@@ -1045,7 +1064,7 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
                     }
                     //Max
                     else {
-                        assert(i == data.results.size() - 1);
+                        assert(i == data.surfaces.size() - 1);
                         cg3::getRotationMatrix(yAxis, -M_PI/2, rotationMatrix);
 
                         //Center mesh
@@ -1067,8 +1086,8 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
 
                         if (i < data.targetDirections.size()-2) {
                             resultFile << ", " <<
-                                      "Angle: " << data.directionsAngle[label] <<
-                                      " (" << data.directionsAngle[label]/M_PI*180 << "°)";
+                                      "Angle: " << data.angles[label] <<
+                                      " (" << data.angles[label]/M_PI*180 << "°)";
                         }
 
                         resultFile << std::endl;
@@ -1094,7 +1113,7 @@ void FourAxisFabricationManager::on_computeEntireAlgorithmButton_clicked() {
         initializeVisualizationSlider();
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
 
         updateUI();
@@ -1111,7 +1130,7 @@ void FourAxisFabricationManager::on_optimalOrientationButton_clicked() {
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 
     updateUI();
@@ -1127,7 +1146,7 @@ void FourAxisFabricationManager::on_selectExtremesButton_clicked()
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 
     updateUI();
@@ -1143,7 +1162,7 @@ void FourAxisFabricationManager::on_checkVisibilityButton_clicked()
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 
     updateUI();
@@ -1160,7 +1179,7 @@ void FourAxisFabricationManager::on_targetDirectionsButton_clicked()
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 
     updateUI();
@@ -1176,7 +1195,7 @@ void FourAxisFabricationManager::on_getAssociationButton_clicked()
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 
     updateUI();
@@ -1191,7 +1210,7 @@ void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 
     updateUI();
@@ -1206,22 +1225,22 @@ void FourAxisFabricationManager::on_cutComponentsButton_clicked() {
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 
     updateUI();
 }
 
-void FourAxisFabricationManager::on_extractResultsButton_clicked() {
-    //Extract results
-    extractResults();
+void FourAxisFabricationManager::on_extractSurfacesButton_clicked() {
+    //Extract surfaces
+    extractSurfaces();
 
     //Visualize association
     ui->associationRadio->setChecked(true);
     initializeVisualizationSlider();
 
     //Update canvas and fit the scene
-    mainWindow.update();
+    mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
 
     updateUI();
@@ -1238,7 +1257,7 @@ void FourAxisFabricationManager::on_centerOnOriginButton_clicked() {
         smoothedMesh.translate(-smoothedMesh.getBoundingBox().center());
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }
@@ -1250,7 +1269,7 @@ void FourAxisFabricationManager::on_plusXButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(ui->stepSpinBox->value(), 0, 0));
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }
@@ -1262,7 +1281,7 @@ void FourAxisFabricationManager::on_minusXButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(-ui->stepSpinBox->value(), 0, 0));
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }
@@ -1274,7 +1293,7 @@ void FourAxisFabricationManager::on_plusYButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(0, ui->stepSpinBox->value(), 0));
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }
@@ -1286,7 +1305,7 @@ void FourAxisFabricationManager::on_minusYButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(0, -ui->stepSpinBox->value(), 0));
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }
@@ -1298,7 +1317,7 @@ void FourAxisFabricationManager::on_plusZButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(0, 0, ui->stepSpinBox->value()));
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }
@@ -1310,7 +1329,7 @@ void FourAxisFabricationManager::on_minusZButton_clicked() {
         smoothedMesh.translate(cg3::Pointd(0, 0, -ui->stepSpinBox->value()));
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }
@@ -1330,7 +1349,7 @@ void FourAxisFabricationManager::on_rotateButton_clicked() {
         smoothedMesh.rotate(m);
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }
@@ -1347,7 +1366,7 @@ void FourAxisFabricationManager::on_scaleButton_clicked() {
         smoothedMesh.scale(scaleFactor);
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }
@@ -1361,7 +1380,7 @@ void FourAxisFabricationManager::on_inverseScaleButton_clicked() {
         smoothedMesh.scale(scaleFactor);
 
         //Update canvas and fit the scene
-        mainWindow.update();
+        mainWindow.canvas.update();
         mainWindow.canvas.fitScene();
     }
 }

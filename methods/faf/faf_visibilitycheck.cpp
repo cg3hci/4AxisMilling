@@ -28,6 +28,29 @@ namespace FourAxisFabrication {
 
 namespace internal {
 
+
+/* Methods for computing visibility */
+
+void initializeDataForVisibilityCheck(
+        const cg3::EigenMesh& mesh,
+        const unsigned int nDirections,
+        const bool fixExtremeAssociation,
+        Data& data);
+
+void computeVisibility(
+        const cg3::EigenMesh& mesh,
+        const unsigned int nDirections,
+        const std::vector<int>& association,
+        std::vector<cg3::Vec3>& directions,
+        std::vector<double>& directionsAngle,
+        cg3::Array2D<int>& visibility,
+        CheckMode checkMode = PROJECTION);
+
+void detectNonVisibleFaces(
+        Data& data);
+
+
+
 /* Check visibility (ray shooting) */
 
 void getVisibilityRayShootingOnZ(
@@ -102,13 +125,84 @@ struct BarycenterZComparator {
 
 /* ----- VISIBILITY METHODS ----- */
 
+
+/**
+ * @brief Get visibility of each face of the mesh from a given number of
+ * different directions.
+ * It is implemented by a ray casting algorithm or checking the intersections
+ * in a 2D projection from a given direction.
+ * @param[in] mesh Input mesh
+ * @param[in] numberDirections Number of directions to be checked
+ * @param[in] fixExtremeAssociation Set if faces in the extremes must be already and unconditionally
+ * @param[out] data Four axis fabrication data
+ * @param[in] checkMode Visibility check mode. Default is projection mode.
+ */
+void getVisibility(
+        const cg3::EigenMesh& mesh,
+        const unsigned int nDirections,
+        const bool fixExtremeAssociation,
+        Data& data,
+        CheckMode checkMode)
+{
+    internal::initializeDataForVisibilityCheck(mesh, nDirections, fixExtremeAssociation, data);
+    internal::computeVisibility(mesh, nDirections, data.association, data.directions, data.angles, data.visibility, checkMode);
+    internal::detectNonVisibleFaces(data);
+}
+
+
+/**
+ * @brief Check visibility of each face of the mesh from the associated direction.
+ * It is implemented by a ray casting algorithm or checking the intersections
+ * in a 2D projection from a given direction.
+ * @param[in] mesh Input mesh
+ * @param[in] data Four axis fabrication data
+ * @param[in] checkMode Visibility check mode. Default is projection mode.
+ * @returns True if all the elements are visibile from the associated directions,
+ * false otherwise.
+ */
+bool updateAssociationIfNotVisible(
+        const cg3::EigenMesh& mesh,
+        Data& data,
+        CheckMode checkMode)
+{
+    bool result = true;
+
+    const int nDirections = (data.directions.size()-2)/2;
+
+    Data newData;
+    newData.minExtremes = data.minExtremes;
+    newData.maxExtremes = data.maxExtremes;
+
+    internal::initializeDataForVisibilityCheck(mesh, nDirections, false, newData);
+    internal::computeVisibility(mesh, nDirections, newData.association, newData.directions, newData.angles, newData.visibility, checkMode);
+
+    for (size_t faceId = 0; faceId < data.association.size(); faceId++) {
+        if (data.association[faceId] > 0 && newData.visibility(data.association[faceId], faceId) < 1) {
+            data.association[faceId] = -1;
+            result = false;
+        }
+    }
+
+    return result;
+}
+
+
+
+
+/* ----- INTERNAL FUNCTION DEFINITION ----- */
+
+namespace internal {
+
+
+/* ----- METHODS FOR COMPUTING VISIBILITY ----- */
+
 /**
  * @brief Initialize data for visibility check
- * @param mesh Input mesh
- * @param nDirections Number of directions
- * @param fixExtremeAssociation Set if faces in the extremes must be already and unconditionally
+ * @param[in] mesh Input mesh
+ * @param[in] nDirections Number of directions
+ * @param[in] fixExtremeAssociation Set if faces in the extremes must be already and unconditionally
  * assigned to the x-axis directions
- * @param data Four axis fabrication data
+ * @param[out] data Four axis fabrication data
  */
 void initializeDataForVisibilityCheck(
         const cg3::EigenMesh& mesh,
@@ -175,7 +269,6 @@ void initializeDataForVisibilityCheck(
 
 }
 
-
 /**
  * @brief Get visibility of each face of the mesh from a given number of
  * different directions.
@@ -183,22 +276,22 @@ void initializeDataForVisibilityCheck(
  * in a 2D projection from a given direction.
  * @param[in] mesh Input mesh
  * @param[in] numberDirections Number of directions to be checked
- * @param[out] data Four axis fabrication data
+ * @param[in] association Current association
+ * @param[out] directions Vector of directions
+ * @param[out] directionsAngle Vector of angle (respect to z-axis)
+ * @param[out] visibility Output visibility
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  */
-void getVisibility(
+void computeVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        Data& data,
-        CheckMode checkMode = PROJECTION)
+        const std::vector<int>& association,
+        std::vector<cg3::Vec3>& directions,
+        std::vector<double>& directionsAngle,
+        cg3::Array2D<int>& visibility,
+        CheckMode checkMode)
 {
-    //Referencing data
-    std::vector<cg3::Vec3>& directions = data.directions;
-    std::vector<double>& directionsAngle = data.directionsAngle;
 
-    cg3::Array2D<int>& visibility = data.visibility;
-
-    const std::vector<int>& association = data.association;
 
     //Set target faces to be checked
     std::vector<unsigned int> targetFaces;
@@ -257,8 +350,6 @@ void getVisibility(
     }
 }
 
-
-
 /**
  * @brief Detect faces that are not visible
  * @param data Four axis fabrication data
@@ -287,14 +378,6 @@ void detectNonVisibleFaces(
     }
 
 }
-
-
-
-
-
-/* ----- INTERNAL FUNCTION DEFINITION ----- */
-
-namespace internal {
 
 
 /* ----- CHECK VISIBILITY (RAY SHOOTING) ----- */

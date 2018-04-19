@@ -54,25 +54,14 @@ void computeEntireAlgorithm(
     FourAxisFabrication::selectExtremesOnXAxis(smoothedMesh, data);
 
 
-    //Initialize data before visibility check
-    FourAxisFabrication::initializeDataForVisibilityCheck(
-                smoothedMesh,
-                nDirections,
-                fixExtremeAssociation,
-                data);
-
-
     //Visibility check
     FourAxisFabrication::getVisibility(
                 smoothedMesh,
                 nDirections,
+                fixExtremeAssociation,
                 data,
                 checkMode);
 
-
-    //Detect non-visible faces
-    FourAxisFabrication::detectNonVisibleFaces(
-                data);
 
 
     //Get the target directions
@@ -93,6 +82,10 @@ void computeEntireAlgorithm(
                 data,
                 frequenciesIterations,
                 smoothedMesh);
+    FourAxisFabrication::updateAssociationIfNotVisible(
+                smoothedMesh,
+                data,
+                checkMode);
 
     //Cut components
     FourAxisFabrication::cutComponents(
@@ -101,7 +94,7 @@ void computeEntireAlgorithm(
 
 
     //Cut components
-    FourAxisFabrication::extractResults(
+    FourAxisFabrication::extractSurfaces(
                 data);
 
 }

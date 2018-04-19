@@ -713,9 +713,19 @@
        </widget>
       </item>
       <item row="11" column="5" colspan="2">
-       <widget class="QPushButton" name="extractResultsButton">
+       <widget class="QPushButton" name="extractSurfacesButton">
         <property name="text">
-         <string>Extract results</string>
+         <string>Extract surfaces</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="3" colspan="2">
+       <widget class="QCheckBox" name="updateAssociationCheckBox">
+        <property name="text">
+         <string>Update association</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

@@ -13,7 +13,7 @@
 
 namespace FourAxisFabrication {
 
-void extractResults(
+void extractSurfaces(
         Data& data);
 
 }

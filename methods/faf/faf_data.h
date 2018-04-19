@@ -22,16 +22,16 @@ struct Data {
     std::vector<unsigned int> minExtremes;
     std::vector<unsigned int> maxExtremes;
 
-    std::vector<int> association;
-
     std::vector<cg3::Vec3> directions;
-    std::vector<double> directionsAngle;
+    std::vector<double> angles;
 
     cg3::Array2D<int> visibility;
 
     std::vector<unsigned int> nonVisibleFaces;
 
     std::vector<unsigned int> targetDirections;
+
+    std::vector<int> association;
 
     cg3::EigenMesh minComponent;
     cg3::EigenMesh maxComponent;
@@ -41,8 +41,8 @@ struct Data {
     std::vector<int> maxComponentAssociation;
     std::vector<int> fourAxisComponentAssociation;
 
-    std::vector<cg3::EigenMesh> results;
-    std::vector<unsigned int> resultsAssociation;
+    std::vector<cg3::EigenMesh> surfaces;
+    std::vector<unsigned int> surfacesAssociation;
 
     void clear();
 };

@@ -13,24 +13,20 @@
 
 namespace FourAxisFabrication {
 
-/* Visibility check */
-
-void initializeDataForVisibilityCheck(
-        const cg3::EigenMesh& mesh,
-        const unsigned int nDirections,
-        const bool fixExtremeAssociation,
-        Data& data);
+/* Get visibility */
 
 void getVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
+        const bool fixExtremeAssociation,
         Data& data,
         CheckMode checkMode);
 
 
-void detectNonVisibleFaces(
-        Data& data);
-
+bool updateAssociationIfNotVisible(
+        const cg3::EigenMesh& mesh,
+        Data& data,
+        CheckMode checkMode = PROJECTION);
 
 }
 

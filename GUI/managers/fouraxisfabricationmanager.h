@@ -10,6 +10,7 @@
 #include <cg3/viewer/utilities/loadersaver.h>
 
 #include <cg3/viewer/interfaces/drawable_object.h>
+#include <cg3/viewer/interfaces/drawable_container.h>
 #include <cg3/viewer/drawable_objects/drawable_eigenmesh.h>
 
 #include <cg3/data_structures/arrays/array2d.h>
@@ -58,6 +59,7 @@ private:
     cg3::DrawableEigenMesh drawableFourAxisComponent;
 
     std::vector<cg3::DrawableEigenMesh> drawableComponents;
+    cg3::DrawableContainer drawableComponentsContainer;
 
 
     /* UI Fields */
@@ -78,7 +80,7 @@ private:
     bool isAssociationComputed;
     bool areFrequenciesRestored;
     bool areComponentsCut;
-    bool areResultExtracted;
+    bool areSurfacesExtracted;
 
 
     /* UI methods */
@@ -98,14 +100,14 @@ private:
     void getAssociation();
     void restoreFrequencies();
     void cutComponents();
-    void extractResults();
+    void extractSurfaces();
 
 
     /* Visualization methods */
 
     void updateDrawableMeshes();
     void addDrawableCutComponents();
-    void addDrawableResults();
+    void addDrawableSurfaces();
 
     void deleteDrawableObjects();
 
@@ -147,7 +149,7 @@ private slots:
     void on_getAssociationButton_clicked();
     void on_restoreFrequenciesButton_clicked();
     void on_cutComponentsButton_clicked();
-    void on_extractResultsButton_clicked();
+    void on_extractSurfacesButton_clicked();
 
 
     /* UI slots Transformations */

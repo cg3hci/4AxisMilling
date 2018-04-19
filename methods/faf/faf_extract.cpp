@@ -19,7 +19,7 @@ cg3::EigenMesh extractFacesWithALabel(
  * @brief Extract results (surface meshes)
  * @param data Four axis fabrication data
  */
-void extractResults(
+void extractSurfaces(
         Data& data)
 {    
     //Referencing data
@@ -33,8 +33,8 @@ void extractResults(
     cg3::EigenMesh& maxComponent = data.maxComponent;
     cg3::EigenMesh& fourAxisComponent = data.fourAxisComponent;
 
-    std::vector<cg3::EigenMesh>& results = data.results;
-    std::vector<unsigned int>& resultsAssociation = data.resultsAssociation;
+    std::vector<cg3::EigenMesh>& results = data.surfaces;
+    std::vector<unsigned int>& resultsAssociation = data.surfacesAssociation;
 
 
     unsigned int minLabel = data.targetDirections[data.targetDirections.size()-2];
@@ -76,7 +76,7 @@ void extractResults(
     resultsAssociation.push_back(maxLabel);
 
     //Update mesh data
-    for (cg3::EigenMesh& result : data.results) {
+    for (cg3::EigenMesh& result : data.surfaces) {
         result.updateBoundingBox();
         result.updateFacesAndVerticesNormals();
     }
