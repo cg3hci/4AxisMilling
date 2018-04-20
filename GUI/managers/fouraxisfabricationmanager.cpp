@@ -486,21 +486,14 @@ void FourAxisFabricationManager::addDrawableSurfaces() {
     mainWindow.setDrawableObjectVisibility(&drawableMaxComponent, false);
     mainWindow.setDrawableObjectVisibility(&drawableFourAxisComponent, false);
 
-    //TODO CONTAINER
     //Draw components
-//    drawableComponentsContainer.clear();
-//    drawableComponents.resize(data.surfaces.size());
-//    for (size_t i = 0; i < data.surfaces.size(); i++) {
-//        drawableComponents[i] = cg3::DrawableEigenMesh(data.surfaces[i]);
-//        drawableComponentsContainer.pushBack(&drawableComponents[i], "Surface " + std::to_string(i));
-//    }
-//    mainWindow.pushDrawableObject(&drawableComponentsContainer, "Surfaces");
-
+    drawableComponentsContainer.clear();
     drawableComponents.resize(data.surfaces.size());
     for (size_t i = 0; i < data.surfaces.size(); i++) {
         drawableComponents[i] = cg3::DrawableEigenMesh(data.surfaces[i]);
-        mainWindow.pushDrawableObject(&drawableComponents[i], "Surface " + std::to_string(i));
+        drawableComponentsContainer.pushBack(&drawableComponents[i], "Surface " + std::to_string(i));
     }
+    mainWindow.pushDrawableObject(&drawableComponentsContainer, "Surfaces");
 }
 
 
@@ -522,12 +515,7 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
 
             //Delete surfaces
             if (areSurfacesExtracted) {
-                //TODO CONTAINER
-//                mainWindow.deleteDrawableObject(&drawableComponentsContainer);
-
-                for (cg3::DrawableEigenMesh& drawableMesh : drawableComponents) {
-                    mainWindow.deleteDrawableObject(&drawableMesh);
-                }
+                mainWindow.deleteDrawableObject(&drawableComponentsContainer);
             }
         }
     }    
@@ -540,9 +528,7 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
     drawableFourAxisComponent.clear();
 
     drawableComponents.clear();
-
-    //TODO CONTAINER
-//    drawableComponentsContainer.clear();
+    drawableComponentsContainer.clear();
 }
 
 

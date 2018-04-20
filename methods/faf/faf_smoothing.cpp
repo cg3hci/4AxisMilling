@@ -144,7 +144,7 @@ std::vector<cg3::Vec3> computeDifferentialCoordinates(
  * @param[in] vId Vertex id
  * @param[in] newPos New position
  * @param[in] vertexFaceAdjacencies Vertex-face adjacencies of the mesh
- * @return True if the move is valid
+ * @return True if the move is valid, false otherwise
  */
 bool validateMove(
         const cg3::EigenMesh& mesh,
@@ -153,6 +153,7 @@ bool validateMove(
         const cg3::Pointd& newPoint,
         const std::vector<std::vector<int>>& vertexFaceAdjacencies)
 {
+    //Check if the triangle has an angle less than 90° with the given direction
     const std::vector<int>& faces = vertexFaceAdjacencies.at(vId);
     for (const int& fId : faces) {
         const cg3::Pointi face = mesh.getFace(fId);
