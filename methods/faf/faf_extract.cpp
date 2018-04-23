@@ -4,7 +4,7 @@
  */
 #include "faf_extract.h"
 
-#include <cg3/libigl/vertex_adjacencies.h>
+#include <cg3/libigl/mesh_adjacencies.h>
 
 namespace FourAxisFabrication {
 

@@ -6,7 +6,7 @@
 
 #if defined(CG3_LIBIGL_DEFINED) && defined(MULTI_LABEL_OPTIMIZATION_INCLUDED)
 
-#include <cg3/libigl/face_adjacences.h>
+#include <cg3/libigl/mesh_adjacencies.h>
 
 #include "lib/MultiLabelOptimization/GCoptimization.h"
 
@@ -50,7 +50,7 @@ void getOptimizedAssociation(
     const unsigned int nFaces = mesh.getNumberFaces();
 
     //Get mesh adjacencies
-    Eigen::MatrixXi adj = cg3::libigl::getFaceAdjacences(mesh);
+    std::vector<std::vector<int>> faceAdj = cg3::libigl::getFaceFaceAdjacencies(mesh);
 
     std::vector<bool> usedLabels(targetDirections.size(), false);
 
@@ -124,7 +124,7 @@ void getOptimizedAssociation(
         for (unsigned int f = 0; f < nFaces; f++) {
             visited[f] = true;
             for (int i=0; i<3; ++i) {
-                int nid = adj(f, i);
+                int nid = faceAdj[f][i];
                 if (!visited[nid]) gc->setNeighbors(f, nid);
             }
         }
