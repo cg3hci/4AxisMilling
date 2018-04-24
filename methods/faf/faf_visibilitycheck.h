@@ -23,7 +23,7 @@ void getVisibility(
         CheckMode checkMode);
 
 
-bool updateAssociationIfNotVisible(
+bool recheckVisibility(
         const cg3::EigenMesh& mesh,
         Data& data,
         CheckMode checkMode = PROJECTION);

@@ -160,7 +160,7 @@ void getVisibility(
  * @returns True if all the elements are visibile from the associated directions,
  * false otherwise.
  */
-bool updateAssociationIfNotVisible(
+bool recheckVisibility(
         const cg3::EigenMesh& mesh,
         Data& data,
         CheckMode checkMode)

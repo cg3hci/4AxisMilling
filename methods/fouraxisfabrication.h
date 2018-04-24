@@ -30,8 +30,9 @@ void computeEntireAlgorithm(
         const bool setCoverage,
         const double compactness,
         const double limitAngle,
-        const int frequenciesIterations,
-        const bool updateAssociationAfterFrequencyRestoring,
+        const unsigned int frequenciesIterations,
+        const bool occlusionsCheck,
+        const bool recheckVisibility,
         Data& data,
         CheckMode checkMode = PROJECTION);
 }

@@ -24,7 +24,8 @@ namespace FourAxisFabrication {
  * @param[in] compactness Compactness
  * @param[in] limitAngle Limit angle
  * @param[in] frequenciesIterations Number of iterations of the algorithm for restoring frequencies
- * @param[in] updateAssociationAfterFrequencyRestoring Update association after frequencies have
+ * @param[in] occlusionsCheck Occlusion check in restoring frequncies
+ * @param[in] recheckVisibility Update association after frequencies have
  * been restored (for debugging)
  * @param data Four axis fabrication data
  * @param[in] checkMode Visibility check mode. Default is projection mode.
@@ -39,8 +40,9 @@ void computeEntireAlgorithm(
         const bool setCoverage,
         const double compactness,
         const double limitAngle,
-        const int frequenciesIterations,
-        const bool updateAssociationAfterFrequencyRestoring,
+        const unsigned int frequenciesIterations,
+        const bool occlusionsCheck,
+        const bool recheckVisibility,
         Data& data,
         CheckMode checkMode)
 {
@@ -84,11 +86,12 @@ void computeEntireAlgorithm(
                 mesh,
                 data,
                 frequenciesIterations,
+                occlusionsCheck,
                 smoothedMesh);
 
-    if (updateAssociationAfterFrequencyRestoring) {
+    if (recheckVisibility) {
         //Update association after frequencies are restored
-        FourAxisFabrication::updateAssociationIfNotVisible(
+        FourAxisFabrication::recheckVisibility(
                     smoothedMesh,
                     data,
                     checkMode);

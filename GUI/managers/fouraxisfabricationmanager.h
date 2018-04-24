@@ -105,9 +105,10 @@ private:
 
     /* Visualization methods */
 
-    void updateDrawableMeshes();
+    void addDrawableMeshes(const std::string& meshName);
     void addDrawableCutComponents();
     void addDrawableSurfaces();
+    void updateDrawableMeshes();
 
     void deleteDrawableObjects();
 

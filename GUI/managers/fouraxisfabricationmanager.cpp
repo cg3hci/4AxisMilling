@@ -102,7 +102,8 @@ void FourAxisFabricationManager::updateUI() {
     ui->restoreFrequenciesButton->setEnabled(!areFrequenciesRestored);
     ui->nIterationsLabel->setEnabled(!areFrequenciesRestored);
     ui->nIterationsSpinBox->setEnabled(!areFrequenciesRestored);
-    ui->updateAssociationCheckBox->setEnabled(!areFrequenciesRestored);
+    ui->recheckVisibilityCheckBox->setEnabled(!areFrequenciesRestored);
+    ui->occlusionsCheckCheckBox->setEnabled(!areFrequenciesRestored);
 
     //Cut components
     ui->cutComponentsButton->setEnabled(!areComponentsCut);
@@ -171,7 +172,8 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
         double compactness = ui->compactnessSpinBox->value();
         double limitAngle = ui->limitAngleSpinBox->value() / 180.0 * M_PI;
         unsigned int nIterations = (unsigned int) ui->nIterationsSpinBox->value();
-        bool updateAssociationAfterFrequencyRestoring = ui->updateAssociationCheckBox->isChecked();
+        bool recheckVisibility = ui->recheckVisibilityCheckBox->isChecked();
+        bool occlusionsCheck = ui->occlusionsCheckCheckBox->isChecked();
 
         cg3::Timer t("Entire algorithm");
 
@@ -187,7 +189,8 @@ void FourAxisFabricationManager::computeEntireAlgorithm() {
                     compactness,
                     limitAngle,
                     nIterations,
-                    updateAssociationAfterFrequencyRestoring,
+                    occlusionsCheck,
+                    recheckVisibility,
                     data,
                     checkMode);
 
@@ -358,21 +361,22 @@ void FourAxisFabricationManager::restoreFrequencies() {
         FourAxisFabrication::CheckMode checkMode = (ui->rayShootingRadio->isChecked() ?
                 FourAxisFabrication::RAYSHOOTING :
                 FourAxisFabrication::PROJECTION);
-        bool updateAssociationAfterFrequencyRestoring = ui->updateAssociationCheckBox->isChecked();
+        bool recheckVisibility = ui->recheckVisibilityCheckBox->isChecked();
+        bool occlusionsCheck = ui->occlusionsCheckCheckBox->isChecked();
 
         cg3::Timer t("Restore frequencies");
 
         //Restore frequencies
-        FourAxisFabrication::restoreFrequencies(originalMesh, data, nIterations, smoothedMesh);
+        FourAxisFabrication::restoreFrequencies(originalMesh, data, nIterations, occlusionsCheck, smoothedMesh);
 
         t.stopAndPrint();
 
 
-        if (updateAssociationAfterFrequencyRestoring) {
+        if (recheckVisibility) {
             cg3::Timer tCheck("Update association after frequencies have been restored");
 
             bool isValidAssociation =
-                    FourAxisFabrication::updateAssociationIfNotVisible(smoothedMesh, data, checkMode);
+                    FourAxisFabrication::recheckVisibility(smoothedMesh, data, checkMode);
 
             tCheck.stopAndPrint();
 
@@ -448,16 +452,18 @@ void FourAxisFabricationManager::extractSurfaces() {
 /* ----- VISUALIZATION METHODS ------ */
 
 /**
- * @brief Update drawable meshes
+ * @brief Add drawable meshes
  */
-void FourAxisFabricationManager::updateDrawableMeshes() {
+void FourAxisFabricationManager::addDrawableMeshes(const std::string& meshName) {
     //Create drawable meshes (already in the canvas)
     drawableOriginalMesh = cg3::DrawableEigenMesh(originalMesh);
     drawableSmoothedMesh = cg3::DrawableEigenMesh(smoothedMesh);
 
-    mainWindow.refreshDrawableObject(&drawableOriginalMesh);
-    mainWindow.refreshDrawableObject(&drawableSmoothedMesh);
+    mainWindow.pushDrawableObject(&drawableOriginalMesh, meshName);
+    mainWindow.pushDrawableObject(&drawableSmoothedMesh, "Smoothed mesh");
 }
+
+
 
 /**
  * @brief Add drawable cut components to the canvas
@@ -496,7 +502,17 @@ void FourAxisFabricationManager::addDrawableSurfaces() {
     mainWindow.pushDrawableObject(&drawableComponentsContainer, "Surfaces");
 }
 
+/**
+ * @brief Update drawable meshes
+ */
+void FourAxisFabricationManager::updateDrawableMeshes() {
+    //Create drawable meshes (already in the canvas)
+    drawableOriginalMesh = cg3::DrawableEigenMesh(originalMesh);
+    drawableSmoothedMesh = cg3::DrawableEigenMesh(smoothedMesh);
 
+    mainWindow.refreshDrawableObject(&drawableOriginalMesh);
+    mainWindow.refreshDrawableObject(&drawableSmoothedMesh);
+}
 
 /**
  * @brief Delte all drawable objects from the canvas
@@ -507,28 +523,29 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
         mainWindow.deleteDrawableObject(&drawableOriginalMesh);
         mainWindow.deleteDrawableObject(&drawableSmoothedMesh);
 
+        drawableOriginalMesh.clear();
+        drawableSmoothedMesh.clear();
+
         //Delete cut components
         if (areComponentsCut) {
             mainWindow.deleteDrawableObject(&drawableMinComponent);
             mainWindow.deleteDrawableObject(&drawableMaxComponent);
             mainWindow.deleteDrawableObject(&drawableFourAxisComponent);
 
+            drawableMinComponent.clear();
+            drawableMaxComponent.clear();
+            drawableFourAxisComponent.clear();
+
             //Delete surfaces
             if (areSurfacesExtracted) {
                 mainWindow.deleteDrawableObject(&drawableComponentsContainer);
+                drawableComponentsContainer.clear();
+
+                drawableComponents.clear();
             }
         }
     }    
 
-    drawableOriginalMesh.clear();
-    drawableSmoothedMesh.clear();
-
-    drawableMinComponent.clear();
-    drawableMaxComponent.clear();
-    drawableFourAxisComponent.clear();
-
-    drawableComponents.clear();
-    drawableComponentsContainer.clear();
 }
 
 
@@ -904,12 +921,10 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
 
                 //If a smoothed mesh has been found
                 if (isMeshLoaded) {
-                    updateDrawableMeshes();
+                    std::string meshName = meshFile.substr(meshFile.find_last_of("/") + 1);
+                    addDrawableMeshes(meshName);
 
                     //Add meshes to the canvas, hiding the original one
-                    std::string meshName = meshFile.substr(meshFile.find_last_of("/") + 1);
-                    mainWindow.pushDrawableObject(&drawableOriginalMesh, meshName);
-                    mainWindow.pushDrawableObject(&drawableSmoothedMesh, "Smoothed mesh");
                     mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
 
                     loadedMeshFile = meshFile;
@@ -984,12 +999,10 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
 
         //If the meshes have been successfully loaded
         if (isMeshLoaded){
-            updateDrawableMeshes();
+            std::string meshName = loadedMeshFile.substr(loadedMeshFile.find_last_of("/") + 1);
+            addDrawableMeshes(meshName);
 
             //Add meshes to the canvas, hiding the original one
-            std::string meshName = loadedMeshFile.substr(loadedMeshFile.find_last_of("/") + 1);
-            mainWindow.pushDrawableObject(&drawableOriginalMesh, meshName);
-            mainWindow.pushDrawableObject(&drawableSmoothedMesh, "Smoothed mesh");
             mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
         }
         else {
