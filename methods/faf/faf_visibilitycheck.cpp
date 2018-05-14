@@ -16,9 +16,11 @@
 
 #include <cg3/cgal/aabbtree.h>
 
+#include "faf_utilities.h"
+
 //Uncomment if you want to check conditions
 //(more efficient when uncommented)
-#define RELEASECHECK
+//#define RELEASECHECK
 
 
 namespace FourAxisFabrication {
@@ -87,38 +89,6 @@ void getVisibilityProjectionOnZ(
         cg3::AABBTree<2, cg3::Triangle2Dd>& aabbTree,
         cg3::Array2D<int>& visibility);
 
-
-/* Triangle overlap and AABB functions */
-
-double triangleAABBExtractor(
-        const cg3::Triangle2Dd& triangle,
-        const cg3::AABBValueType& valueType,
-        const int& dim);
-
-
-/* Comparators */
-
-bool triangleComparator(const cg3::Triangle2Dd& t1, const cg3::Triangle2Dd& t2);
-
-/**
- * @brief Comparator for Z-value of points of a mesh
- */
-struct BarycenterZComparator {
-    const cg3::EigenMesh& m;
-    BarycenterZComparator(const cg3::EigenMesh& m) : m(m) {}
-    bool operator()(unsigned int f1, unsigned int f2){
-        const cg3::Pointi& ff1 = m.getFace(f1);
-        const cg3::Pointi& ff2 = m.getFace(f2);
-        cg3::Pointd c1 = (m.getVertex(ff1.x()) + m.getVertex(ff1.y()) + m.getVertex(ff1.z()))/3;
-        cg3::Pointd c2 = (m.getVertex(ff2.x()) + m.getVertex(ff2.y()) + m.getVertex(ff2.z()))/3;
-        if (c1.z() < c2.z())
-            return true;
-        if (c2.z() < c1.z())
-            return false;
-        return c1 < c2;
-    }
-};
-
 }
 
 
@@ -155,31 +125,38 @@ void getVisibility(
  * It is implemented by a ray casting algorithm or checking the intersections
  * in a 2D projection from a given direction.
  * @param[in] mesh Input mesh
- * @param[in] data Four axis fabrication data
+ * @param[in] recheckVisibility Recheck visibility. If false, the current association is copied
+ * @param[out] data Four axis fabrication data
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  * @returns True if all the elements are visibile from the associated directions,
  * false otherwise.
  */
-bool recheckVisibility(
-        const cg3::EigenMesh& mesh,
+bool calculateRestoredVisibility(
+        const bool recheckVisibility,
         Data& data,
         CheckMode checkMode)
 {
+    cg3::EigenMesh& targetMesh = data.restoredMesh;
+
+    data.restoredAssociation = data.association;
+
     bool result = true;
 
-    const int nDirections = (data.directions.size()-2)/2;
+    if (recheckVisibility) {
+        const int nDirections = (data.directions.size()-2)/2;
 
-    Data newData;
-    newData.minExtremes = data.minExtremes;
-    newData.maxExtremes = data.maxExtremes;
+        Data newData;
+        newData.minExtremes = data.minExtremes;
+        newData.maxExtremes = data.maxExtremes;
 
-    internal::initializeDataForVisibilityCheck(mesh, nDirections, false, newData);
-    internal::computeVisibility(mesh, nDirections, newData.association, newData.directions, newData.angles, newData.visibility, checkMode);
+        internal::initializeDataForVisibilityCheck(targetMesh, nDirections, false, newData);
+        internal::computeVisibility(targetMesh, nDirections, newData.association, newData.directions, newData.angles, newData.visibility, checkMode);
 
-    for (size_t faceId = 0; faceId < data.association.size(); faceId++) {
-        if (data.association[faceId] > 0 && newData.visibility(data.association[faceId], faceId) < 1) {
-            data.association[faceId] = -1;
-            result = false;
+        for (size_t faceId = 0; faceId < data.association.size(); faceId++) {
+            if (data.restoredAssociation[faceId] > 0 && newData.visibility(data.restoredAssociation[faceId], faceId) < 1) {
+                data.restoredAssociation[faceId] = -1;
+                result = false;
+            }
         }
     }
 
@@ -278,7 +255,7 @@ void initializeDataForVisibilityCheck(
  * @param[in] numberDirections Number of directions to be checked
  * @param[in] association Current association
  * @param[out] directions Vector of directions
- * @param[out] directionsAngle Vector of angle (respect to z-axis)
+ * @param[out] angles Vector of angle (respect to z-axis)
  * @param[out] visibility Output visibility
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  */
@@ -287,7 +264,7 @@ void computeVisibility(
         const unsigned int nDirections,
         const std::vector<int>& association,
         std::vector<cg3::Vec3>& directions,
-        std::vector<double>& directionsAngle,
+        std::vector<double>& angles,
         cg3::Array2D<int>& visibility,
         CheckMode checkMode)
 {
@@ -320,10 +297,10 @@ void computeVisibility(
     cg3::Vec3 dir(0,0,1);
 
     //Set angles
-    directionsAngle.resize(nDirections*2);
+    angles.resize(nDirections*2);
     double sum = 0;
     for(unsigned int i = 0; i < nDirections*2; i++) {
-        directionsAngle[i] = sum;
+        angles[i] = sum;
         sum += stepAngle;
     }
 
@@ -545,9 +522,9 @@ void getVisibilityProjectionOnZ(
         cg3::Array2D<int>& visibility)
 {
     cg3::AABBTree<2, cg3::Triangle2Dd> aabbTreeMax(
-                &internal::triangleAABBExtractor, &internal::triangleComparator);
+                &internal::triangle2DAABBExtractor, &internal::triangle2DComparator);
     cg3::AABBTree<2, cg3::Triangle2Dd> aabbTreeMin(
-                &internal::triangleAABBExtractor, &internal::triangleComparator);
+                &internal::triangle2DAABBExtractor, &internal::triangle2DComparator);
 
     //Order the face by z-coordinate of the barycenter
     std::vector<unsigned int> orderedZFaces(faces);
@@ -605,7 +582,7 @@ void getVisibilityProjectionOnZ(
         cg3::Point2Dd v2Projected(v2.x(), v2.y());
         cg3::Point2Dd v3Projected(v3.x(), v3.y());
 
-        //Create segments
+        //Create triangle
         cg3::Triangle2Dd triangle(v1Projected, v2Projected, v3Projected);        
         cg3::sortTriangle2DPointsAndReorderCounterClockwise(triangle);
 
@@ -622,67 +599,6 @@ void getVisibilityProjectionOnZ(
         }
     }
 
-}
-
-
-
-/* ----- TRIANGLE OVERLAP AND AABB FUNCTIONS ----- */
-
-/**
- * @brief Extract a 2D segment AABB
- * @param[in] triangle Input triangle
- * @param[in] valueType Type of the value requested (MIN or MAX)
- * @param[in] dim Dimension requested of the value (0 for x, 1 for y)
- * @return Requested coordinate of the AABB
- */
-double triangleAABBExtractor(
-        const cg3::Triangle2Dd& triangle,
-        const cg3::AABBValueType& valueType,
-        const int& dim)
-{
-    if (valueType == cg3::AABBValueType::MIN) {
-        switch (dim) {
-        case 1:
-            return (double) std::min(std::min(triangle.v1().x(), triangle.v2().x()), triangle.v3().x());
-        case 2:
-            return (double) std::min(std::min(triangle.v1().y(), triangle.v2().y()), triangle.v3().y());
-        }
-    }
-    else if (valueType == cg3::AABBValueType::MAX) {
-        switch (dim) {
-        case 1:
-            return (double) std::max(std::max(triangle.v1().x(), triangle.v2().x()), triangle.v3().x());
-        case 2:
-            return (double) std::max(std::max(triangle.v1().y(), triangle.v2().y()), triangle.v3().y());
-        }
-    }
-    throw new std::runtime_error("Impossible to extract an AABB value.");
-}
-
-
-
-
-
-/* ----- COMPARATORS ----- */
-
-/**
- * @brief Comparator for triangles
- * @param t1 Triangle 1
- * @param t2 Triangle 2
- * @return True if triangle 1 is less than triangle 2
- */
-bool triangleComparator(const cg3::Triangle2Dd& t1, const cg3::Triangle2Dd& t2) {
-    if (t1.v1() < t2.v1())
-        return true;
-    if (t2.v1() < t1.v1())
-        return false;
-
-    if (t1.v2() < t2.v2())
-        return true;
-    if (t2.v2() < t1.v2())
-        return false;
-
-    return t1.v3() < t2.v3();
 }
 
 

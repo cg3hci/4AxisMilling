@@ -54,27 +54,32 @@ MULTI_LABEL_OPTIMIZATION {
 HEADERS += \
     methods/fouraxisfabrication.h \
     methods/faf/faf_data.h \
+    methods/faf/faf_optimalrotation.h \
+    methods/faf/faf_extremes.h \
     methods/faf/faf_utilities.h \
     methods/faf/faf_visibilitycheck.h \
     methods/faf/faf_minimization.h \
-    GUI/managers/fouraxisfabricationmanager.h \
     methods/faf/faf_optimization.h \
     methods/faf/faf_smoothing.h \
     methods/faf/faf_boolean.h \
-    methods/faf/faf_extract.h
+    methods/faf/faf_extract.h \
+    GUI/managers/fouraxisfabricationmanager.h
 
 SOURCES += \
     main.cpp \
     methods/fouraxisfabrication.cpp \
     methods/faf/faf_data.cpp \
+    methods/faf/faf_optimalrotation.cpp \
+    methods/faf/faf_extremes.cpp \
     methods/faf/faf_utilities.cpp \
     methods/faf/faf_visibilitycheck.cpp \
     methods/faf/faf_minimization.cpp \
-    GUI/managers/fouraxisfabricationmanager.cpp \
     methods/faf/faf_optimization.cpp \
     methods/faf/faf_smoothing.cpp \
     methods/faf/faf_boolean.cpp \
-    methods/faf/faf_extract.cpp
+    methods/faf/faf_extract.cpp \
+    GUI/managers/fouraxisfabricationmanager.cpp
+
 
 FORMS += \
     GUI/managers/fouraxisfabricationmanager.ui

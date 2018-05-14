@@ -13,7 +13,7 @@ namespace FourAxisFabrication {
 /**
  * @brief Compute the entire algorithm for four axis fabrication.
  *
- * @param[out] mesh Original mesh
+ * @param[out] originalMesh Original mesh
  * @param[out] smoothedMesh Smoothed mesh
  * @param[in] nDirections Number of directions to check
  * @param[in] deterministic Deterministic approach (if false it is randomized)
@@ -31,7 +31,7 @@ namespace FourAxisFabrication {
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  */
 void computeEntireAlgorithm(
-        cg3::EigenMesh& mesh,
+        cg3::EigenMesh& originalMesh,
         cg3::EigenMesh& smoothedMesh,
         const unsigned int nOrientations,
         const bool deterministic,
@@ -49,7 +49,7 @@ void computeEntireAlgorithm(
 
     //Get optimal mesh orientation
     FourAxisFabrication::rotateToOptimalOrientation(
-                mesh,
+                originalMesh,
                 smoothedMesh,
                 nOrientations,
                 deterministic);
@@ -81,25 +81,23 @@ void computeEntireAlgorithm(
                 limitAngle,
                 data);
 
+
     //Restore frequencies
     FourAxisFabrication::restoreFrequencies(
-                mesh,
-                data,
                 frequenciesIterations,
                 occlusionsCheck,
-                smoothedMesh);
+                originalMesh,
+                smoothedMesh,
+                data);
 
-    if (recheckVisibility) {
-        //Update association after frequencies are restored
-        FourAxisFabrication::recheckVisibility(
-                    smoothedMesh,
-                    data,
-                    checkMode);
-    }
+    //Get association after frequencies are restored
+    FourAxisFabrication::calculateRestoredVisibility(
+                recheckVisibility,
+                data,
+                checkMode);
 
     //Cut components
     FourAxisFabrication::cutComponents(
-                smoothedMesh,
                 data);
 
 

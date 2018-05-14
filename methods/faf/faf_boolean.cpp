@@ -21,14 +21,14 @@ void resetAssociationData(
 
 /**
  * @brief Cut components (min and max extremes)
- * @param mesh Input mesh
- * @param data Four axis fabrication data
+ * @param[out] data Four axis fabrication data
  */
 void cutComponents(
-        const cg3::EigenMesh& mesh,
         Data& data)
 {    
     typedef cg3::libigl::CSGTree CSGTree;
+
+    const cg3::EigenMesh& restoredMesh = data.restoredMesh;
 
     //Referencing data
     std::vector<int>& minComponentAssociation = data.minComponentAssociation;
@@ -39,17 +39,17 @@ void cutComponents(
     int maxLabel = data.targetDirections[data.targetDirections.size()-1];
 
     //Referencing bounding box of the mesh
-    cg3::BoundingBox bb = mesh.getBoundingBox();
+    cg3::BoundingBox bb = restoredMesh.getBoundingBox();
 
 
     //Get minimum x in the faces of the max extremes
-    double maxLevelSetX = mesh.getVertex(mesh.getFace(data.maxExtremes[0]).x()).x();
+    double maxLevelSetX = restoredMesh.getVertex(restoredMesh.getFace(data.maxExtremes[0]).x()).x();
     for (int maxIndex : data.maxExtremes) {
-        cg3::Pointi face = mesh.getFace(maxIndex);
+        cg3::Pointi face = restoredMesh.getFace(maxIndex);
 
-        maxLevelSetX = std::min(maxLevelSetX, mesh.getVertex(face.x()).x());
-        maxLevelSetX = std::min(maxLevelSetX, mesh.getVertex(face.y()).x());
-        maxLevelSetX = std::min(maxLevelSetX, mesh.getVertex(face.z()).x());
+        maxLevelSetX = std::min(maxLevelSetX, restoredMesh.getVertex(face.x()).x());
+        maxLevelSetX = std::min(maxLevelSetX, restoredMesh.getVertex(face.y()).x());
+        maxLevelSetX = std::min(maxLevelSetX, restoredMesh.getVertex(face.z()).x());
     }    
     //Set max extremes bounding box
     cg3::BoundingBox maxBB = bb;
@@ -57,13 +57,13 @@ void cutComponents(
 
 
     //Get maximum x in the faces of the min extremes
-    double minLevelSetX = mesh.getVertex(mesh.getFace(data.minExtremes[0]).x()).x();
+    double minLevelSetX = restoredMesh.getVertex(restoredMesh.getFace(data.minExtremes[0]).x()).x();
     for (int minIndex : data.minExtremes) {
-        cg3::Pointi face = mesh.getFace(minIndex);
+        cg3::Pointi face = restoredMesh.getFace(minIndex);
 
-        minLevelSetX = std::max(minLevelSetX, mesh.getVertex(face.x()).x());
-        minLevelSetX = std::max(minLevelSetX, mesh.getVertex(face.y()).x());
-        minLevelSetX = std::max(minLevelSetX, mesh.getVertex(face.z()).x());
+        minLevelSetX = std::max(minLevelSetX, restoredMesh.getVertex(face.x()).x());
+        minLevelSetX = std::max(minLevelSetX, restoredMesh.getVertex(face.y()).x());
+        minLevelSetX = std::max(minLevelSetX, restoredMesh.getVertex(face.z()).x());
     } 
     //Set min extremes bounding box
     cg3::BoundingBox minBB = bb;
@@ -71,7 +71,7 @@ void cutComponents(
 
 
     //Get CSGTrees
-    CSGTree csgMesh = cg3::libigl::eigenMeshToCSGTree(mesh);
+    CSGTree csgMesh = cg3::libigl::eigenMeshToCSGTree(restoredMesh);
     CSGTree csgMaxBB = cg3::libigl::eigenMeshToCSGTree(
                 cg3::EigenMeshAlgorithms::makeBox(maxBB));
     CSGTree csgMinBB = cg3::libigl::eigenMeshToCSGTree(
@@ -96,11 +96,11 @@ void cutComponents(
 
 
     //Restore association of cut components
-    resetAssociationData(csgMesh, csgMinResult, data.association, minComponentAssociation,
+    resetAssociationData(csgMesh, csgMinResult, data.restoredAssociation, minComponentAssociation,
                          minLabel); //Set everything to min index
-    resetAssociationData(csgMesh, csgMaxResult, data.association, maxComponentAssociation,
+    resetAssociationData(csgMesh, csgMaxResult, data.restoredAssociation, maxComponentAssociation,
                          maxLabel); //Set eveyrthing to max index
-    resetAssociationData(csgMesh, csgFourAxisResult, data.association, fourAxisComponentAssociation);
+    resetAssociationData(csgMesh, csgFourAxisResult, data.restoredAssociation, fourAxisComponentAssociation);
 
 
     //Update mesh data

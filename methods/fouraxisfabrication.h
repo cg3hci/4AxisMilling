@@ -8,6 +8,8 @@
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
 
 #include "faf/faf_data.h"
+#include "faf/faf_optimalrotation.h"
+#include "faf/faf_extremes.h"
 #include "faf/faf_visibilitycheck.h"
 #include "faf/faf_utilities.h"
 #include "faf/faf_minimization.h"
@@ -15,6 +17,7 @@
 #include "faf/faf_smoothing.h"
 #include "faf/faf_boolean.h"
 #include "faf/faf_extract.h"
+
 
 namespace FourAxisFabrication {
 

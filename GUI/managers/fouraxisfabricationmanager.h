@@ -54,6 +54,8 @@ private:
     cg3::DrawableEigenMesh drawableOriginalMesh;
     cg3::DrawableEigenMesh drawableSmoothedMesh;
 
+    cg3::DrawableEigenMesh drawableRestoredMesh;
+
     cg3::DrawableEigenMesh drawableMinComponent;
     cg3::DrawableEigenMesh drawableMaxComponent;
     cg3::DrawableEigenMesh drawableFourAxisComponent;
@@ -106,6 +108,7 @@ private:
     /* Visualization methods */
 
     void addDrawableMeshes(const std::string& meshName);
+    void addDrawableRestoredMesh();
     void addDrawableCutComponents();
     void addDrawableSurfaces();
     void updateDrawableMeshes();
@@ -113,17 +116,17 @@ private:
     void deleteDrawableObjects();
 
     void resetCameraDirection();
-    void setCameraDirection(cg3::Vec3 dir);
+    void setCameraDirection(const cg3::Vec3& dir);
 
     void initializeVisualizationSlider();
-    void updateVisualization();
+    void updateVisualizationColors();
 
-    void visualizeMesh();
-    void visualizeExtremes();
-    void visualizeVisibility();
-    void visualizeTargetDirections();
-    void visualizeAssociation();
-    void visualizeAssociation(
+    void colorizeMesh();
+    void colorizeExtremes();
+    void colorizeVisibility();
+    void colorizeTargetDirections();
+    void colorizeAssociation();
+    void colorizeAssociation(
             cg3::DrawableEigenMesh& drawableMesh,
             const std::vector<int>& association,
             const std::vector<unsigned int>& targetDirections);

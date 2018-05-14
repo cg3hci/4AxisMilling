@@ -14,7 +14,6 @@
 namespace FourAxisFabrication {
 
 void cutComponents(
-        const cg3::EigenMesh& mesh,
         Data& data);
 
 

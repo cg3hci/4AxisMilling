@@ -19,19 +19,36 @@ namespace FourAxisFabrication {
 /* Data for four axis fabrication */
 
 struct Data {
+
+    /* Min/max extremes */
+
     std::vector<unsigned int> minExtremes;
     std::vector<unsigned int> maxExtremes;
+
+    /* Directions */
 
     std::vector<cg3::Vec3> directions;
     std::vector<double> angles;
 
-    cg3::Array2D<int> visibility;
+    /* Visibility */
 
+    cg3::Array2D<int> visibility;
     std::vector<unsigned int> nonVisibleFaces;
+
+    /* Target directions */
 
     std::vector<unsigned int> targetDirections;
 
+    /* Associations */
+
     std::vector<int> association;
+
+    /* Frequencies restored data */
+
+    cg3::EigenMesh restoredMesh;
+    std::vector<int> restoredAssociation;
+
+    /* Extracted components */
 
     cg3::EigenMesh minComponent;
     cg3::EigenMesh maxComponent;
@@ -40,6 +57,8 @@ struct Data {
     std::vector<int> minComponentAssociation;
     std::vector<int> maxComponentAssociation;
     std::vector<int> fourAxisComponentAssociation;
+
+    /* Surface results */
 
     std::vector<cg3::EigenMesh> surfaces;
     std::vector<unsigned int> surfacesAssociation;

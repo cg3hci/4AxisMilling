@@ -16,11 +16,11 @@ namespace FourAxisFabrication {
 /* Restore frequencies */
 
 void restoreFrequencies(
-        const cg3::EigenMesh& originalMesh,
-        const Data& data,
         const unsigned int iterations,
-        const bool occlusionCheck,
-        cg3::EigenMesh& targetMesh);
+        const bool occlusionsCheck,
+        const cg3::EigenMesh& originalMesh,
+        cg3::EigenMesh& smoothedMesh,
+        Data& data);
 
 }
 

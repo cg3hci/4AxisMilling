@@ -23,8 +23,8 @@ void getVisibility(
         CheckMode checkMode);
 
 
-bool recheckVisibility(
-        const cg3::EigenMesh& mesh,
+bool calculateRestoredVisibility(
+        const bool recheckVisibility,
         Data& data,
         CheckMode checkMode = PROJECTION);
 

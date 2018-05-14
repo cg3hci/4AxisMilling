@@ -23,6 +23,9 @@ void Data::clear() {
 
     association.clear();
 
+    restoredMesh.clear();
+    restoredAssociation.clear();
+
     minComponent.clear();
     maxComponent.clear();
     fourAxisComponent.clear();
