@@ -46,6 +46,7 @@ void computeVisibility(
         std::vector<cg3::Vec3>& directions,
         std::vector<double>& directionsAngle,
         cg3::Array2D<int>& visibility,
+        const double heightfieldAngle,
         CheckMode checkMode = PROJECTION);
 
 void detectNonVisibleFaces(
@@ -60,7 +61,8 @@ void getVisibilityRayShootingOnZ(
         const std::vector<unsigned int>& faces,
         const unsigned int nDirections,
         const unsigned int directionIndex,
-        cg3::Array2D<int>& visibility);
+        cg3::Array2D<int>& visibility,
+        const double heightfieldAngle);
 
 void getVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
@@ -68,7 +70,8 @@ void getVisibilityRayShootingOnZ(
         const unsigned int directionIndex,
         const cg3::Vec3& direction,
         cg3::cgal::AABBTree& aabbTree,
-        cg3::Array2D<int>& visibility);
+        cg3::Array2D<int>& visibility,
+        const double heightfieldAngle);
 
 
 
@@ -79,7 +82,8 @@ void getVisibilityProjectionOnZ(
         const std::vector<unsigned int>& faces,
         const unsigned int nDirections,
         const unsigned int directionIndex,
-        cg3::Array2D<int>& visibility);
+        cg3::Array2D<int>& visibility,
+        const double heightfieldAngle);
 
 void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
@@ -87,7 +91,8 @@ void getVisibilityProjectionOnZ(
         const unsigned int directionIndex,
         const cg3::Vec3& direction,
         cg3::AABBTree<2, cg3::Triangle2Dd>& aabbTree,
-        cg3::Array2D<int>& visibility);
+        cg3::Array2D<int>& visibility,
+        const double heightfieldAngle);
 
 }
 
@@ -105,6 +110,7 @@ void getVisibilityProjectionOnZ(
  * @param[in] numberDirections Number of directions to be checked
  * @param[in] fixExtremeAssociation Set if faces in the extremes must be already and unconditionally
  * @param[out] data Four axis fabrication data
+ * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  */
 void getVisibility(
@@ -112,10 +118,11 @@ void getVisibility(
         const unsigned int nDirections,
         const bool fixExtremeAssociation,
         Data& data,
+        const double heightfieldAngle,
         CheckMode checkMode)
 {
     internal::initializeDataForVisibilityCheck(mesh, nDirections, fixExtremeAssociation, data);
-    internal::computeVisibility(mesh, nDirections, data.association, data.directions, data.angles, data.visibility, checkMode);
+    internal::computeVisibility(mesh, nDirections, data.association, data.directions, data.angles, data.visibility, heightfieldAngle, checkMode);
     internal::detectNonVisibleFaces(data);
 }
 
@@ -124,39 +131,35 @@ void getVisibility(
  * @brief Check visibility of each face of the mesh from the associated direction.
  * It is implemented by a ray casting algorithm or checking the intersections
  * in a 2D projection from a given direction.
- * @param[in] mesh Input mesh
- * @param[in] recheckVisibility Recheck visibility. If false, the current association is copied
  * @param[out] data Four axis fabrication data
+ * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  * @returns True if all the elements are visibile from the associated directions,
  * false otherwise.
  */
-bool calculateRestoredVisibility(
-        const bool recheckVisibility,
+bool checkRestoredFrequenciesVisibility(
         Data& data,
+        const double heightfieldAngle,
         CheckMode checkMode)
 {
     cg3::EigenMesh& targetMesh = data.restoredMesh;
-
     data.restoredAssociation = data.association;
 
     bool result = true;
 
-    if (recheckVisibility) {
-        const int nDirections = (data.directions.size()-2)/2;
+    const int nDirections = (data.directions.size()-2)/2;
 
-        Data newData;
-        newData.minExtremes = data.minExtremes;
-        newData.maxExtremes = data.maxExtremes;
+    Data newData;
+    newData.minExtremes = data.minExtremes;
+    newData.maxExtremes = data.maxExtremes;
 
-        internal::initializeDataForVisibilityCheck(targetMesh, nDirections, false, newData);
-        internal::computeVisibility(targetMesh, nDirections, newData.association, newData.directions, newData.angles, newData.visibility, checkMode);
+    internal::initializeDataForVisibilityCheck(targetMesh, nDirections, false, newData);
+    internal::computeVisibility(targetMesh, nDirections, newData.association, newData.directions, newData.angles, newData.visibility, heightfieldAngle, checkMode);
 
-        for (size_t faceId = 0; faceId < data.association.size(); faceId++) {
-            if (data.restoredAssociation[faceId] > 0 && newData.visibility(data.restoredAssociation[faceId], faceId) < 1) {
-                data.restoredAssociation[faceId] = -1;
-                result = false;
-            }
+    for (size_t faceId = 0; faceId < data.restoredAssociation.size(); faceId++) {
+        if (data.restoredAssociation[faceId] > 0 && newData.visibility(data.restoredAssociation[faceId], faceId) < 1) {
+            data.restoredAssociation[faceId] = -1;
+            result = false;
         }
     }
 
@@ -257,6 +260,7 @@ void initializeDataForVisibilityCheck(
  * @param[out] directions Vector of directions
  * @param[out] angles Vector of angle (respect to z-axis)
  * @param[out] visibility Output visibility
+ * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  */
 void computeVisibility(
@@ -266,10 +270,9 @@ void computeVisibility(
         std::vector<cg3::Vec3>& directions,
         std::vector<double>& angles,
         cg3::Array2D<int>& visibility,
+        const double heightfieldAngle,
         CheckMode checkMode)
 {
-
-
     //Set target faces to be checked
     std::vector<unsigned int> targetFaces;
 
@@ -308,11 +311,11 @@ void computeVisibility(
     for(unsigned int dirIndex = 0; dirIndex < nDirections; dirIndex++){
         if (checkMode == RAYSHOOTING) {
             //Check visibility ray shooting
-            internal::getVisibilityRayShootingOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility);
+            internal::getVisibilityRayShootingOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility, heightfieldAngle);
         }
         else {
             //Check visibility with projection
-            internal::getVisibilityProjectionOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility);
+            internal::getVisibilityProjectionOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility, heightfieldAngle);
         }
 
         //Add the current directions
@@ -368,14 +371,18 @@ void detectNonVisibleFaces(
  * @param[out] direction Current direction
  * @param[out] visibility Map the visibility from the given directions
  * to each face.
+ * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  */
 void getVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
         const unsigned int nDirections,
         const unsigned int directionIndex,
-        cg3::Array2D<int>& visibility)
+        cg3::Array2D<int>& visibility,
+        const double heightfieldAngle)
 {
+    const double heightFieldLimit = cos(heightfieldAngle);
+
     //Create cgal AABB on the current mesh
     cg3::cgal::AABBTree tree(mesh);
 
@@ -438,7 +445,7 @@ void getVisibilityRayShootingOnZ(
             //Save face with the maximum Z barycenter and that is visible
             //from (0,0,1)
             if (currentBarycenter.z() > maxZCoordinate &&
-                    zDirMax.dot(mesh.getFaceNormal(intersectedFace)) >= 0)
+                    zDirMax.dot(mesh.getFaceNormal(intersectedFace)) >= heightFieldLimit)
             {
                 maxZFace = intersectedFace;
                 maxZCoordinate = currentBarycenter.z();
@@ -447,7 +454,7 @@ void getVisibilityRayShootingOnZ(
             //Save face with the minimum Z barycenter and that is visible
             //from (0,0,-1) direction
             if (currentBarycenter.z() < minZCoordinate &&
-                    zDirMin.dot(mesh.getFaceNormal(intersectedFace)) >= 0)
+                    zDirMin.dot(mesh.getFaceNormal(intersectedFace)) >= heightFieldLimit)
             {
                 minZFace = intersectedFace;
                 minZCoordinate = currentBarycenter.z();
@@ -460,10 +467,10 @@ void getVisibilityRayShootingOnZ(
 
 
 
-        assert(zDirMax.dot(mesh.getFaceNormal(maxZFace)) >= 0);
+        assert(zDirMax.dot(mesh.getFaceNormal(maxZFace)) >= heightFieldLimit);
 #ifdef RELEASECHECK
         //TO BE DELETED ON FINAL RELEASE
-        if (zDirMax.dot(mesh.getFaceNormal(maxZFace)) < 0) {
+        if (zDirMax.dot(mesh.getFaceNormal(maxZFace)) < heightFieldLimit) {
             std::cout << "ERROR: not visible triangle, dot product with z-axis is less than 0 for the direction " << mesh.getFaceNormal(maxZFace) << std::endl;
             exit(1);
         }
@@ -478,10 +485,10 @@ void getVisibilityRayShootingOnZ(
         }
 #endif
 
-        assert(zDirMin.dot(mesh.getFaceNormal(minZFace)) >= 0);
+        assert(zDirMin.dot(mesh.getFaceNormal(minZFace)) >= heightFieldLimit);
 #ifdef RELEASECHECK
         //TO BE DELETED ON FINAL RELEASE
-        if (zDirMin.dot(mesh.getFaceNormal(minZFace)) < 0) {
+        if (zDirMin.dot(mesh.getFaceNormal(minZFace)) < heightFieldLimit) {
             std::cout << "ERROR: not visible triangle, dot product with opposite of z-axis is less than 0 for the direction " << mesh.getFaceNormal(minZFace) << std::endl;
             exit(1);
         }
@@ -513,13 +520,15 @@ void getVisibilityRayShootingOnZ(
  * @param[out] direction Current direction
  * @param[out] visibility Map the visibility from the given directions
  * to each face.
+ * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  */
 void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
         const unsigned int nDirections,
         const unsigned int directionIndex,
-        cg3::Array2D<int>& visibility)
+        cg3::Array2D<int>& visibility,
+        const double heightfieldAngle)
 {
     cg3::AABBTree<2, cg3::Triangle2Dd> aabbTreeMax(
                 &internal::triangle2DAABBExtractor, &internal::triangle2DComparator);
@@ -539,7 +548,7 @@ void getVisibilityProjectionOnZ(
         unsigned int faceId = orderedZFaces[i];        
 
         internal::getVisibilityProjectionOnZ(
-                    mesh, faceId, directionIndex, zDirMax, aabbTreeMax, visibility);
+                    mesh, faceId, directionIndex, zDirMax, aabbTreeMax, visibility, heightfieldAngle);
     }
 
     //Start from the min z-coordinate face
@@ -547,7 +556,7 @@ void getVisibilityProjectionOnZ(
         unsigned int faceId = orderedZFaces[i];
 
         internal::getVisibilityProjectionOnZ(
-                    mesh, faceId, nDirections + directionIndex, zDirMin, aabbTreeMin, visibility);
+                    mesh, faceId, nDirections + directionIndex, zDirMin, aabbTreeMin, visibility, heightfieldAngle);
     }
 }
 
@@ -561,6 +570,8 @@ void getVisibilityProjectionOnZ(
  * @param[in] direction Direction
  * @param[out] aabbTree AABB tree with projections
  * @param[out] visibility Map the visibility from the given directions
+ * to each face.
+ * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  */
 void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
@@ -568,10 +579,13 @@ void getVisibilityProjectionOnZ(
         const unsigned int directionIndex,
         const cg3::Vec3& direction,
         cg3::AABBTree<2, cg3::Triangle2Dd>& aabbTree,
-        cg3::Array2D<int>& visibility)
+        cg3::Array2D<int>& visibility,
+        const double heightfieldAngle)
 {
-    //If it is visible checking the angle
-    if (direction.dot(mesh.getFaceNormal(faceId)) >= 0) {
+    const double heightFieldLimit = cos(heightfieldAngle);
+
+    //If it is visible (checking the angle between normal and the target direction)
+    if (direction.dot(mesh.getFaceNormal(faceId)) >= heightFieldLimit) {
         const cg3::Pointi& faceData = mesh.getFace(faceId);
         const cg3::Pointd& v1 = mesh.getVertex(faceData.x());
         const cg3::Pointd& v2 = mesh.getVertex(faceData.y());

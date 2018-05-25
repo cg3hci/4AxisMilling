@@ -14,9 +14,8 @@ namespace FourAxisFabrication {
  * @brief Get min and max extremes of the mesh along the x direction.
  * The algorithm stops when the current triangle is not visible
  * by related the direction (-x for min and +x for max).
- * @param mesh Input mesh
- * @param[out] minExtremes Min extremes on the x-axis of the mesh
- * @param[out] maxExtremes Max extremes on the x-axis of the mesh
+ * @param[in] mesh Input mesh
+ * @param[out] data Four axis fabrication data
  */
 void selectExtremesOnXAxis(
         const cg3::EigenMesh &mesh,

@@ -2,8 +2,8 @@
  * @author Stefano Nuvoli
  * @author Alessandro Muntoni
  */
-#ifndef FAF_SMOOTHING_H
-#define FAF_SMOOTHING_H
+#ifndef FAF_FREQUENCIES_H
+#define FAF_FREQUENCIES_H
 
 #include <vector>
 
@@ -17,11 +17,11 @@ namespace FourAxisFabrication {
 
 void restoreFrequencies(
         const unsigned int iterations,
-        const bool occlusionsCheck,
+        const double heightfieldAngle,
         const cg3::EigenMesh& originalMesh,
         cg3::EigenMesh& smoothedMesh,
         Data& data);
 
 }
 
-#endif // FAF_SMOOTHING_H
+#endif // FAF_FREQUENCIES_H

@@ -15,8 +15,10 @@ namespace FourAxisFabrication {
 
 void getOptimizedAssociation(
         const cg3::EigenMesh& mesh,
+        const double freeCostAngle,
+        const double dataSigma,
+        const double maxLabelAngle,
         const double compactness,
-        const double limitAngle,
         Data& data);
 
 

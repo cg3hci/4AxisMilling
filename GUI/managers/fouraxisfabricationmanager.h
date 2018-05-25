@@ -93,8 +93,6 @@ private:
 
     /* Computing methods */
 
-    void computeEntireAlgorithm();
-
     void optimalOrientation();
     void selectExtremes();
     void checkVisibility();
@@ -143,8 +141,6 @@ private slots:
 
 
     /* UI slots Four Axis Fabrication */
-
-    void on_computeEntireAlgorithmButton_clicked();
 
     void on_optimalOrientationButton_clicked();
     void on_selectExtremesButton_clicked();

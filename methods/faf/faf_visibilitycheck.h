@@ -20,12 +20,13 @@ void getVisibility(
         const unsigned int nDirections,
         const bool fixExtremeAssociation,
         Data& data,
+        const double heightFieldAngle,
         CheckMode checkMode);
 
 
-bool calculateRestoredVisibility(
-        const bool recheckVisibility,
+bool checkRestoredFrequenciesVisibility(
         Data& data,
+        const double heightFieldAngle,
         CheckMode checkMode = PROJECTION);
 
 }

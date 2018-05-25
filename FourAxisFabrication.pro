@@ -60,14 +60,13 @@ HEADERS += \
     methods/faf/faf_visibilitycheck.h \
     methods/faf/faf_minimization.h \
     methods/faf/faf_optimization.h \
-    methods/faf/faf_smoothing.h \
     methods/faf/faf_boolean.h \
     methods/faf/faf_extract.h \
+    methods/faf/faf_frequencies.h \
     GUI/managers/fouraxisfabricationmanager.h
 
 SOURCES += \
     main.cpp \
-    methods/fouraxisfabrication.cpp \
     methods/faf/faf_data.cpp \
     methods/faf/faf_optimalrotation.cpp \
     methods/faf/faf_extremes.cpp \
@@ -75,10 +74,11 @@ SOURCES += \
     methods/faf/faf_visibilitycheck.cpp \
     methods/faf/faf_minimization.cpp \
     methods/faf/faf_optimization.cpp \
-    methods/faf/faf_smoothing.cpp \
     methods/faf/faf_boolean.cpp \
     methods/faf/faf_extract.cpp \
-    GUI/managers/fouraxisfabricationmanager.cpp
+    methods/faf/faf_frequencies.cpp \
+    GUI/managers/fouraxisfabricationmanager.cpp \
+    methods/faf/faf_smoothingbackup.cpp
 
 
 FORMS += \
