@@ -63,6 +63,17 @@ struct Data {
     std::vector<cg3::EigenMesh> surfaces;
     std::vector<unsigned int> surfacesAssociation;
 
+
+    /* Results */
+
+    cg3::EigenMesh stock;
+
+    std::vector<cg3::EigenMesh> results;
+    std::vector<unsigned int> resultsAssociation;
+
+
+    /* Methods */
+
     void clear();
 };
 

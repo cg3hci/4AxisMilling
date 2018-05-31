@@ -112,8 +112,15 @@ void FourAxisFabricationManager::updateUI() {
     //Cut components
     ui->cutComponentsButton->setEnabled(!areComponentsCut);
 
-    //Extract surfaces
-    ui->extractSurfacesButton->setEnabled(!areSurfacesExtracted);
+    //Extract results
+    ui->extractResultsButton->setEnabled(!areResultsExtracted);
+    ui->extractResultsStockLengthLabel->setEnabled(!areResultsExtracted);
+    ui->extractResultsStockLengthSpinBox->setEnabled(!areResultsExtracted);
+    ui->extractResultsStockDiameterLabel->setEnabled(!areResultsExtracted);
+    ui->extractResultsStockDiameterSpinBox->setEnabled(!areResultsExtracted);
+    ui->extractResultsAngleLabel->setEnabled(!areResultsExtracted);
+    ui->extractResultsAngleSpinBox->setEnabled(!areResultsExtracted);
+    ui->extractResultsRotateCheckBox->setEnabled(!areResultsExtracted);
 
 
     // ----- Visualization -----
@@ -143,7 +150,7 @@ void FourAxisFabricationManager::clearData() {
     isAssociationComputed = false;
     areFrequenciesRestored = false;
     areComponentsCut = false;
-    areSurfacesExtracted = false;
+    areResultsExtracted = false;
 
     data.clear();
 
@@ -380,10 +387,10 @@ void FourAxisFabricationManager::cutComponents() {
 }
 
 /**
- * @brief Extract surfaces
+ * @brief Extract results
  */
-void FourAxisFabricationManager::extractSurfaces() {
-    if (!areSurfacesExtracted) {
+void FourAxisFabricationManager::extractResults() {
+    if (!areResultsExtracted) {
         optimalOrientation();
         selectExtremes();
         checkVisibility();
@@ -392,17 +399,22 @@ void FourAxisFabricationManager::extractSurfaces() {
         restoreFrequencies();
         cutComponents();
 
+        //Get UI data
+        double stockLength = ui->extractResultsStockLengthSpinBox->value();
+        double stockDiameter = ui->extractResultsStockDiameterSpinBox->value();
+        double surroundingAngle = ui->extractResultsAngleSpinBox->value() / 180.0 * M_PI;
+        bool rotateSurfaces = ui->extractResultsRotateCheckBox->isChecked();
 
-        cg3::Timer t("Extract surfaces");
+        cg3::Timer t("Extract results");
 
-        //Extract surfaces
-        FourAxisFabrication::extractSurfaces(data);
+        //Extract results
+        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, surroundingAngle, rotateSurfaces);
 
         t.stopAndPrint();
 
-        areSurfacesExtracted = true;
+        areResultsExtracted = true;
 
-        addDrawableSurfaces();
+        addDrawableResults();
     }
 }
 
@@ -458,22 +470,36 @@ void FourAxisFabricationManager::addDrawableCutComponents() {
 }
 
 /**
- * @brief Add drawable surfaces
+ * @brief Add drawable results
  */
-void FourAxisFabricationManager::addDrawableSurfaces() {
+void FourAxisFabricationManager::addDrawableResults() {
     //Hide the cut components
     mainWindow.setDrawableObjectVisibility(&drawableMinComponent, false);
     mainWindow.setDrawableObjectVisibility(&drawableMaxComponent, false);
     mainWindow.setDrawableObjectVisibility(&drawableFourAxisComponent, false);
 
-    //Draw components
-    drawableComponentsContainer.clear();
-    drawableComponents.resize(data.surfaces.size());
+    //Draw components (hidden by default)
+    drawableSurfacesContainer.clear();
+    drawableSurfaces.resize(data.surfaces.size());
     for (size_t i = 0; i < data.surfaces.size(); i++) {
-        drawableComponents[i] = cg3::DrawableEigenMesh(data.surfaces[i]);
-        drawableComponentsContainer.pushBack(&drawableComponents[i], "Surface " + std::to_string(i));
+        drawableSurfaces[i] = cg3::DrawableEigenMesh(data.surfaces[i]);
+        drawableSurfacesContainer.pushBack(&drawableSurfaces[i], "Surface " + std::to_string(i));
     }
-    mainWindow.pushDrawableObject(&drawableComponentsContainer, "Surfaces");
+    mainWindow.pushDrawableObject(&drawableSurfacesContainer, "Surfaces", false);
+
+
+    //Add stock (hidden by default)
+    drawableStock = cg3::DrawableEigenMesh(data.stock);
+    mainWindow.pushDrawableObject(&drawableStock, "Stock", false);
+
+    //Draw components
+    drawableResultsContainer.clear();
+    drawableResults.resize(data.results.size());
+    for (size_t i = 0; i < data.results.size(); i++) {
+        drawableResults[i] = cg3::DrawableEigenMesh(data.results[i]);
+        drawableResultsContainer.pushBack(&drawableResults[i], "Result " + std::to_string(i));
+    }
+    mainWindow.pushDrawableObject(&drawableResultsContainer, "Results");
 }
 
 /**
@@ -516,14 +542,26 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
                 drawableMaxComponent.clear();
                 drawableFourAxisComponent.clear();
 
-                //Delete surfaces
-                if (areSurfacesExtracted) {
-                    mainWindow.deleteDrawableObject(&drawableComponentsContainer);
-                    drawableComponentsContainer.clear();
 
-                    drawableComponents.clear();
+                //Delete results
+                if (areResultsExtracted) {
+                    mainWindow.deleteDrawableObject(&drawableSurfacesContainer);
+                    drawableSurfacesContainer.clear();
+
+                    drawableSurfaces.clear();
+
+
+                    mainWindow.deleteDrawableObject(&drawableStock);
+                    drawableStock.clear();
+
+
+                    mainWindow.deleteDrawableObject(&drawableResultsContainer);
+                    drawableResultsContainer.clear();
+
+                    drawableResults.clear();
                 }
             }
+
         }
     }    
 
@@ -1031,70 +1069,49 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
         originalMesh.saveOnObj(rawname + "_original.obj");
         smoothedMesh.saveOnObj(rawname + "_result.obj");
 
-        if (areComponentsCut) {
-            data.minComponent.setVertexColor(128,128,128);
-            data.maxComponent.setVertexColor(128,128,128);
-            data.fourAxisComponent.setVertexColor(128,128,128);
+        if (isAssociationComputed) {
+            std::ofstream resultFile;
+            resultFile.open (rawname + "_directions.txt");
+            for (size_t i = 0; i < data.targetDirections.size(); i++) {
+                size_t label = data.targetDirections[i];
+                resultFile << i << " -> " <<
+                              "Label " << label << ", " <<
+                              "Direction: " << data.directions[label];
 
-            data.minComponent.saveOnObj(rawname + "_min.obj");
-            data.maxComponent.saveOnObj(rawname + "_max.obj");
-            data.fourAxisComponent.saveOnObj(rawname + "_fouraxis.obj");
+                if (i < data.targetDirections.size()-2) {
+                    resultFile << ", " <<
+                              "Angle: " << data.angles[label] <<
+                              " (" << data.angles[label]/M_PI*180 << "°)";
+                }
 
-            if (areSurfacesExtracted) {
-                for (size_t i = 0; i < data.surfaces.size(); i++) {
-                    cg3::EigenMesh& mesh = data.surfaces[i];
-                    mesh.setVertexColor(128,128,128);
-                    mesh.saveOnObj(rawname + "_component_" + std::to_string(i) + ".obj");
+                resultFile << std::endl;
+            }
+            resultFile.close();
 
-                    cg3::EigenMesh copyMesh = mesh;
+            if (areComponentsCut) {
+                data.minComponent.setVertexColor(128,128,128);
+                data.maxComponent.setVertexColor(128,128,128);
+                data.fourAxisComponent.setVertexColor(128,128,128);
 
-                    Eigen::Matrix3d rotationMatrix;
-                    cg3::Vec3 xAxis(1,0,0);
-                    cg3::Vec3 yAxis(0,1,0);
+                data.minComponent.saveOnObj(rawname + "_min.obj");
+                data.maxComponent.saveOnObj(rawname + "_max.obj");
+                data.fourAxisComponent.saveOnObj(rawname + "_fouraxis.obj");
 
-                    if (i < data.surfaces.size() - 2) {
-                        unsigned int label = data.surfacesAssociation[i];
-                        double angle = data.angles[label];
-                        cg3::getRotationMatrix(xAxis, angle, rotationMatrix);
-                    }
-                    //Min
-                    else if (i == data.surfaces.size() - 2) {
-                        cg3::getRotationMatrix(yAxis, M_PI/2, rotationMatrix);
-
-                        //Center mesh
-                        copyMesh.translate(-copyMesh.getBoundingBox().center());
-                    }
-                    //Max
-                    else {
-                        assert(i == data.surfaces.size() - 1);
-                        cg3::getRotationMatrix(yAxis, -M_PI/2, rotationMatrix);
-
-                        //Center mesh
-                        copyMesh.translate(-copyMesh.getBoundingBox().center());
+                if (areResultsExtracted) {
+                    for (size_t i = 0; i < data.surfaces.size(); i++) {
+                        cg3::EigenMesh& mesh = data.surfaces[i];
+                        mesh.setVertexColor(128,128,128);
+                        mesh.saveOnObj(rawname + "_surface_" + std::to_string(i) + ".obj");
                     }
 
-                    //Rotate mesh
-                    copyMesh.rotate(rotationMatrix);
+                    data.stock.setVertexColor(128,128,128);
+                    data.stock.saveOnObj(rawname + "_stock.obj");
 
-                    copyMesh.saveOnObj(rawname + "_rotated_component_" + std::to_string(i) + ".obj");
-
-                    std::ofstream resultFile;
-                    resultFile.open (rawname + "_directions.txt");
-                    for (size_t i = 0; i < data.targetDirections.size(); i++) {
-                        size_t label = data.targetDirections[i];
-                        resultFile << i << " -> " <<
-                                      "Label " << label << ", " <<
-                                      "Direction: " << data.directions[label];
-
-                        if (i < data.targetDirections.size()-2) {
-                            resultFile << ", " <<
-                                      "Angle: " << data.angles[label] <<
-                                      " (" << data.angles[label]/M_PI*180 << "°)";
-                        }
-
-                        resultFile << std::endl;
+                    for (size_t i = 0; i < data.results.size(); i++) {
+                        cg3::EigenMesh& mesh = data.results[i];
+                        mesh.setVertexColor(128,128,128);
+                        mesh.saveOnObj(rawname + "_result_" + std::to_string(i) + ".obj");
                     }
-                    resultFile.close();
                 }
             }
         }
@@ -1215,9 +1232,10 @@ void FourAxisFabricationManager::on_cutComponentsButton_clicked() {
     updateUI();
 }
 
-void FourAxisFabricationManager::on_extractSurfacesButton_clicked() {
-    //Extract surfaces
-    extractSurfaces();
+
+void FourAxisFabricationManager::on_extractResultsButton_clicked() {
+    //Extract results
+    extractResults();
 
     //Update canvas and fit the scene
     mainWindow.canvas.update();

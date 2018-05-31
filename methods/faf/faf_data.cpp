@@ -33,6 +33,11 @@ void Data::clear() {
 
     surfaces.clear();
     surfacesAssociation.clear();
+
+    stock.clear();
+
+    results.clear();
+    resultsAssociation.clear();
 }
 
 }

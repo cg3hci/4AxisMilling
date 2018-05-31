@@ -60,8 +60,12 @@ private:
     cg3::DrawableEigenMesh drawableMaxComponent;
     cg3::DrawableEigenMesh drawableFourAxisComponent;
 
-    std::vector<cg3::DrawableEigenMesh> drawableComponents;
-    cg3::DrawableContainer drawableComponentsContainer;
+    std::vector<cg3::DrawableEigenMesh> drawableSurfaces;
+    cg3::DrawableContainer drawableSurfacesContainer;
+
+    cg3::DrawableEigenMesh drawableStock;
+    std::vector<cg3::DrawableEigenMesh> drawableResults;
+    cg3::DrawableContainer drawableResultsContainer;
 
 
     /* UI Fields */
@@ -82,7 +86,7 @@ private:
     bool isAssociationComputed;
     bool areFrequenciesRestored;
     bool areComponentsCut;
-    bool areSurfacesExtracted;
+    bool areResultsExtracted;
 
 
     /* UI methods */
@@ -100,7 +104,7 @@ private:
     void getAssociation();
     void restoreFrequencies();
     void cutComponents();
-    void extractSurfaces();
+    void extractResults();
 
 
     /* Visualization methods */
@@ -108,7 +112,7 @@ private:
     void addDrawableMeshes(const std::string& meshName);
     void addDrawableRestoredMesh();
     void addDrawableCutComponents();
-    void addDrawableSurfaces();
+    void addDrawableResults();
     void updateDrawableMeshes();
 
     void deleteDrawableObjects();
@@ -149,7 +153,7 @@ private slots:
     void on_getAssociationButton_clicked();
     void on_restoreFrequenciesButton_clicked();
     void on_cutComponentsButton_clicked();
-    void on_extractSurfacesButton_clicked();
+    void on_extractResultsButton_clicked();
 
 
     /* UI slots Transformations */

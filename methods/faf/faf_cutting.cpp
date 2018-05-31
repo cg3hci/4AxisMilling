@@ -2,7 +2,7 @@
  * @author Stefano Nuvoli
  * @author Alessandro Muntoni
  */
-#include "faf_boolean.h"
+#include "faf_cutting.h"
 
 #include <cg3/libigl/booleans.h>
 

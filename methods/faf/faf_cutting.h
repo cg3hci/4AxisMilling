@@ -2,8 +2,8 @@
  * @author Stefano Nuvoli
  * @author Alessandro Muntoni
  */
-#ifndef FAF_EXTRACT_H
-#define FAF_EXTRACT_H
+#ifndef FAF_CUTTING_H
+#define FAF_CUTTING_H
 
 #include <vector>
 
@@ -13,9 +13,10 @@
 
 namespace FourAxisFabrication {
 
-void extractSurfaces(
+void cutComponents(
         Data& data);
+
 
 }
 
-#endif // FAF_EXTRACT_H
+#endif // FAF_CUTTING_H
