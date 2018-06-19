@@ -22,6 +22,12 @@ void restoreFrequencies(
         cg3::EigenMesh& smoothedMesh,
         Data& data);
 
+
+unsigned int checkVisibilityAfterFrequenciesAreRestored(
+        Data& data,
+        const double heightFieldAngle,
+        CheckMode checkMode = PROJECTION);
+
 }
 
 #endif // FAF_FREQUENCIES_H

@@ -123,6 +123,8 @@ private:
     void initializeVisualizationSlider();
     void updateVisualizationColors();
 
+
+
     void colorizeMesh();
     void colorizeExtremes();
     void colorizeVisibility();
@@ -131,7 +133,9 @@ private:
     void colorizeAssociation(
             cg3::DrawableEigenMesh& drawableMesh,
             const std::vector<int>& association,
-            const std::vector<unsigned int>& targetDirections);
+            const std::vector<unsigned int>& targetDirections,
+            const std::vector<unsigned int>& nonVisibleFaces);
+    void showCurrentStatusDescription();
 
 
 private slots:
@@ -182,8 +186,9 @@ private slots:
     void on_targetDirectionsRadio_clicked();
     void on_associationRadio_clicked();
 
-    void on_visualizationSlider_valueChanged(int value);
+    void on_showNonVisibleCheck_clicked();
     void on_resetCameraButton_clicked();
+    void on_visualizationSlider_valueChanged(int value);
 };
 
 #endif // FOURAXISFABRICATIONMANAGER_H

@@ -102,6 +102,10 @@ void FourAxisFabricationManager::updateUI() {
     ui->getAssociationMaxLabelAngleLabel->setEnabled(!isAssociationComputed);
     ui->getAssociationCompactnessLabel->setEnabled(!isAssociationComputed);
     ui->getAssociationCompactnessSpinBox->setEnabled(!isAssociationComputed);
+    ui->getAssociationOptimizationLabel->setEnabled(!isAssociationComputed);
+    ui->getAssociationOptimizationSpinBox->setEnabled(!isAssociationComputed);
+    ui->getAssociationMinFacesLabel->setEnabled(!isAssociationComputed);
+    ui->getAssociationMinFacesSpinBox->setEnabled(!isAssociationComputed);
 
     //Restore frequencies
     ui->restoreFrequenciesButton->setEnabled(!areFrequenciesRestored);
@@ -292,16 +296,20 @@ void FourAxisFabricationManager::getAssociation() {
         double dataSigma = ui->getAssociationDataSigmaSpinBox->value();
         double maxLabelAngle = ui->getAssociationMaxLabelAngleSpinBox->value() / 180.0 * M_PI;
         double compactness = ui->getAssociationCompactnessSpinBox->value();
+        double optimizationIterations = ui->getAssociationOptimizationSpinBox->value();
+        double minFaces = ui->getAssociationMinFacesSpinBox->value();
 
         cg3::Timer t("Get association");
 
         //Get association
-        FourAxisFabrication::getOptimizedAssociation(
+        FourAxisFabrication::getAssociation(
                     smoothedMesh,
                     freeCostAngle,
                     dataSigma,
                     maxLabelAngle,
                     compactness,
+                    optimizationIterations,
+                    minFaces,
                     data);
 
         t.stopAndPrint();
@@ -342,14 +350,12 @@ void FourAxisFabricationManager::restoreFrequencies() {
             cg3::Timer tCheck("Recheck association after frequencies have been restored");
 
             //Check if it is a valid association
-            bool isValidAssociation =
-                    FourAxisFabrication::checkRestoredFrequenciesVisibility(data, heightfieldAngle, checkMode);
+            unsigned int numberOfNoLongerVisibleTriangles =
+                    FourAxisFabrication::checkVisibilityAfterFrequenciesAreRestored(data, heightfieldAngle, checkMode);
 
             tCheck.stopAndPrint();
 
-            if (!isValidAssociation) {
-                QMessageBox::warning(this, "Warning", "Association is not valid after the frequencies have been restored!");
-            }
+            std::cout << "Number of no longer visible triangles: " << numberOfNoLongerVisibleTriangles << std::endl;
         }
 
 
@@ -603,21 +609,31 @@ void FourAxisFabricationManager::initializeVisualizationSlider() {
         ui->visualizationSlider->setMinimum(0);
         ui->visualizationSlider->setMaximum(0);
         ui->visualizationSlider->setValue(0);
+        ui->showNonVisibleCheck->setEnabled(false);
     }
     else if (ui->extremesRadio->isChecked()) {
         ui->visualizationSlider->setMinimum(0);
         ui->visualizationSlider->setMaximum(2);
         ui->visualizationSlider->setValue(0);
+        ui->showNonVisibleCheck->setEnabled(false);
     }
     else if (ui->visibilityRadio->isChecked()) {
         ui->visualizationSlider->setMinimum(0);
         ui->visualizationSlider->setMaximum(data.visibility.getSizeX());
         ui->visualizationSlider->setValue(0);
+        ui->showNonVisibleCheck->setEnabled(true);
     }
-    else if (ui->targetDirectionsRadio->isChecked() || ui->associationRadio->isChecked()) {
+    else if (ui->targetDirectionsRadio->isChecked()) {
         ui->visualizationSlider->setMinimum(0);
         ui->visualizationSlider->setMaximum(data.targetDirections.size());
         ui->visualizationSlider->setValue(0);
+        ui->showNonVisibleCheck->setEnabled(true);
+    }
+    else if (ui->associationRadio->isChecked()) {
+        ui->visualizationSlider->setMinimum(0);
+        ui->visualizationSlider->setMaximum(data.targetDirections.size());
+        ui->visualizationSlider->setValue(0);
+        ui->showNonVisibleCheck->setEnabled(true);
     }
 
     updateVisualizationColors();
@@ -712,26 +728,16 @@ void FourAxisFabricationManager::colorizeExtremes() {
  */
 void FourAxisFabricationManager::colorizeVisibility() {
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
+    unsigned int showNonVisible = (unsigned int) ui->showNonVisibleCheck->isChecked();
 
     //Set default color
     drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
     drawableRestoredMesh.setFaceColor(cg3::Color(128,128,128));
 
-    std::stringstream ss;
 
-    //Color the not visible
+    //Information on visibility
     if (sliderValue == 0) {
-        for (unsigned int faceId : data.nonVisibleFaces) {
-            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
-        }
-
-        ss << "Visibility: " << data.directions.size() << " directions. ";
-        if (data.nonVisibleFaces.size() > 0) {
-            ss << data.nonVisibleFaces.size() << " non-visible triangles (black)";
-        }
-        else {
-            ss << "All the triangles are visible";
-        }
+        showCurrentStatusDescription();
     }
     else {
         //Subdivisions for colors
@@ -752,13 +758,23 @@ void FourAxisFabricationManager::colorizeVisibility() {
             }
         }
 
+        std::stringstream ss;
+
         //Description
         ss << "Direction " << data.directions[chosenDirectionIndex];
+
+        //Update description label
+        std::string description = ss.str();
+        ui->descriptionLabel->setText(QString::fromStdString(description));
     }
 
-    //Update description label
-    std::string description = ss.str();
-    ui->descriptionLabel->setText(QString::fromStdString(description));
+    //Show non-visible faces
+    if (showNonVisible) {
+        for (unsigned int faceId : data.nonVisibleFaces) {
+            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
+        }
+    }
+
 }
 
 /**
@@ -766,26 +782,14 @@ void FourAxisFabricationManager::colorizeVisibility() {
  */
 void FourAxisFabricationManager::colorizeTargetDirections() {
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
+    unsigned int showNonVisible = (unsigned int) ui->showNonVisibleCheck->isChecked();
 
     //Set default color
     drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
 
-    std::stringstream ss;
-
-    //Color the not visible
+    //Information on visibility
     if (sliderValue == 0) {
-        for (unsigned int faceId : data.nonVisibleFaces) {
-            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
-        }
-
-        //Description
-        ss << "Target directions: " << data.targetDirections.size() << " directions. ";
-        if (data.nonVisibleFaces.size() > 0) {
-            ss << data.nonVisibleFaces.size() << " non-visible triangles (black)";
-        }
-        else {
-            ss << "All the triangles are visible";
-        }
+        showCurrentStatusDescription();
     }
     else {
         //Subdivisions for colors
@@ -806,13 +810,24 @@ void FourAxisFabricationManager::colorizeTargetDirections() {
             }
         }
 
+        std::stringstream ss;
+
         //Description
         ss << "Direction " << data.directions[chosenDirectionIndex];
+
+        //Update description label
+        std::string description = ss.str();
+        ui->descriptionLabel->setText(QString::fromStdString(description));
     }
 
-    //Update description label
-    std::string description = ss.str();
-    ui->descriptionLabel->setText(QString::fromStdString(description));
+
+    //Show non-visible faces
+    if (showNonVisible) {
+        for (unsigned int faceId : data.nonVisibleFaces) {
+            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
+        }
+    }
+
 }
 
 
@@ -821,21 +836,19 @@ void FourAxisFabricationManager::colorizeTargetDirections() {
  * @brief Colorize association
  */
 void FourAxisFabricationManager::colorizeAssociation() {
-    std::stringstream ss;    
-
     //Coloring drawable mesh
-    colorizeAssociation(drawableSmoothedMesh, data.association, data.targetDirections);
+    colorizeAssociation(drawableSmoothedMesh, data.association, data.targetDirections, data.nonVisibleFaces);
 
     //Coloring restored mesh
     if (areFrequenciesRestored) {
-        colorizeAssociation(drawableRestoredMesh, data.restoredAssociation, data.targetDirections);
+        colorizeAssociation(drawableRestoredMesh, data.restoredMeshAssociation, data.targetDirections, data.restoredMeshNonVisibleFaces);
     }
 
     //Coloring cut components
     if (areComponentsCut) {
-        colorizeAssociation(drawableMinComponent, data.minComponentAssociation, data.targetDirections);
-        colorizeAssociation(drawableMaxComponent, data.maxComponentAssociation, data.targetDirections);
-        colorizeAssociation(drawableFourAxisComponent, data.fourAxisComponentAssociation, data.targetDirections);
+        colorizeAssociation(drawableMinComponent, data.minComponentAssociation, data.targetDirections, data.minComponentNonVisibleFaces);
+        colorizeAssociation(drawableMaxComponent, data.maxComponentAssociation, data.targetDirections, data.maxComponentNonVisibleFaces);
+        colorizeAssociation(drawableFourAxisComponent, data.fourAxisComponentAssociation, data.targetDirections, data.fourAxisComponentNonVisibleFaces);
     }
 
     //Get UI data
@@ -846,22 +859,18 @@ void FourAxisFabricationManager::colorizeAssociation() {
         //Get index of the current chosen direction
         unsigned int chosenDirectionIndex = data.targetDirections[sliderValue - 1];
 
+        std::stringstream ss;
+
         ss << "Direction " << data.directions[chosenDirectionIndex];
+
+        //Update description label
+        std::string description = ss.str();
+        ui->descriptionLabel->setText(QString::fromStdString(description));
     }
     else {
-        ss << "Optimization: " << data.targetDirections.size() << " directions. ";
-        if (data.nonVisibleFaces.size() > 0) {
-            ss << data.nonVisibleFaces.size() << " non-visible triangles (black)";
-        }
-        else {
-            ss << "All the triangles are visible";
-        }
+        showCurrentStatusDescription();
     }
 
-
-    //Update description label
-    std::string description = ss.str();
-    ui->descriptionLabel->setText(QString::fromStdString(description));
 }
 
 
@@ -874,13 +883,15 @@ void FourAxisFabricationManager::colorizeAssociation() {
 void FourAxisFabricationManager::colorizeAssociation(
         cg3::DrawableEigenMesh& drawableMesh,
         const std::vector<int>& association,
-        const std::vector<unsigned int>& targetDirections)
+        const std::vector<unsigned int>& targetDirections,
+        const std::vector<unsigned int>& nonVisibleFaces)
 {
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
+    unsigned int showNonVisible = (unsigned int) ui->showNonVisibleCheck->isChecked();
 
     //Variables for colors
     cg3::Color color;
-    int subd = 255 / (data.targetDirections.size()-1);
+    int subd = 255 / (data.targetDirections.size());
 
     //Set the color
     drawableMesh.setFaceColor(cg3::Color(128,128,128));
@@ -907,10 +918,36 @@ void FourAxisFabricationManager::colorizeAssociation(
                 drawableMesh.setFaceColor(color, faceId);
             }
         }
-        else {
-            //Black color for non-visible faces
+    }
+
+    //Show non-visible faces
+    if (showNonVisible) {
+        for (unsigned int faceId : nonVisibleFaces) {
             drawableMesh.setFaceColor(cg3::Color(0,0,0), faceId);
         }
+    }
+}
+
+/**
+ * @brief Show description of the current status
+ */
+void FourAxisFabricationManager::showCurrentStatusDescription()
+{
+    if (areTargetDirectionsFound) {
+        std::stringstream ss;
+
+        //Description
+        ss << "Target directions: " << data.targetDirections.size() << " directions. ";
+
+        //Non-visible data
+        ss << data.nonVisibleFaces.size() << " ";
+        if (areFrequenciesRestored)
+            ss << "(Freq: " << data.restoredMeshNonVisibleFaces.size() << ") ";
+        ss << "non-visible triangles (black)";
+
+        //Update description label
+        std::string description = ss.str();
+        ui->descriptionLabel->setText(QString::fromStdString(description));
     }
 }
 
@@ -1412,6 +1449,15 @@ void FourAxisFabricationManager::on_associationRadio_clicked() {
     initializeVisualizationSlider();
 }
 
+void FourAxisFabricationManager::on_showNonVisibleCheck_clicked()
+{
+    initializeVisualizationSlider();
+}
+void FourAxisFabricationManager::on_resetCameraButton_clicked() {
+    //Reset camera direction
+    resetCameraDirection();
+}
+
 void FourAxisFabricationManager::on_visualizationSlider_valueChanged(int value) {
     CG3_SUPPRESS_WARNING(value);
     updateVisualizationColors();
@@ -1451,9 +1497,4 @@ void FourAxisFabricationManager::on_visualizationSlider_valueChanged(int value) 
             }
         }
     }
-}
-
-void FourAxisFabricationManager::on_resetCameraButton_clicked() {
-    //Reset camera direction
-    resetCameraDirection();
 }

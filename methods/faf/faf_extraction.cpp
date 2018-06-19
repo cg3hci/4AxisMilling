@@ -16,6 +16,7 @@
 #include <cg3/geometry/2d/utils2d.h>
 
 #include <cg3/libigl/booleans.h>
+#include <cg3/libigl/connected_components.h>
 
 #define CYLINDER_SUBD 100
 
@@ -31,7 +32,7 @@ cg3::EigenMesh extractSurfaceWithLabel(
         const std::vector<std::vector<int>>& vfAdj,
         const unsigned int targetLabel);
 
-std::vector<unsigned int> computeBorder(const cg3::SimpleEigenMesh& m);
+std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m);
 
 } //namespace internal
 
@@ -137,9 +138,16 @@ void extractResults(
             surface.rotate(rotationMatrix);
         }
 
-        //Add to the results
-        surfaces.push_back(surface);
-        surfacesAssociation.push_back(targetLabel);
+        //Get connected components
+        std::vector<cg3::SimpleEigenMesh> connectedComponents = cg3::libigl::getConnectedComponents(surface);
+
+        //Add each components to the results
+        for (cg3::SimpleEigenMesh& simpleComponent : connectedComponents) {
+            cg3::EigenMesh component(simpleComponent);
+
+            surfaces.push_back(component);
+            surfacesAssociation.push_back(targetLabel);
+        }
     }
 
     //Get surface of min component
@@ -196,7 +204,7 @@ void extractResults(
         int targetLabel = targetDirections[i];
 
         //New component mesh
-        cg3::EigenMesh result = internal::extractSurfaceWithLabel(
+        cg3::EigenMesh surface = internal::extractSurfaceWithLabel(
                     fourAxisScaled,
                     fourAxisComponentAssociation,
                     fourAxisVFAdj,
@@ -206,102 +214,119 @@ void extractResults(
         //Rotate the mesh in the z-axis
         double angle = data.angles[targetLabel];
         cg3::getRotationMatrix(xAxis, angle, rotationMatrix);
-        result.rotate(rotationMatrix);
+        surface.rotate(rotationMatrix);
 
 
-        // ---- TODO: avoid internal holes! -----
+        //Get connected components
+        std::vector<cg3::SimpleEigenMesh> connectedComponents = cg3::libigl::getConnectedComponents(surface);
 
-        //Point-id map
-        std::map<cg3::Point2Dd, unsigned int> idMap;
+        //Add each components to the results
+        for (cg3::SimpleEigenMesh& simpleComponent : connectedComponents) {
+            cg3::EigenMesh component(simpleComponent);
 
-        //Compute mesh borders and project in 2D
-        std::vector<unsigned int> internalBorderIds = internal::computeBorder(result);
-        std::vector<cg3::Point2Dd> internalBorder(internalBorderIds.size());
+            //Point-id map
+            std::map<cg3::Point2Dd, unsigned int> idMap;
 
-        for (unsigned int i = 0; i < internalBorderIds.size(); i++) {
-            cg3::Pointd point3D = result.getVertex(internalBorderIds[i]);
-            cg3::Point2Dd projection = cg3::Point2Dd(point3D.x(), point3D.y());
+            //Compute mesh borders and project in 2D
+            std::vector<unsigned int> internalBorderIds = internal::computeExternalBorder(component);
+            std::vector<cg3::Point2Dd> internalBorder(internalBorderIds.size());
 
-            internalBorder[i] = projection;
+            for (unsigned int i = 0; i < internalBorderIds.size(); i++) {
+                cg3::Pointd point3D = component.getVertex(internalBorderIds[i]);
+                cg3::Point2Dd projection = cg3::Point2Dd(point3D.x(), point3D.y());
 
-            idMap[projection] = internalBorderIds[i];
-        }
+                internalBorder[i] = projection;
 
-
-        const double length = stockHalfLength*1.2;
-        const double height = stockRadius*1.2;
-        const double zHeightUp = height * sin(surroundingAngle);
-        const double zHeightDown = stockRadius*1.05;
-
-        //Creating new points of the mesh block
-        std::vector<cg3::Pointd> newPoints(8);
-        std::vector<unsigned int> newPointsId(8);
-
-        newPoints[0] = cg3::Pointd(-length, -height, zHeightUp);
-        newPoints[1] = cg3::Pointd(length, -height, zHeightUp);
-        newPoints[2] = cg3::Pointd(length, height, zHeightUp);
-        newPoints[3] = cg3::Pointd(-length, height, zHeightUp);
-        newPoints[4] = cg3::Pointd(-length, -height, -zHeightDown);
-        newPoints[5] = cg3::Pointd(length, -height, -zHeightDown);
-        newPoints[6] = cg3::Pointd(length, height, -zHeightDown);
-        newPoints[7] = cg3::Pointd(-length, height, -zHeightDown);
-
-        for (unsigned int i = 0; i < newPoints.size(); i++) {
-            unsigned int vid = result.addVertex(newPoints[i]);
-            newPointsId[i] = vid;
-        }
-
-        result.addFace(newPointsId[2], newPointsId[1], newPointsId[5]);
-        result.addFace(newPointsId[2], newPointsId[5], newPointsId[6]);
-
-        result.addFace(newPointsId[5], newPointsId[1], newPointsId[0]);
-        result.addFace(newPointsId[5], newPointsId[0], newPointsId[4]);
-
-        result.addFace(newPointsId[6], newPointsId[5], newPointsId[4]);
-        result.addFace(newPointsId[6], newPointsId[4], newPointsId[7]);
-
-        result.addFace(newPointsId[7], newPointsId[4], newPointsId[0]);
-        result.addFace(newPointsId[7], newPointsId[0], newPointsId[3]);
-
-        result.addFace(newPointsId[7], newPointsId[3], newPointsId[2]);
-        result.addFace(newPointsId[7], newPointsId[2], newPointsId[6]);
-
-        //External border        
-        std::vector<cg3::Point2Dd> externalBorder(4);
-        for (int i = 0; i < 4; i++) {
-            externalBorder[i] = cg3::Point2Dd(newPoints[i].x(), newPoints[i].y());
-            idMap[externalBorder[i]] = newPointsId[i];
-        }
-
-        //Holes
-        std::vector<std::vector<cg3::Point2Dd>> holes;
-        holes.push_back(internalBorder);
-
-        //Triangulation
-        std::vector<std::array<cg3::Point2Dd, 3>> triang =
-                cg3::cgal::triangulate(externalBorder, holes);
-
-        for (std::array<cg3::Point2Dd, 3>& triangle : triang) {
-            unsigned int v[3];
-            for (unsigned int i = 0; i < 3; i++) {
-                assert(idMap.find(triangle[i]) != idMap.end());
-                v[i] = idMap.at(triangle[i]);
+                idMap[projection] = internalBorderIds[i];
             }
-            result.addFace(v[0], v[1], v[2]);
+
+
+            const double length = stockHalfLength*1.2;
+            const double height = stockRadius*1.2;
+            const double zHeightUp = height * sin(surroundingAngle);
+            const double zHeightDown = stockRadius*1.05;
+
+            //Creating new points of the mesh block
+            std::vector<cg3::Pointd> newPoints(8);
+            std::vector<unsigned int> newPointsId(8);
+
+            newPoints[0] = cg3::Pointd(-length, -height, zHeightUp);
+            newPoints[1] = cg3::Pointd(length, -height, zHeightUp);
+            newPoints[2] = cg3::Pointd(length, height, zHeightUp);
+            newPoints[3] = cg3::Pointd(-length, height, zHeightUp);
+            newPoints[4] = cg3::Pointd(-length, -height, -zHeightDown);
+            newPoints[5] = cg3::Pointd(length, -height, -zHeightDown);
+            newPoints[6] = cg3::Pointd(length, height, -zHeightDown);
+            newPoints[7] = cg3::Pointd(-length, height, -zHeightDown);
+
+            for (unsigned int i = 0; i < newPoints.size(); i++) {
+                unsigned int vid = component.addVertex(newPoints[i]);
+                newPointsId[i] = vid;
+            }
+
+            component.addFace(newPointsId[2], newPointsId[1], newPointsId[5]);
+            component.addFace(newPointsId[2], newPointsId[5], newPointsId[6]);
+
+            component.addFace(newPointsId[5], newPointsId[1], newPointsId[0]);
+            component.addFace(newPointsId[5], newPointsId[0], newPointsId[4]);
+
+            component.addFace(newPointsId[6], newPointsId[5], newPointsId[4]);
+            component.addFace(newPointsId[6], newPointsId[4], newPointsId[7]);
+
+            component.addFace(newPointsId[7], newPointsId[4], newPointsId[0]);
+            component.addFace(newPointsId[7], newPointsId[0], newPointsId[3]);
+
+            component.addFace(newPointsId[7], newPointsId[3], newPointsId[2]);
+            component.addFace(newPointsId[7], newPointsId[2], newPointsId[6]);
+
+            //External border
+            std::vector<cg3::Point2Dd> externalBorder(4);
+            for (int i = 0; i < 4; i++) {
+                externalBorder[i] = cg3::Point2Dd(newPoints[i].x(), newPoints[i].y());
+                idMap[externalBorder[i]] = newPointsId[i];
+            }
+
+            //Holes
+            std::vector<std::vector<cg3::Point2Dd>> holes;
+            holes.push_back(internalBorder);
+
+            //Triangulation
+            std::vector<std::array<cg3::Point2Dd, 3>> triang =
+                    cg3::cgal::triangulate(externalBorder, holes);
+
+            for (std::array<cg3::Point2Dd, 3>& triangle : triang) {
+                //Flag to check if a new point has been created (flipped triangles on projection)
+                bool isValid = true;
+
+                unsigned int v[3];
+
+                for (unsigned int i = 0; i < 3 && isValid; i++) {
+                    if (idMap.find(triangle[i]) != idMap.end()) {
+                        v[i] = idMap.at(triangle[i]);
+                    }
+                    else {
+                        isValid = false;
+                    }
+                }
+
+                if (isValid) {
+                    component.addFace(v[0], v[1], v[2]);
+                }
+            }
+
+
+            component = cg3::libigl::intersection(stock, component);
+
+
+            if (!rotateMeshes) {
+                //Rotate back the mesh
+                cg3::getRotationMatrix(xAxis, -angle, rotationMatrix);
+                component.rotate(rotationMatrix);
+            }
+
+            results.push_back(component);
+            resultsAssociation.push_back(targetLabel);
         }
-
-
-        result = cg3::libigl::intersection(stock, result);
-
-
-        if (!rotateMeshes) {
-            //Rotate back the mesh
-            cg3::getRotationMatrix(xAxis, -angle, rotationMatrix);
-            result.rotate(rotationMatrix);
-        }
-
-        results.push_back(result);
-        resultsAssociation.push_back(targetLabel);
     }
 
 
@@ -410,7 +435,7 @@ cg3::EigenMesh extractSurfaceWithLabel(
  * @param m Eigen mesh
  * @return Vector of id vertex of the borders
  */
-std::vector<unsigned int> computeBorder(const cg3::SimpleEigenMesh& m)
+std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m)
 {
     //TODO without dcel
 
@@ -427,16 +452,33 @@ std::vector<unsigned int> computeBorder(const cg3::SimpleEigenMesh& m)
         }
     }
 
-    unsigned int firstId = nextMap.begin()->first;
+
     std::vector<unsigned int> polygon;
 
-    polygon.reserve(nextMap.size());
-
-    unsigned int actual = firstId;
+    bool externalBorder;
     do {
-        polygon.push_back(actual);
-        actual = nextMap.at(actual);
-    } while (actual != firstId);
+        std::map<unsigned int, unsigned int>::iterator it = nextMap.begin();
+
+        unsigned int firstId = it->first;
+
+        polygon.clear();
+
+        unsigned int actual = firstId;
+        do {
+            polygon.push_back(actual);
+            actual = nextMap.at(actual);
+        } while (actual != firstId);
+
+        std::vector<cg3::Point2Dd> polygonPoints(polygon.size());
+        for (unsigned int vId : polygon) {
+            cg3::Pointd p = m.getVertex(vId);
+            polygonPoints.push_back(cg3::Point2Dd(p.x(), p.y()));
+        }
+        externalBorder = cg3::isPolygonCounterClockwise(polygonPoints);
+
+        it++;
+    }
+    while (!externalBorder);
 
     return polygon;
 }

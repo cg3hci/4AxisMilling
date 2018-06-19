@@ -96,11 +96,11 @@ void cutComponents(
 
 
     //Restore association of cut components
-    resetAssociationData(csgMesh, csgMinResult, data.restoredAssociation, minComponentAssociation,
+    resetAssociationData(csgMesh, csgMinResult, data.restoredMeshAssociation, minComponentAssociation,
                          minLabel); //Set everything to min index
-    resetAssociationData(csgMesh, csgMaxResult, data.restoredAssociation, maxComponentAssociation,
+    resetAssociationData(csgMesh, csgMaxResult, data.restoredMeshAssociation, maxComponentAssociation,
                          maxLabel); //Set eveyrthing to max index
-    resetAssociationData(csgMesh, csgFourAxisResult, data.restoredAssociation, fourAxisComponentAssociation);
+    resetAssociationData(csgMesh, csgFourAxisResult, data.restoredMeshAssociation, fourAxisComponentAssociation);
 
 
     //Update mesh data

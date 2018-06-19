@@ -127,46 +127,6 @@ void getVisibility(
 }
 
 
-/**
- * @brief Check visibility of each face of the mesh from the associated direction.
- * It is implemented by a ray casting algorithm or checking the intersections
- * in a 2D projection from a given direction.
- * @param[out] data Four axis fabrication data
- * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
- * @param[in] checkMode Visibility check mode. Default is projection mode.
- * @returns True if all the elements are visibile from the associated directions,
- * false otherwise.
- */
-bool checkRestoredFrequenciesVisibility(
-        Data& data,
-        const double heightfieldAngle,
-        CheckMode checkMode)
-{
-    cg3::EigenMesh& targetMesh = data.restoredMesh;
-    data.restoredAssociation = data.association;
-
-    bool result = true;
-
-    const int nDirections = (data.directions.size()-2)/2;
-
-    Data newData;
-    newData.minExtremes = data.minExtremes;
-    newData.maxExtremes = data.maxExtremes;
-
-    internal::initializeDataForVisibilityCheck(targetMesh, nDirections, false, newData);
-    internal::computeVisibility(targetMesh, nDirections, newData.association, newData.directions, newData.angles, newData.visibility, heightfieldAngle, checkMode);
-
-    for (size_t faceId = 0; faceId < data.restoredAssociation.size(); faceId++) {
-        if (data.restoredAssociation[faceId] > 0 && newData.visibility(data.restoredAssociation[faceId], faceId) < 1) {
-            data.restoredAssociation[faceId] = -1;
-            result = false;
-        }
-    }
-
-    return result;
-}
-
-
 
 
 /* ----- INTERNAL FUNCTION DEFINITION ----- */

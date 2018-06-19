@@ -2,8 +2,8 @@
  * @author Stefano Nuvoli
  * @author Alessandro Muntoni
  */
-#ifndef FAF_OPTIMIZATION_H
-#define FAF_OPTIMIZATION_H
+#ifndef FAF_ASSOCIATION_H
+#define FAF_ASSOCIATION_H
 
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
 
@@ -13,15 +13,17 @@ namespace FourAxisFabrication {
 
 /* Get optimal association for each face */
 
-void getOptimizedAssociation(
+void getAssociation(
         const cg3::EigenMesh& mesh,
         const double freeCostAngle,
         const double dataSigma,
         const double maxLabelAngle,
         const double compactness,
+        const unsigned int optimizationIterations,
+        const unsigned int minFaces,
         Data& data);
 
 
 }
 
-#endif // FAF_OPTIMIZATION_H
+#endif // FAF_ASSOCIATION_H

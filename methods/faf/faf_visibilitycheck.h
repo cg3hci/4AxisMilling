@@ -23,12 +23,6 @@ void getVisibility(
         const double heightFieldAngle,
         CheckMode checkMode);
 
-
-bool checkRestoredFrequenciesVisibility(
-        Data& data,
-        const double heightFieldAngle,
-        CheckMode checkMode = PROJECTION);
-
 }
 
 #endif // FAF_VISIBILITYCHECK_H

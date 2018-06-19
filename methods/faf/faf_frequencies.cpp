@@ -13,20 +13,18 @@
 #endif
 
 #include <cg3/geometry/triangle.h>
-#include <cg3/geometry/2d/triangle2d.h>
-#include <cg3/geometry/plane.h>
 
 #include <cg3/geometry/2d/triangle2d_utils.h>
 #include <cg3/geometry/utils3d.h>
 
 #include <cg3/geometry/transformations.h>
 
-
-#include <cg3/data_structures/trees/aabbtree.h>
-
 #include "faf_utilities.h"
+#include "faf_visibilitycheck.h"
+#include "faf_minimization.h"
+#include "faf_association.h"
 
-#define BINARY_SEARCH_ITERATIONS 20
+#define BINARY_SEARCH_ITERATIONS 10
 
 namespace FourAxisFabrication {
 
@@ -120,7 +118,51 @@ void restoreFrequencies(
     //Needed because they changed
     targetMesh.updateFacesAndVerticesNormals();
     targetMesh.updateBoundingBox();
+
+    data.restoredMeshAssociation = data.association;
+    data.restoredMeshNonVisibleFaces = data.nonVisibleFaces;
+    data.restoredMeshVisibility = data.visibility;
 }
+
+
+
+/**
+ * @brief Check visibility of each face of the mesh from the associated direction.
+ * It is implemented by a ray casting algorithm or checking the intersections
+ * in a 2D projection from a given direction.
+ * @param[out] data Four axis fabrication data
+ * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
+ * @param[in] checkMode Visibility check mode. Default is projection mode.
+ * @returns The number of no longer visible triangles
+ */
+unsigned int checkVisibilityAfterFrequenciesAreRestored(
+        Data& data,
+        const double heightfieldAngle,
+        CheckMode checkMode)
+{
+    cg3::EigenMesh& targetMesh = data.restoredMesh;
+    const int nDirections = (data.directions.size()-2)/2;
+
+    //Initialize new data
+    Data newData;
+    newData.minExtremes = data.minExtremes;
+    newData.maxExtremes = data.maxExtremes;
+
+    //Get new visibility
+    getVisibility(targetMesh, nDirections, true, newData, heightfieldAngle, checkMode);
+    data.restoredMeshVisibility = newData.visibility;
+
+    data.restoredMeshNonVisibleFaces.clear();
+
+    for (size_t faceId = 0; faceId < data.restoredMeshAssociation.size(); faceId++) {
+        if (newData.visibility(data.restoredMeshAssociation[faceId], faceId) < 1) {
+            data.restoredMeshNonVisibleFaces.push_back(faceId);
+        }
+    }
+
+    return (unsigned int) data.restoredMeshNonVisibleFaces.size() - data.nonVisibleFaces.size();
+}
+
 
 
 /* ----- INTERNAL FUNCTION DEFINITION ----- */

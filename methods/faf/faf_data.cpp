@@ -23,13 +23,24 @@ void Data::clear() {
 
     association.clear();
 
+    chartData.clear();
+
     restoredMesh.clear();
-    restoredAssociation.clear();
+    restoredMeshVisibility.clear();
+    restoredMeshAssociation.clear();
+    restoredMeshNonVisibleFaces.clear();
 
     minComponent.clear();
     maxComponent.clear();
     fourAxisComponent.clear();
+
+    minComponentAssociation.clear();
+    maxComponentAssociation.clear();
     fourAxisComponentAssociation.clear();
+
+    minComponentNonVisibleFaces.clear();
+    maxComponentNonVisibleFaces.clear();
+    fourAxisComponentNonVisibleFaces.clear();
 
     surfaces.clear();
     surfacesAssociation.clear();

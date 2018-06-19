@@ -13,6 +13,8 @@
 
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
 
+#include "faf_charts.h"
+
 namespace FourAxisFabrication {
 
 
@@ -43,10 +45,16 @@ struct Data {
 
     std::vector<int> association;
 
+
+    /* Chart data */
+    ChartData chartData;
+
     /* Frequencies restored data */
 
-    cg3::EigenMesh restoredMesh;
-    std::vector<int> restoredAssociation;
+    cg3::EigenMesh restoredMesh;    
+    cg3::Array2D<int> restoredMeshVisibility;
+    std::vector<int> restoredMeshAssociation;
+    std::vector<unsigned int> restoredMeshNonVisibleFaces;
 
     /* Extracted components */
 
@@ -57,6 +65,10 @@ struct Data {
     std::vector<int> minComponentAssociation;
     std::vector<int> maxComponentAssociation;
     std::vector<int> fourAxisComponentAssociation;
+
+    std::vector<unsigned int> minComponentNonVisibleFaces;
+    std::vector<unsigned int> maxComponentNonVisibleFaces;
+    std::vector<unsigned int> fourAxisComponentNonVisibleFaces;
 
     /* Surface results */
 
