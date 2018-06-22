@@ -22,10 +22,10 @@ void Data::clear() {
     targetDirections.clear();
 
     association.clear();
-
-    chartData.clear();
+    associationNonVisibleFaces.clear();
 
     restoredMesh.clear();
+
     restoredMeshVisibility.clear();
     restoredMeshAssociation.clear();
     restoredMeshNonVisibleFaces.clear();

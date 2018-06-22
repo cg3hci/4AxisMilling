@@ -44,10 +44,8 @@ struct Data {
     /* Associations */
 
     std::vector<int> association;
+    std::vector<unsigned int> associationNonVisibleFaces;
 
-
-    /* Chart data */
-    ChartData chartData;
 
     /* Frequencies restored data */
 

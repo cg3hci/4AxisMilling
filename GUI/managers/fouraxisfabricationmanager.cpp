@@ -104,8 +104,8 @@ void FourAxisFabricationManager::updateUI() {
     ui->getAssociationCompactnessSpinBox->setEnabled(!isAssociationComputed);
     ui->getAssociationOptimizationLabel->setEnabled(!isAssociationComputed);
     ui->getAssociationOptimizationSpinBox->setEnabled(!isAssociationComputed);
-    ui->getAssociationMinFacesLabel->setEnabled(!isAssociationComputed);
-    ui->getAssociationMinFacesSpinBox->setEnabled(!isAssociationComputed);
+    ui->getAssociationMinChartAreaLabel->setEnabled(!isAssociationComputed);
+    ui->getAssociationMinChartAreaSpinBox->setEnabled(!isAssociationComputed);
 
     //Restore frequencies
     ui->restoreFrequenciesButton->setEnabled(!areFrequenciesRestored);
@@ -297,7 +297,7 @@ void FourAxisFabricationManager::getAssociation() {
         double maxLabelAngle = ui->getAssociationMaxLabelAngleSpinBox->value() / 180.0 * M_PI;
         double compactness = ui->getAssociationCompactnessSpinBox->value();
         double optimizationIterations = ui->getAssociationOptimizationSpinBox->value();
-        double minFaces = ui->getAssociationMinFacesSpinBox->value();
+        double minChartArea = ui->getAssociationMinChartAreaSpinBox->value();
 
         cg3::Timer t("Get association");
 
@@ -309,7 +309,7 @@ void FourAxisFabricationManager::getAssociation() {
                     maxLabelAngle,
                     compactness,
                     optimizationIterations,
-                    minFaces,
+                    minChartArea,
                     data);
 
         t.stopAndPrint();

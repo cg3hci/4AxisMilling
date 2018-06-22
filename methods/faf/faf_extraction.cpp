@@ -456,9 +456,10 @@ std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m)
     std::vector<unsigned int> polygon;
 
     bool externalBorder;
-    do {
-        std::map<unsigned int, unsigned int>::iterator it = nextMap.begin();
 
+    std::map<unsigned int, unsigned int>::iterator it = nextMap.begin();
+
+    do {
         unsigned int firstId = it->first;
 
         polygon.clear();

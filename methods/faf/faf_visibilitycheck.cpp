@@ -361,9 +361,9 @@ void getVisibilityRayShootingOnZ(
         cg3::Pointd bar((v1 + v2 + v3) / 3);
 
         //Calculate the intersection in the mesh
-        std::vector<int> barIntersection;
+        std::list<int> barIntersection;
 
-        tree.getIntersectEigenFaces(
+        tree.getIntersectedEigenFaces(
                     cg3::Pointd(bar.x(), bar.y(), maxZ),
                     cg3::Pointd(bar.x(), bar.y(), minZ),
                     barIntersection);

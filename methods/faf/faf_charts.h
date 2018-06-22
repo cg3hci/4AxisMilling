@@ -6,8 +6,6 @@
 
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
 
-
-
 namespace FourAxisFabrication {
 
 /**
@@ -18,11 +16,17 @@ struct Chart {
 
     int label;
 
-    std::vector<int> faces;
-    std::set<int> vertices;
+    std::vector<unsigned int> faces;
+    std::set<unsigned int> vertices;
 
-    std::set<int> adjacentFaces;
+    std::set<unsigned int> adjacentFaces;
     std::set<int> adjacentLabels;
+
+    std::vector<unsigned int> borderVertices;
+    std::vector<std::vector<unsigned int>> holeVertices;
+
+    std::set<size_t> adjacentExternalCharts;
+    std::set<size_t> adjacentHoleCharts;
 };
 
 /**
@@ -42,11 +46,6 @@ struct ChartData {
 ChartData getChartData(
         const cg3::EigenMesh& targetMesh,
         const std::vector<int>& association);
-
-ChartData getChartData(
-        const cg3::EigenMesh& targetMesh,
-        const std::vector<int>& association,
-        const std::vector<std::vector<int>>& faceFaceAdjacencies);
 
 }
 

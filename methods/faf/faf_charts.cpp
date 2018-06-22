@@ -4,6 +4,10 @@
 
 #include <cg3/libigl/mesh_adjacencies.h>
 
+#include <cg3/meshes/dcel/dcel.h>
+
+#include <unordered_map>
+
 namespace FourAxisFabrication {
 
 /**
@@ -16,88 +20,191 @@ ChartData getChartData(
         const cg3::EigenMesh& targetMesh,
         const std::vector<int>& association)
 {
-    const std::vector<std::vector<int>> faceFaceAdjacencies = cg3::libigl::getFaceFaceAdjacencies(targetMesh);
+    typedef cg3::Dcel Dcel;
+    typedef cg3::Dcel::Face Face;
+    typedef cg3::Dcel::HalfEdge HalfEdge;
+    typedef cg3::Dcel::Vertex Vertex;
 
-    return getChartData(targetMesh, association, faceFaceAdjacencies);
-}
+    //Create Dcel from mesh used for navigation
+    Dcel dcel(targetMesh);
 
-/**
- * @brief Initialize data associated to the charts
- * @param[in] targetMesh Target mesh
- * @param[in] data Four axis fabrication data
- * @param[in] faceFaceAdjacencies Face-face adjacencies of the mesh
- * @param[out] chartData Data of the charts
- */
-ChartData getChartData(
-        const cg3::EigenMesh& targetMesh,
-        const std::vector<int>& association,
-        const std::vector<std::vector<int>>& faceFaceAdjacencies)
-{
+    //Result
     ChartData chartData;
 
-    unsigned int nFaces = targetMesh.getNumberFaces();
+    unsigned int nFaces = dcel.getNumberFaces();
 
-    //Clear data
     chartData.faceChartMap.resize(nFaces);
-
 
     //Visited flag vector
     std::vector<bool> visited(nFaces, false);
 
-    for (unsigned int fId = 0; fId < targetMesh.getNumberFaces(); fId++) {
-        if (!visited[fId]) {
-            int label = association[fId];
+    //Half edges in the border for each chart
+    std::vector<std::vector<const HalfEdge*>> borderHalfEdges;
 
-            //If a label has been assigned
-            if (label > 0) {
-                //Initialize chart data
-                Chart chart;
+    for (const Face* face : dcel.faceIterator()) {
+        unsigned int startFaceId = face->getId();
 
-                chart.id = chartData.charts.size();
-                chartData.faceChartMap[fId] = chart.id;
+        if (!visited[startFaceId]) {
+            int label = association[startFaceId];
 
-                chart.label = label;
+            //Initialize chart data
+            Chart chart;
 
-                //Stack for iterating on adjacent faces
-                std::stack<int> stack;
-                stack.push(fId);
+            chart.id = chartData.charts.size();
+
+            chart.label = label;
+
+            //Half edges in the border of the chart
+            std::vector<const HalfEdge*> chartBorderHalfEdges;
+
+            //Stack for iterating on adjacent faces
+            std::stack<int> stack;
+            stack.push(startFaceId);
 
 
-                //Region growing algorithm to get all chart faces
-                while (!stack.empty()) {
-                    int faceId = stack.top();
-                    stack.pop();
+            //Region growing algorithm to get all chart faces
+            while (!stack.empty()) {
+                int currentFaceId = stack.top();
+                stack.pop();
 
-                    //Add face index to the chart
-                    chart.faces.push_back(faceId);
+                visited[currentFaceId] = true;
 
-                    const std::vector<int>& adjFaces = faceFaceAdjacencies[faceId];
+                Face* currentFace = dcel.getFace(currentFaceId);
 
-                    //Add adjacent faces
-                    for (int adjFace : adjFaces) {
-                        int adjFaceLabel = association[adjFace];
-                        //The adjacent face has the same label
-                        if (adjFaceLabel == label) {
-                            if (!visited[adjFace]) {
-                                stack.push(adjFace);
-                            }
-                        }
-                        //The adjacent face has a different label
-                        //i.e. it is a face of the contour
-                        else {
-                            chart.adjacentFaces.insert(adjFace);
-                            chart.adjacentLabels.insert(adjFaceLabel);
-                        }
-                    }
+                //Add face index to the chart
+                chart.faces.push_back(currentFaceId);
 
-                    visited[faceId] = true;
+                //Add vertices
+                for (const Vertex* vertex : currentFace->incidentVertexIterator()) {
+                    chart.vertices.insert(vertex->getId());
                 }
 
-                //Add chart data
-                chartData.charts.push_back(chart);
+                //Add adjacent faces
+                for (const HalfEdge* he : currentFace->incidentHalfEdgeIterator()) {
+                    const Face* adjFace = he->getTwin()->getFace();
+
+                    unsigned int adjId = adjFace->getId();
+                    int adjLabel = association[adjId];
+
+                    //If the adjacent face has the same label
+                    if (adjLabel == label) {
+                        if (!visited[adjId]) {
+                            stack.push(adjId);
+                        }
+                    }
+                    //If the adjacent face has a different label
+                    //i.e. it is a face of the contour
+                    else {
+                        chartBorderHalfEdges.push_back(he);
+
+                        chart.adjacentFaces.insert(adjId);
+                        chart.adjacentLabels.insert(adjLabel);
+                    }
+                }
+
+                chartData.faceChartMap[currentFaceId] = chart.id;
+            }
+
+            //Add chart data
+            chartData.charts.push_back(chart);
+
+            borderHalfEdges.push_back(chartBorderHalfEdges);
+        }
+
+    }
+
+
+    //Calculate borders and chart adjacencies
+    for (Chart& chart : chartData.charts) {
+        std::vector<const HalfEdge*>& chartBorderHalfEdges = borderHalfEdges.at(chart.id);
+
+        if (!chartBorderHalfEdges.empty()) {
+            size_t nVertices = chart.vertices.size();
+
+            //Center of the chart
+            cg3::Pointd chartCenter(0,0,0);
+            for (const unsigned int& vId : chart.vertices) {
+                const Vertex* vertex = dcel.getVertex(vId);
+                chartCenter += vertex->getCoordinate();
+            }
+            chartCenter /= cg3::Pointd(nVertices, nVertices, nVertices);
+
+            //Next map and set of vertices in the borders
+            std::unordered_map<unsigned int, unsigned int> vNext;
+            std::unordered_map<unsigned int, const HalfEdge*> vHeMap;
+            std::set<unsigned int> remainingVertices;
+
+            //Furthest vertex
+            int furthestVertex = -1;
+            double maxDistance = 0;
+
+            for (const HalfEdge* he : chartBorderHalfEdges){
+                const Vertex* fromV = he->getFromVertex();
+                const Vertex* toV = he->getToVertex();
+                const unsigned int fromId = fromV->getId();
+                const unsigned int toId = toV->getId();
+
+                //Fill maps
+                vNext[fromId] = toId;
+                vHeMap[fromId] = he;
+
+                //Fill set of vertices
+                remainingVertices.insert(fromId);
+
+                //Get furthest point from center: it is certainly part of the external borders
+                const cg3::Vec3 vec = fromV->getCoordinate() - chartCenter;
+                double distance = vec.getLength();
+                if (distance >= maxDistance) {
+                    maxDistance = distance;
+                    furthestVertex = fromId;
+                }
+            }
+            assert(furthestVertex >= 0);
+
+            unsigned int vStart;
+            unsigned int vCurrent;
+
+            //Get external borders
+            vStart = (unsigned int) furthestVertex;
+            vCurrent = vStart;
+            do {
+                //Add adjacent chart
+                unsigned int adjId = vHeMap.at(vCurrent)->getTwin()->getFace()->getId();
+                chart.adjacentExternalCharts.insert(chartData.faceChartMap.at(adjId));
+
+                chart.borderVertices.push_back(vCurrent);
+
+                remainingVertices.erase(vCurrent);
+
+                vCurrent = vNext.at(vCurrent);
+            }
+            while (vCurrent != vStart);
+
+            //Get holes
+            while (!remainingVertices.empty()) {
+                vStart = *(remainingVertices.begin());
+                vCurrent = vStart;
+
+                std::vector<unsigned int> hole;
+
+                do {
+                    //Add adjacent hole chart
+                    unsigned int adjId = vHeMap.at(vCurrent)->getTwin()->getFace()->getId();
+                    chart.adjacentHoleCharts.insert(chartData.faceChartMap.at(adjId));
+
+                    hole.push_back(vCurrent);
+
+                    remainingVertices.erase(vCurrent);
+
+                    vCurrent = vNext.at(vCurrent);
+                }
+                while (vCurrent != vStart);
+
+                chart.holeVertices.push_back(hole);
             }
         }
     }
+
 
     return chartData;
 }

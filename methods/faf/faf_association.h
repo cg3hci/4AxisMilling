@@ -20,7 +20,7 @@ void getAssociation(
         const double maxLabelAngle,
         const double compactness,
         const unsigned int optimizationIterations,
-        const unsigned int minFaces,
+        const unsigned int minChartArea,
         Data& data);
 
 
