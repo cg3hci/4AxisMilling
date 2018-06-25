@@ -433,7 +433,7 @@ void FourAxisFabricationManager::extractResults() {
  * @brief Add drawable meshes
  */
 void FourAxisFabricationManager::addDrawableMeshes(const std::string& meshName) {
-    //Create drawable meshes (already in the canvas)
+    //Add drawable meshes to the canvas
     drawableOriginalMesh = cg3::DrawableEigenMesh(originalMesh);
     drawableSmoothedMesh = cg3::DrawableEigenMesh(smoothedMesh);
 
@@ -513,11 +513,14 @@ void FourAxisFabricationManager::addDrawableResults() {
  */
 void FourAxisFabricationManager::updateDrawableMeshes() {
     //Create drawable meshes (already in the canvas)
+    bool originalVisibility = drawableOriginalMesh.isVisible();
+    bool smoothVisibility = drawableSmoothedMesh.isVisible();
+
     drawableOriginalMesh = cg3::DrawableEigenMesh(originalMesh);
     drawableSmoothedMesh = cg3::DrawableEigenMesh(smoothedMesh);
 
-    mainWindow.refreshDrawableObject(&drawableOriginalMesh);
-    mainWindow.refreshDrawableObject(&drawableSmoothedMesh);
+    mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, originalVisibility);
+    mainWindow.setDrawableObjectVisibility(&drawableSmoothedMesh, smoothVisibility);
 }
 
 /**
@@ -837,7 +840,7 @@ void FourAxisFabricationManager::colorizeTargetDirections() {
  */
 void FourAxisFabricationManager::colorizeAssociation() {
     //Coloring drawable mesh
-    colorizeAssociation(drawableSmoothedMesh, data.association, data.targetDirections, data.nonVisibleFaces);
+    colorizeAssociation(drawableSmoothedMesh, data.association, data.targetDirections, data.associationNonVisibleFaces);
 
     //Coloring restored mesh
     if (areFrequenciesRestored) {
@@ -964,7 +967,7 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
         meshFile = loaderSaverObj.loadDialog("Load mesh");
 
         if (meshFile != "") {
-            isMeshLoaded = originalMesh.readFromObj(meshFile);
+            isMeshLoaded = originalMesh.loadFromObj(meshFile);
 
             //If the mesh has been successfully loaded
             if (isMeshLoaded){
@@ -973,14 +976,14 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
 
                 //Find smoothed mesh in the path
                 smoothedFile = rawname + "_smooth" + ext;
-                isMeshLoaded = smoothedMesh.readFromObj(smoothedFile);
+                isMeshLoaded = smoothedMesh.loadFromObj(smoothedFile);
 
                 //If a smoothed mesh has not been found
                 if (!isMeshLoaded){
                     //Get loading dialog
                     smoothedFile = loaderSaverObj.loadDialog("Load smoothed mesh");
                     if (smoothedFile != ""){
-                        isMeshLoaded = smoothedMesh.readFromObj(smoothedFile);
+                        isMeshLoaded = smoothedMesh.loadFromObj(smoothedFile);
                     }
                 }
 
@@ -1060,8 +1063,8 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
 
         //Try to reload the meshes
         isMeshLoaded =
-                originalMesh.readFromObj(loadedMeshFile) &
-                smoothedMesh.readFromObj(loadedSmoothedMeshFile);
+                originalMesh.loadFromObj(loadedMeshFile) &
+                smoothedMesh.loadFromObj(loadedSmoothedMeshFile);
 
         //If the meshes have been successfully loaded
         if (isMeshLoaded){

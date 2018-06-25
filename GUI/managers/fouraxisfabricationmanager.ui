@@ -12,7 +12,7 @@
   </property>
   <property name="maximumSize">
    <size>
-    <width>610</width>
+    <width>16777215</width>
     <height>16777215</height>
    </size>
   </property>
@@ -30,7 +30,7 @@
     <widget class="QGroupBox" name="transformationGroup">
      <property name="maximumSize">
       <size>
-       <width>580</width>
+       <width>16777215</width>
        <height>16777215</height>
       </size>
      </property>
@@ -363,7 +363,7 @@
     <widget class="QGroupBox" name="fourAxisFabricationGroup">
      <property name="maximumSize">
       <size>
-       <width>590</width>
+       <width>16777215</width>
        <height>16777215</height>
       </size>
      </property>
@@ -771,7 +771,7 @@
     <widget class="QGroupBox" name="meshGroup">
      <property name="maximumSize">
       <size>
-       <width>590</width>
+       <width>16777215</width>
        <height>16777215</height>
       </size>
      </property>
@@ -827,7 +827,7 @@
     <widget class="QGroupBox" name="visualizationGroup">
      <property name="maximumSize">
       <size>
-       <width>590</width>
+       <width>16777215</width>
        <height>16777215</height>
       </size>
      </property>

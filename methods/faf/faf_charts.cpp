@@ -127,7 +127,7 @@ ChartData getChartData(
                 const Vertex* vertex = dcel.getVertex(vId);
                 chartCenter += vertex->getCoordinate();
             }
-            chartCenter /= cg3::Pointd(nVertices, nVertices, nVertices);
+            chartCenter /= nVertices;
 
             //Next map and set of vertices in the borders
             std::unordered_map<unsigned int, unsigned int> vNext;

@@ -156,17 +156,18 @@ void getAssociation(
 
 
         //TODO CHECK ASSOCIATION AND UPDATE NON VISIBLE FACES
+        data.associationNonVisibleFaces = data.nonVisibleFaces;
 
         //The remaining directions are the new target directions
-        std::vector<bool> usedLabels(nLabels, false);
+        std::vector<bool> usedDirections(data.directions.size(), false);
         std::vector<unsigned int> newTargetDirections;
         for (unsigned int fId = 0; fId < nFaces; fId++){
-            usedLabels[association[fId]] = true;
+            usedDirections[association[fId]] = true;
         }
         //Set target directions
-        for (unsigned int lId = 0; lId < nLabels; ++lId) {
-            if (usedLabels[lId]) {
-                newTargetDirections.push_back(targetDirections[lId]);
+        for (unsigned int lId = 0; lId < data.directions.size(); ++lId) {
+            if (usedDirections[lId]) {
+                newTargetDirections.push_back(lId);
             }
         }
         data.targetDirections = newTargetDirections;
