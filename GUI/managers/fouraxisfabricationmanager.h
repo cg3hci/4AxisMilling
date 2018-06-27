@@ -84,6 +84,7 @@ private:
     bool isVisibilityChecked;
     bool areTargetDirectionsFound;
     bool isAssociationComputed;
+    bool isAssociationOptimized;
     bool areFrequenciesRestored;
     bool areComponentsCut;
     bool areResultsExtracted;
@@ -102,6 +103,7 @@ private:
     void checkVisibility();
     void getTargetDirections();
     void getAssociation();
+    void optimizeAssociation();
     void restoreFrequencies();
     void cutComponents();
     void extractResults();
@@ -155,6 +157,7 @@ private slots:
     void on_checkVisibilityButton_clicked();
     void on_targetDirectionsButton_clicked();
     void on_getAssociationButton_clicked();
+    void on_optimizationButton_clicked();
     void on_restoreFrequenciesButton_clicked();
     void on_cutComponentsButton_clicked();
     void on_extractResultsButton_clicked();

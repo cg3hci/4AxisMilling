@@ -18,7 +18,6 @@ namespace FourAxisFabrication {
 void getVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        const bool fixExtremeAssociation,
         Data& data,
         const double heightFieldAngle,
         CheckMode checkMode);

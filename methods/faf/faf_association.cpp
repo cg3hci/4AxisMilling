@@ -24,14 +24,15 @@ void setupDataCost(
         const cg3::EigenMesh& mesh,
         const double freeCostAngle,
         const double dataSigma,
+        const bool fixExtremes,
         const Data& data,
-        float* dataCost);
+        std::vector<float>& dataCost);
 
 void setupSmoothCost(
         const double maxLabelAngle,
         const double compactness,
         const Data& data,
-        float* smoothCost);
+        std::vector<float>& smoothCost);
 
 }
 
@@ -39,12 +40,13 @@ void setupSmoothCost(
 /* Get optimal association for each face */
 
 /**
- * @brief Associate each face of the mesh to a direction
+ * @brief Associate each face of the mesh to a direction using a graph-cut algorithm
  * @param[in] Input mesh
  * @param[in] freeCostAngle Angles lower than the values, are not considered in data term
  * @param[in] dataSigma Sigma of the gaussian function for calculating data term
  * @param[in] maxLabelAngle Maximum angles between adjacent labels
  * @param[in] compactness Compactness
+ * @param[in] fixExtremes Fix extremes on the given directions
  * @param[out] data Four axis fabrication data
  */
 void getAssociation(
@@ -53,40 +55,44 @@ void getAssociation(
         const double dataSigma,
         const double maxLabelAngle,
         const double compactness,
-        const unsigned int optimizationIterations,
-        const unsigned int minChartArea,
+        const bool fixExtremes,
         Data& data)
 {
     //Get fabrication data
-    const std::vector<unsigned int>& targetDirections = data.targetDirections;
+    const std::vector<cg3::Vec3>& directions = data.directions;
+    const std::vector<unsigned int>& nonVisibleFaces = data.nonVisibleFaces;
+    std::vector<unsigned int>& targetDirections = data.targetDirections;
+    std::vector<int>& association = data.association;
+    std::vector<unsigned int>& associationNonVisibleFaces = data.associationNonVisibleFaces;
+
     const unsigned int nFaces = mesh.getNumberFaces();
     const unsigned int nLabels = targetDirections.size();
-    std::vector<int>& association = data.association;
 
     //Get mesh adjacencies
-    std::vector<std::vector<int>> faceAdj = cg3::libigl::getFaceFaceAdjacencies(mesh);
+    std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
+
+    //Creating cost data arrays
+    std::vector<float> dataCost(nFaces * nLabels);
+    std::vector<float> smoothCost(nLabels * nLabels);
+
+    //Get the costs
+    internal::setupDataCost(mesh, freeCostAngle, dataSigma, fixExtremes, data, dataCost);
+    internal::setupSmoothCost(maxLabelAngle, compactness, data, smoothCost);
 
     try {
         GCoptimizationGeneralGraph* gc = new GCoptimizationGeneralGraph(nFaces, nLabels);
 
-        //Creating cost data arrays
-        float* dataCost = new float[nFaces * nLabels];
-        float* smoothCost = new float[nLabels * nLabels];
-
-        //Get the costs
-        internal::setupDataCost(mesh, freeCostAngle, dataSigma, data, dataCost);
-        internal::setupSmoothCost(maxLabelAngle, compactness, data, smoothCost);
-
-        gc->setDataCost(dataCost);
-        gc->setSmoothCost(smoothCost);
+        gc->setDataCost(dataCost.data());
+        gc->setSmoothCost(smoothCost.data());
 
         //Set adjacencies
         std::vector<bool> visited(nFaces, false);
         for (unsigned int f = 0; f < nFaces; f++) {
             visited[f] = true;
             for (int i = 0; i < 3; ++i) {
-                int nid = faceAdj[f][i];
-                if (!visited[nid]) gc->setNeighbors(f, nid);
+                int nid = ffAdj[f][i];
+                if (!visited[nid])
+                    gc->setNeighbors(f, nid);
             }
         }
 
@@ -97,80 +103,29 @@ void getAssociation(
         for (unsigned int fId = 0; fId < nFaces; fId++){
             int associatedDirectionIndex = gc->whatLabel(fId);
 
-            association[fId] = data.targetDirections[associatedDirectionIndex];
+            association[fId] = targetDirections[associatedDirectionIndex];
         }
-
-
-        //Optimization
-        unsigned int iterations = 0;
-        bool done = false;
-
-        ChartData chartData;
-        while (!done && iterations < optimizationIterations) {
-            //Get chart data
-            chartData = getChartData(mesh, data.association);
-
-            done = true;
-
-            //Relaxing data cost for holes
-            for (const Chart& surroundingChart : chartData.charts) {
-                if (!surroundingChart.adjacentHoleCharts.empty()) {
-                    for (unsigned int holeChartId : surroundingChart.adjacentHoleCharts) {
-                        Chart& holeChart = chartData.charts.at(holeChartId);
-
-                        std::vector<unsigned int>::const_iterator targetLabelIt = std::find(targetDirections.begin(), targetDirections.end(), (unsigned int) surroundingChart.label);
-                        size_t targetLabelIndex = std::distance(targetDirections.begin(), targetLabelIt);
-
-                        for (const int fId : holeChart.faces) {
-                            if (dataCost[fId * nLabels + targetLabelIndex] < MAXCOST) {
-                                dataCost[fId * nLabels + targetLabelIndex] = dataCost[fId * nLabels + targetLabelIndex] / 2;
-                            }
-                        }
-
-                        done = false;
-                    }
-                }
-            }
-
-            if (!done) {
-                //Compute graph cut with new data costs
-                gc->swap(-1); // -1 => run until convergence [convergence is guaranteed]
-
-                //Set associations
-                for (unsigned int fId = 0; fId < nFaces; fId++){
-                    int associatedDirectionIndex = gc->whatLabel(fId);
-
-                    association[fId] = data.targetDirections[associatedDirectionIndex];
-                }
-            }
-
-            iterations++;
-        }
-
-        std::cout << "Optimization iterations: " << iterations << std::endl;
 
         //Delete data
         delete gc;
-        delete dataCost;
-        delete smoothCost;
 
-
-        //TODO CHECK ASSOCIATION AND UPDATE NON VISIBLE FACES
-        data.associationNonVisibleFaces = data.nonVisibleFaces;
+        //Set non-visible faces for association
+        associationNonVisibleFaces = nonVisibleFaces;
 
         //The remaining directions are the new target directions
-        std::vector<bool> usedDirections(data.directions.size(), false);
+        std::vector<bool> usedDirections(directions.size(), false);
         std::vector<unsigned int> newTargetDirections;
         for (unsigned int fId = 0; fId < nFaces; fId++){
             usedDirections[association[fId]] = true;
         }
         //Set target directions
-        for (unsigned int lId = 0; lId < data.directions.size(); ++lId) {
+        for (unsigned int lId = 0; lId < directions.size(); ++lId) {
             if (usedDirections[lId]) {
                 newTargetDirections.push_back(lId);
             }
         }
-        data.targetDirections = newTargetDirections;
+
+        targetDirections = newTargetDirections;
     }
     catch (GCException e) {
         std::cerr << "\n\n!!!GRAPH-CUT EXCEPTION!!!\nCheck logfile\n\n" << std::endl;
@@ -178,6 +133,155 @@ void getAssociation(
     }
 }
 
+/**
+ * @brief Try to optimize the association, deleting holes and little charts.
+ * @param[in] Input mesh
+ * @param[in] relaxHoles Relax cost in hole-charts, assigning surrounding chart label
+ * if a face is visible
+ * @param[in] relaxHoles Lose details on holes
+ * @param[in] minChartArea Min area for which a chart can be deleted
+ * @param[out] data Four axis fabrication data
+ */
+void optimization(
+        const cg3::EigenMesh& mesh,
+        const bool relaxHoles,
+        const bool loseHoles,
+        const double minChartArea,
+        Data& data)
+{
+    //Get fabrication data
+    const std::vector<cg3::Vec3>& directions = data.directions;
+    const cg3::Array2D<int>& visibility = data.visibility;
+    std::vector<unsigned int>& targetDirections = data.targetDirections;
+    std::vector<int>& association = data.association;
+    std::vector<unsigned int>& associationNonVisibleFaces = data.associationNonVisibleFaces;
+    ChartData& chartData = data.chartData;
+
+    const unsigned int nFaces = mesh.getNumberFaces();
+    const unsigned int nLabels = targetDirections.size();
+
+    //Get chart data
+    chartData = getChartData(mesh, association);
+
+    //Relaxing data cost for holes
+    if (relaxHoles) {
+        unsigned int facesAffected = 0;
+        unsigned int chartAffected = 0;
+        for (const Chart& surroundingChart : chartData.charts) {
+            const int surroundingChartLabel = surroundingChart.label;
+
+            for (unsigned int holeChartId : surroundingChart.holeCharts) {
+                const Chart& holeChart = chartData.charts.at(holeChartId);
+
+                for (const int fId : holeChart.faces) {
+                    if (visibility(surroundingChartLabel, fId) > 0) {
+                        association[fId] = surroundingChartLabel;
+                        facesAffected++;
+                    }
+                }
+
+                chartAffected++;
+            }
+        }
+
+        if (chartAffected > 0) {
+            //Get new chart data
+            chartData = getChartData(mesh, association);
+        }
+
+        std::cout << "Relaxed constraints for " << chartAffected << " hole charts. Faces affected: " << facesAffected << std::endl;
+    }
+
+
+    //Deleting small charts
+    if (minChartArea > std::numeric_limits<double>::epsilon()) {
+        //Mesh area
+        double meshArea = 0;
+        for (unsigned int fId = 0; fId < nFaces; fId++)
+            meshArea += mesh.getFaceArea(fId);
+
+        double limitArea = meshArea * minChartArea;
+
+
+        unsigned int facesAffected = 0;
+        unsigned int facesNoLongerVisible = 0;
+        unsigned int chartAffected = 0;
+
+        //For each chart
+        for (const Chart& chart : chartData.charts) {
+            //Chart area
+            double chartArea = 0;
+            for (unsigned int fId : chart.faces)
+                chartArea += mesh.getFaceArea(fId);
+
+            if (chartArea < limitArea) {
+                //TODO
+
+                //TODO ADD NON VISIBLE-FACES TO ASSOCIATION
+//                if (visibility(surroundingChartLabel, fId)) {
+//                    associationNonVisibleFaces.push_back(fId);
+//                    facesNoLongerVisible++;
+//                }
+            }
+        }
+
+        if (chartAffected > 0) {
+            //Get new chart data
+            chartData = getChartData(mesh, association);
+        }
+
+        std::cout << "Small chart details lost for " << chartAffected << " charts. Faces affected: " << facesAffected << ". Faces no longer visible: " << facesNoLongerVisible << std::endl;
+    }
+
+
+    //Lose details on holes
+    if (loseHoles) {
+        unsigned int facesAffected = 0;
+        unsigned int facesNoLongerVisible = 0;
+        unsigned int chartAffected = 0;
+        for (const Chart& surroundingChart : chartData.charts) {
+            const int surroundingChartLabel = surroundingChart.label;
+
+            for (unsigned int holeChartId : surroundingChart.holeCharts) {
+                const Chart& holeChart = chartData.charts.at(holeChartId);
+
+                for (const int fId : holeChart.faces) {
+                    association[fId] = surroundingChartLabel;
+                    facesAffected++;
+
+                    if (visibility(surroundingChartLabel, fId) == 0) {
+                        associationNonVisibleFaces.push_back(fId);
+                        facesNoLongerVisible++;
+                    }
+                }
+
+                chartAffected++;
+            }
+        }
+
+        if (chartAffected > 0) {
+            //Get new chart data
+            chartData = getChartData(mesh, association);
+        }
+
+        std::cout << "Lost details for " << chartAffected << " hole charts. Faces affected: " << facesAffected << ". Faces no longer visible: " << facesNoLongerVisible << std::endl;
+    }
+
+    //The remaining directions are the new target directions
+    std::vector<bool> usedDirections(directions.size(), false);
+    std::vector<unsigned int> newTargetDirections;
+    for (unsigned int fId = 0; fId < nFaces; fId++){
+        usedDirections[association[fId]] = true;
+    }
+    //Set target directions
+    for (unsigned int lId = 0; lId < directions.size(); ++lId) {
+        if (usedDirections[lId]) {
+            newTargetDirections.push_back(lId);
+        }
+    }
+
+    targetDirections = newTargetDirections;
+}
 
 namespace internal {
 
@@ -186,6 +290,7 @@ namespace internal {
  * @param[in] Input mesh
  * @param[in] freeCostAngle Angles lower than the values, are not considered in data term
  * @param[in] dataSigma Sigma of the gaussian function for calculating data term
+ * @param[in] fixExtremes Fix extremes on the given directions
  * @param[in] data Four axis fabrication data
  * @param[out] dataCost Data cost output
  */
@@ -193,17 +298,20 @@ void setupDataCost(
         const cg3::EigenMesh& mesh,
         const double freeCostAngle,
         const double dataSigma,
+        const bool fixExtremes,
         const Data& data,
-        float* dataCost)
+        std::vector<float>& dataCost)
 {
     const std::vector<cg3::Vec3>& directions = data.directions;
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
     const cg3::Array2D<int>& visibility = data.visibility;
-    const std::vector<int>& association = data.association;
+    const std::vector<unsigned int>& minExtremes = data.minExtremes;
+    const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
+
     const unsigned int nFaces = mesh.getNumberFaces();
     const unsigned int nLabels = targetDirections.size();
 
-
+    #pragma omp parallel for
     for (unsigned int faceId = 0; faceId < nFaces; faceId++){
         for (unsigned int label = 0; label < nLabels; ++label) {
             const int& directionIndex = targetDirections[label];
@@ -211,41 +319,46 @@ void setupDataCost(
 
             double cost;
 
-            if (association[faceId] < 0) {
-                //Visible
-                if (visibility(directionIndex, faceId) == 1) {
-                    const cg3::Vec3 faceNormal = mesh.getFaceNormal(faceId);
+            //Visible
+            if (visibility(directionIndex, faceId) == 1) {
+                const cg3::Vec3 faceNormal = mesh.getFaceNormal(faceId);
 
-                    double dot = faceNormal.dot(labelNormal);
-                    double angle = acos(dot);
+                double dot = faceNormal.dot(labelNormal);
+                double angle = acos(dot);
 
-                    //If the angle is greater than the limit angle
-                    if (angle > freeCostAngle) {
-                        double normalizedAngle = (angle - freeCostAngle)/(M_PI/2 - freeCostAngle);
-                        cost = pow(normalizedAngle, dataSigma);
-                    }
-                    else {
-                        cost = 0;
-                    }
+                //If the angle is greater than the limit angle
+                if (angle > freeCostAngle) {
+                    double normalizedAngle = (angle - freeCostAngle)/(M_PI/2 - freeCostAngle);
+                    cost = pow(normalizedAngle, dataSigma);
                 }
-                //Not visibile
                 else {
-                    cost = MAXCOST;
-                }
-            }
-            else {
-                //Already associated with that label
-                if (association[faceId] == directionIndex) {
                     cost = 0;
                 }
-                //Already associated with another label
-                else {
-                    cost = MAXCOST;
-                }
-
+            }
+            //Not visibile
+            else {
+                cost = MAXCOST;
             }
 
             dataCost[faceId * nLabels + label] = cost;
+        }
+    }
+
+    //Fix extremes on the +x and -x
+    if (fixExtremes) {
+        #pragma omp parallel for
+        for (unsigned int label = 0; label < nLabels - 2; ++label) {
+            #pragma omp parallel for
+            for (size_t i = 0; i < minExtremes.size(); i++) {
+                unsigned int faceId = minExtremes[i];
+                dataCost[faceId * nLabels + label] = MAXCOST;
+            }
+
+            #pragma omp parallel for
+            for (size_t i = 0; i < maxExtremes.size(); i++){
+                unsigned int faceId = maxExtremes[i];
+                dataCost[faceId * nLabels + label] = MAXCOST;
+            }
         }
     }
 }
@@ -262,16 +375,19 @@ void setupSmoothCost(
         const double maxLabelAngle,
         const double compactness,
         const Data& data,
-        float* smoothCost)
+        std::vector<float>& smoothCost)
 {
     const std::vector<cg3::Vec3>& directions = data.directions;
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
+
     const unsigned int nLabels = targetDirections.size();
 
+    #pragma omp parallel for
     for (unsigned int l1 = 0; l1 < nLabels; ++l1) {
         const int& l1DirIndex = targetDirections[l1];
         const cg3::Vec3& l1Normal = directions[l1DirIndex];
 
+        #pragma omp parallel for
         for (unsigned int l2 = 0; l2 < nLabels; ++l2) {
             double cost;
 

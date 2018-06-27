@@ -47,6 +47,10 @@ struct Data {
     std::vector<unsigned int> associationNonVisibleFaces;
 
 
+    /* Chart data */
+    ChartData chartData;
+
+
     /* Frequencies restored data */
 
     cg3::EigenMesh restoredMesh;    

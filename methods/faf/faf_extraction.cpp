@@ -83,9 +83,9 @@ void extractResults(
 
 
     //Get vertex-face adjacencies
-    std::vector<std::vector<int>> fourAxisVFAdj = cg3::libigl::getVertexFaceAdjacencies(fourAxisComponent);
-    std::vector<std::vector<int>> minVFAdj = cg3::libigl::getVertexFaceAdjacencies(minComponent);
-    std::vector<std::vector<int>> maxVFAdj = cg3::libigl::getVertexFaceAdjacencies(maxComponent);
+    std::vector<std::vector<int>> fourAxisVFAdj = cg3::libigl::vertexToFaceIncidences(fourAxisComponent);
+    std::vector<std::vector<int>> minVFAdj = cg3::libigl::vertexToFaceIncidences(minComponent);
+    std::vector<std::vector<int>> maxVFAdj = cg3::libigl::vertexToFaceIncidences(maxComponent);
 
 
 
@@ -139,7 +139,7 @@ void extractResults(
         }
 
         //Get connected components
-        std::vector<cg3::SimpleEigenMesh> connectedComponents = cg3::libigl::getConnectedComponents(surface);
+        std::vector<cg3::SimpleEigenMesh> connectedComponents = cg3::libigl::connectedComponents(surface);
 
         //Add each components to the results
         for (cg3::SimpleEigenMesh& simpleComponent : connectedComponents) {
@@ -218,7 +218,7 @@ void extractResults(
 
 
         //Get connected components
-        std::vector<cg3::SimpleEigenMesh> connectedComponents = cg3::libigl::getConnectedComponents(surface);
+        std::vector<cg3::SimpleEigenMesh> connectedComponents = cg3::libigl::connectedComponents(surface);
 
         //Add each components to the results
         for (cg3::SimpleEigenMesh& simpleComponent : connectedComponents) {

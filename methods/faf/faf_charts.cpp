@@ -170,7 +170,7 @@ ChartData getChartData(
             do {
                 //Add adjacent chart
                 unsigned int adjId = vHeMap.at(vCurrent)->getTwin()->getFace()->getId();
-                chart.adjacentExternalCharts.insert(chartData.faceChartMap.at(adjId));
+                chart.borderCharts.insert(chartData.faceChartMap.at(adjId));
 
                 chart.borderVertices.push_back(vCurrent);
 
@@ -190,7 +190,7 @@ ChartData getChartData(
                 do {
                     //Add adjacent hole chart
                     unsigned int adjId = vHeMap.at(vCurrent)->getTwin()->getFace()->getId();
-                    chart.adjacentHoleCharts.insert(chartData.faceChartMap.at(adjId));
+                    chart.holeCharts.insert(chartData.faceChartMap.at(adjId));
 
                     hole.push_back(vCurrent);
 

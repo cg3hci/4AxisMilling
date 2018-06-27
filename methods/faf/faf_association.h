@@ -19,8 +19,14 @@ void getAssociation(
         const double dataSigma,
         const double maxLabelAngle,
         const double compactness,
-        const unsigned int optimizationIterations,
-        const unsigned int minChartArea,
+        const bool fixExtremes,
+        Data& data);
+
+void optimization(
+        const cg3::EigenMesh& mesh,
+        const bool relaxHoles,
+        const bool loseHoles,
+        const double minChartArea,
         Data& data);
 
 

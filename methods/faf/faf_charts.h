@@ -25,8 +25,8 @@ struct Chart {
     std::vector<unsigned int> borderVertices;
     std::vector<std::vector<unsigned int>> holeVertices;
 
-    std::set<size_t> adjacentExternalCharts;
-    std::set<size_t> adjacentHoleCharts;
+    std::set<size_t> borderCharts;
+    std::set<size_t> holeCharts;
 };
 
 /**

@@ -36,13 +36,11 @@ namespace internal {
 void initializeDataForVisibilityCheck(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        const bool fixExtremeAssociation,
         Data& data);
 
 void computeVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        const std::vector<int>& association,
         std::vector<cg3::Vec3>& directions,
         std::vector<double>& directionsAngle,
         cg3::Array2D<int>& visibility,
@@ -108,7 +106,6 @@ void getVisibilityProjectionOnZ(
  * in a 2D projection from a given direction.
  * @param[in] mesh Input mesh
  * @param[in] numberDirections Number of directions to be checked
- * @param[in] fixExtremeAssociation Set if faces in the extremes must be already and unconditionally
  * @param[out] data Four axis fabrication data
  * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  * @param[in] checkMode Visibility check mode. Default is projection mode.
@@ -116,13 +113,12 @@ void getVisibilityProjectionOnZ(
 void getVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        const bool fixExtremeAssociation,
         Data& data,
         const double heightfieldAngle,
         CheckMode checkMode)
 {
-    internal::initializeDataForVisibilityCheck(mesh, nDirections, fixExtremeAssociation, data);
-    internal::computeVisibility(mesh, nDirections, data.association, data.directions, data.angles, data.visibility, heightfieldAngle, checkMode);
+    internal::initializeDataForVisibilityCheck(mesh, nDirections, data);
+    internal::computeVisibility(mesh, nDirections, data.directions, data.angles, data.visibility, heightfieldAngle, checkMode);
     internal::detectNonVisibleFaces(data);
 }
 
@@ -140,14 +136,11 @@ namespace internal {
  * @brief Initialize data for visibility check
  * @param[in] mesh Input mesh
  * @param[in] nDirections Number of directions
- * @param[in] fixExtremeAssociation Set if faces in the extremes must be already and unconditionally
- * assigned to the x-axis directions
  * @param[out] data Four axis fabrication data
  */
 void initializeDataForVisibilityCheck(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        const bool fixExtremeAssociation,
         Data& data)
 {
     const std::vector<unsigned int>& minExtremes = data.minExtremes;
@@ -183,28 +176,18 @@ void initializeDataForVisibilityCheck(
     directions[maxIndex] = cg3::Vec3(1,0,0);
 
 
-    //Set visibility and association of the min extremes
+    //Set visibility of the min extremes
     #pragma omp parallel for
-    for (unsigned int i = 0; i < minExtremes.size(); i++){
+    for (size_t i = 0; i < minExtremes.size(); i++){
         unsigned int faceId = minExtremes[i];
-
         visibility(minIndex, faceId) = 1;
-
-        if (fixExtremeAssociation) {
-            association[faceId] = (int) minIndex;
-        }
     }
 
-    //Set visibility and association of the max extremes
+    //Set visibility of the max extremes
     #pragma omp parallel for
-    for (unsigned int i = 0; i < maxExtremes.size(); i++){
+    for (size_t i = 0; i < maxExtremes.size(); i++){
         unsigned int faceId = maxExtremes[i];
-
         visibility(maxIndex, faceId) = 1;
-
-        if (fixExtremeAssociation) {
-            association[faceId] = (int) maxIndex;
-        }
     }
 
 }
@@ -216,7 +199,6 @@ void initializeDataForVisibilityCheck(
  * in a 2D projection from a given direction.
  * @param[in] mesh Input mesh
  * @param[in] numberDirections Number of directions to be checked
- * @param[in] association Current association
  * @param[out] directions Vector of directions
  * @param[out] angles Vector of angle (respect to z-axis)
  * @param[out] visibility Output visibility
@@ -226,7 +208,6 @@ void initializeDataForVisibilityCheck(
 void computeVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        const std::vector<int>& association,
         std::vector<cg3::Vec3>& directions,
         std::vector<double>& angles,
         cg3::Array2D<int>& visibility,
@@ -237,10 +218,7 @@ void computeVisibility(
     std::vector<unsigned int> targetFaces;
 
     for (unsigned int i = 0; i < mesh.getNumberFaces(); i++) {
-        //We do not include faces that have already an association
-        if (association[i] < 0) {
-            targetFaces.push_back(i);
-        }
+        targetFaces.push_back(i);
     }
 
     //Copy the mesh

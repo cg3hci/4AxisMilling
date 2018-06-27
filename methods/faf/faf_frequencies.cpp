@@ -83,22 +83,22 @@ void restoreFrequencies(
     assert(originalMesh.getNumberFaces() == smoothedMesh.getNumberFaces());
 
     //Get vertex-vertex adjacencies
-    const std::vector<std::vector<int>> vertexVertexAdjacencies =
-            cg3::libigl::getVertexVertexAdjacencies(originalMesh);
-    assert(vertexVertexAdjacencies.size() == originalMesh.getNumberVertices());
+    const std::vector<std::vector<int>> vvAdj =
+            cg3::libigl::vertexToVertexAdjacencies(originalMesh);
+    assert(vvAdj.size() == originalMesh.getNumberVertices());
 
     //Get vertex-face adjacencies
-    const std::vector<std::vector<int>> vertexFaceAdjacencies =
-            cg3::libigl::getVertexFaceAdjacencies(originalMesh);
-    assert(vertexFaceAdjacencies.size() == originalMesh.getNumberVertices());
+    const std::vector<std::vector<int>> vfAdj =
+            cg3::libigl::vertexToFaceIncidences(originalMesh);
+    assert(vfAdj.size() == originalMesh.getNumberVertices());
 
     //Get face-face adjacencies
-    const std::vector<std::vector<int>> faceFaceAdjacencies =
-            cg3::libigl::getFaceFaceAdjacencies(originalMesh);
-    assert(faceFaceAdjacencies.size() == originalMesh.getNumberFaces());
+    const std::vector<std::vector<int>> ffAdj =
+            cg3::libigl::faceToFaceAdjacencies(originalMesh);
+    assert(ffAdj.size() == originalMesh.getNumberFaces());
 
     const std::vector<cg3::Vec3> differentialCoordinates =
-            internal::computeDifferentialCoordinates(originalMesh, vertexVertexAdjacencies);
+            internal::computeDifferentialCoordinates(originalMesh, vvAdj);
 
     //Copy the target mesh
     cg3::EigenMesh& targetMesh = data.restoredMesh;
@@ -109,8 +109,8 @@ void restoreFrequencies(
         internal::restoreFrequenciesValidHeightfields(
                     targetMesh,
                     differentialCoordinates,
-                    vertexVertexAdjacencies,
-                    vertexFaceAdjacencies,
+                    vvAdj,
+                    vfAdj,
                     data,
                     heightfieldAngle);
     }
@@ -135,7 +135,7 @@ void restoreFrequencies(
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  * @returns The number of no longer visible triangles
  */
-unsigned int checkVisibilityAfterFrequenciesAreRestored(
+void checkVisibilityAfterFrequenciesAreRestored(
         Data& data,
         const double heightfieldAngle,
         CheckMode checkMode)
@@ -149,7 +149,7 @@ unsigned int checkVisibilityAfterFrequenciesAreRestored(
     newData.maxExtremes = data.maxExtremes;
 
     //Get new visibility
-    getVisibility(targetMesh, nDirections, true, newData, heightfieldAngle, checkMode);
+    getVisibility(targetMesh, nDirections, newData, heightfieldAngle, checkMode);
     data.restoredMeshVisibility = newData.visibility;
 
     data.restoredMeshNonVisibleFaces.clear();
@@ -159,8 +159,6 @@ unsigned int checkVisibilityAfterFrequenciesAreRestored(
             data.restoredMeshNonVisibleFaces.push_back(faceId);
         }
     }
-
-    return (unsigned int) data.restoredMeshNonVisibleFaces.size() - data.nonVisibleFaces.size();
 }
 
 

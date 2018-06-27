@@ -85,8 +85,7 @@ void FourAxisFabricationManager::updateUI() {
     ui->checkVisibilityDirectionsSpinBox->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityMethodFrame->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityHeightfieldAngleLabel->setEnabled(!isVisibilityChecked);
-    ui->checkVisibilityHeightfieldAngleSpinBox->setEnabled(!isVisibilityChecked);
-    ui->checkVisibilityFixExtremesCheckBox->setEnabled(!isVisibilityChecked);
+    ui->checkVisibilityHeightfieldAngleSpinBox->setEnabled(!isVisibilityChecked);    
 
     //Get the target directions
     ui->targetDirectionsButton->setEnabled(!areTargetDirectionsFound);
@@ -102,10 +101,14 @@ void FourAxisFabricationManager::updateUI() {
     ui->getAssociationMaxLabelAngleLabel->setEnabled(!isAssociationComputed);
     ui->getAssociationCompactnessLabel->setEnabled(!isAssociationComputed);
     ui->getAssociationCompactnessSpinBox->setEnabled(!isAssociationComputed);
-    ui->getAssociationOptimizationLabel->setEnabled(!isAssociationComputed);
-    ui->getAssociationOptimizationSpinBox->setEnabled(!isAssociationComputed);
-    ui->getAssociationMinChartAreaLabel->setEnabled(!isAssociationComputed);
-    ui->getAssociationMinChartAreaSpinBox->setEnabled(!isAssociationComputed);
+    ui->getAssociationFixExtremesCheckBox->setEnabled(!isAssociationComputed);
+
+    //Optimization
+    ui->optimizationButton->setEnabled(!isAssociationOptimized);
+    ui->optimizationRelaxHolesCheckBox->setEnabled(!isAssociationOptimized);
+    ui->optimizationLoseHolesCheckBox->setEnabled(!isAssociationOptimized);
+    ui->optimizationMinChartAreaLabel->setEnabled(!isAssociationOptimized);
+    ui->optimizationMinChartAreaSpinBox->setEnabled(!isAssociationOptimized);
 
     //Restore frequencies
     ui->restoreFrequenciesButton->setEnabled(!areFrequenciesRestored);
@@ -152,6 +155,7 @@ void FourAxisFabricationManager::clearData() {
     isVisibilityChecked = false;
     areTargetDirectionsFound = false;
     isAssociationComputed = false;
+    isAssociationOptimized = false;
     areFrequenciesRestored = false;
     areComponentsCut = false;
     areResultsExtracted = false;
@@ -228,7 +232,6 @@ void FourAxisFabricationManager::checkVisibility() {
 
         //Get UI data
         unsigned int nDirections = (unsigned int) ui->checkVisibilityDirectionsSpinBox->value();
-        bool fixExtremeAssociation = ui->checkVisibilityFixExtremesCheckBox->isChecked();
         double heightfieldAngle = ui->checkVisibilityHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
         FourAxisFabrication::CheckMode checkMode = (ui->checkVisibilityRayRadio->isChecked() ?
                 FourAxisFabrication::RAYSHOOTING :
@@ -244,7 +247,6 @@ void FourAxisFabricationManager::checkVisibility() {
         FourAxisFabrication::getVisibility(
                     smoothedMesh,
                     nDirections,
-                    fixExtremeAssociation,
                     data,
                     heightfieldAngle,
                     checkMode);
@@ -253,6 +255,8 @@ void FourAxisFabricationManager::checkVisibility() {
         t.stopAndPrint();
 
         isVisibilityChecked = true;
+
+        std::cout << "Non-visible triangles: " << data.nonVisibleFaces.size() << std::endl;
     }
 }
 
@@ -282,7 +286,7 @@ void FourAxisFabricationManager::getTargetDirections() {
 }
 
 /**
- * @brief Get optimized association
+ * @brief Get association
  */
 void FourAxisFabricationManager::getAssociation() {
     if (!isAssociationComputed) {
@@ -296,8 +300,7 @@ void FourAxisFabricationManager::getAssociation() {
         double dataSigma = ui->getAssociationDataSigmaSpinBox->value();
         double maxLabelAngle = ui->getAssociationMaxLabelAngleSpinBox->value() / 180.0 * M_PI;
         double compactness = ui->getAssociationCompactnessSpinBox->value();
-        double optimizationIterations = ui->getAssociationOptimizationSpinBox->value();
-        double minChartArea = ui->getAssociationMinChartAreaSpinBox->value();
+        bool fixExtremes = ui->getAssociationFixExtremesCheckBox->isChecked();
 
         cg3::Timer t("Get association");
 
@@ -308,8 +311,7 @@ void FourAxisFabricationManager::getAssociation() {
                     dataSigma,
                     maxLabelAngle,
                     compactness,
-                    optimizationIterations,
-                    minChartArea,
+                    fixExtremes,
                     data);
 
         t.stopAndPrint();
@@ -317,6 +319,42 @@ void FourAxisFabricationManager::getAssociation() {
         isAssociationComputed = true;
     }
 }
+
+
+/**
+ * @brief Get optimized association
+ */
+void FourAxisFabricationManager::optimizeAssociation() {
+    if (!isAssociationOptimized) {
+        optimalOrientation();
+        selectExtremes();
+        checkVisibility();
+        getTargetDirections();
+        getAssociation();
+
+        //Get UI data
+        bool relaxHoles = ui->optimizationRelaxHolesCheckBox->isChecked();
+        bool loseHoles = ui->optimizationLoseHolesCheckBox->isChecked();
+        double minChartArea = ui->optimizationMinChartAreaSpinBox->value();
+
+        cg3::Timer t("Optimize association");
+
+        //Execute optimization
+        FourAxisFabrication::optimization(
+                    smoothedMesh,
+                    relaxHoles,
+                    loseHoles,
+                    minChartArea,
+                    data);
+
+        t.stopAndPrint();
+
+        isAssociationOptimized = true;
+
+        std::cout << "Non-visible triangles after association: " << data.associationNonVisibleFaces.size() << std::endl;
+    }
+}
+
 
 /**
  * @brief Restore frequencies
@@ -328,6 +366,7 @@ void FourAxisFabricationManager::restoreFrequencies() {
         checkVisibility();
         getTargetDirections();
         getAssociation();
+        optimizeAssociation();
 
         //Get UI data
         unsigned int nIterations = (unsigned int) ui->restoreFrequenciesIterationsSpinBox->value();
@@ -350,12 +389,11 @@ void FourAxisFabricationManager::restoreFrequencies() {
             cg3::Timer tCheck("Recheck association after frequencies have been restored");
 
             //Check if it is a valid association
-            unsigned int numberOfNoLongerVisibleTriangles =
                     FourAxisFabrication::checkVisibilityAfterFrequenciesAreRestored(data, heightfieldAngle, checkMode);
 
-            tCheck.stopAndPrint();
+            tCheck.stopAndPrint();            
 
-            std::cout << "Number of no longer visible triangles: " << numberOfNoLongerVisibleTriangles << std::endl;
+            std::cout << "Non-visible triangles after frequency restoring: " << data.restoredMeshNonVisibleFaces.size() << std::endl;
         }
 
 
@@ -376,6 +414,7 @@ void FourAxisFabricationManager::cutComponents() {
         checkVisibility();
         getTargetDirections();
         getAssociation();
+        optimizeAssociation();
         restoreFrequencies();
 
 
@@ -402,6 +441,7 @@ void FourAxisFabricationManager::extractResults() {
         checkVisibility();
         getTargetDirections();
         getAssociation();
+        optimizeAssociation();
         restoreFrequencies();
         cutComponents();
 
@@ -940,13 +980,14 @@ void FourAxisFabricationManager::showCurrentStatusDescription()
         std::stringstream ss;
 
         //Description
-        ss << "Target directions: " << data.targetDirections.size() << " directions. ";
+        ss << "Target directions: " << data.targetDirections.size() << " directions.";
 
         //Non-visible data
-        ss << data.nonVisibleFaces.size() << " ";
+        ss << " Non-visible: " << data.nonVisibleFaces.size() << ".";
+        if (isAssociationOptimized)
+            ss << " Ass: " << data.associationNonVisibleFaces.size() << ".";
         if (areFrequenciesRestored)
-            ss << "(Freq: " << data.restoredMeshNonVisibleFaces.size() << ") ";
-        ss << "non-visible triangles (black)";
+            ss << " Freq: "<<  data.restoredMeshNonVisibleFaces.size() << ".";
 
         //Update description label
         std::string description = ss.str();
@@ -1242,6 +1283,22 @@ void FourAxisFabricationManager::on_getAssociationButton_clicked()
     updateUI();
 }
 
+void FourAxisFabricationManager::on_optimizationButton_clicked()
+{
+    //Optimization
+    optimizeAssociation();
+
+    //Update canvas and fit the scene
+    mainWindow.canvas.update();
+    mainWindow.canvas.fitScene();
+
+    //Visualize association
+    ui->associationRadio->setChecked(true);
+    initializeVisualizationSlider();
+
+    updateUI();
+}
+
 void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
     //Check visibility by the chosen directions
     restoreFrequencies();
@@ -1287,7 +1344,6 @@ void FourAxisFabricationManager::on_extractResultsButton_clicked() {
 
     updateUI();
 }
-
 
 /* ----- UI SLOTS TRANSFORMATIONS ------ */
 
