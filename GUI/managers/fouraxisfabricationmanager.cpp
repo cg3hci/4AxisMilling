@@ -114,7 +114,10 @@ void FourAxisFabricationManager::updateUI() {
     ui->restoreFrequenciesButton->setEnabled(!areFrequenciesRestored);
     ui->restoreFrequenciesIterationsLabel->setEnabled(!areFrequenciesRestored);
     ui->restoreFrequenciesIterationsSpinBox->setEnabled(!areFrequenciesRestored);
-    ui->restoreFrequenciesRecheckCheckBox->setEnabled(!areFrequenciesRestored);
+
+    //Recheck visibility after restore
+    ui->recheckVisibilityReassignNonVisibleCheckBox->setEnabled(!isVisibilityRecheckedAfterRestore);
+    ui->recheckVisibilityButton->setEnabled(!isVisibilityRecheckedAfterRestore);
 
     //Cut components
     ui->cutComponentsButton->setEnabled(!areComponentsCut);
@@ -157,6 +160,7 @@ void FourAxisFabricationManager::clearData() {
     isAssociationComputed = false;
     isAssociationOptimized = false;
     areFrequenciesRestored = false;
+    isVisibilityRecheckedAfterRestore = false;
     areComponentsCut = false;
     areResultsExtracted = false;
 
@@ -226,7 +230,6 @@ void FourAxisFabricationManager::selectExtremes() {
  */
 void FourAxisFabricationManager::checkVisibility() {
     if (!isVisibilityChecked) {
-        optimalOrientation();
         selectExtremes();
 
         //Get UI data
@@ -264,8 +267,6 @@ void FourAxisFabricationManager::checkVisibility() {
  */
 void FourAxisFabricationManager::getTargetDirections() {
     if (!areTargetDirectionsFound) {
-        optimalOrientation();
-        selectExtremes();
         checkVisibility();
 
         //Get UI data
@@ -289,9 +290,6 @@ void FourAxisFabricationManager::getTargetDirections() {
  */
 void FourAxisFabricationManager::getAssociation() {
     if (!isAssociationComputed) {
-        optimalOrientation();
-        selectExtremes();
-        checkVisibility();
         getTargetDirections();
 
         //Get UI data
@@ -325,10 +323,6 @@ void FourAxisFabricationManager::getAssociation() {
  */
 void FourAxisFabricationManager::optimizeAssociation() {
     if (!isAssociationOptimized) {
-        optimalOrientation();
-        selectExtremes();
-        checkVisibility();
-        getTargetDirections();
         getAssociation();
 
         //Get UI data
@@ -360,20 +354,11 @@ void FourAxisFabricationManager::optimizeAssociation() {
  */
 void FourAxisFabricationManager::restoreFrequencies() {
     if (!areFrequenciesRestored) {
-        optimalOrientation();
-        selectExtremes();
-        checkVisibility();
-        getTargetDirections();
-        getAssociation();
         optimizeAssociation();
 
         //Get UI data
         unsigned int nIterations = (unsigned int) ui->restoreFrequenciesIterationsSpinBox->value();
-        FourAxisFabrication::CheckMode checkMode = (ui->checkVisibilityRayRadio->isChecked() ?
-                FourAxisFabrication::RAYSHOOTING :
-                FourAxisFabrication::PROJECTION);
         double heightfieldAngle = ui->checkVisibilityHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
-        bool recheckVisibility = ui->restoreFrequenciesRecheckCheckBox->isChecked();
 
         cg3::Timer t("Restore frequencies");
 
@@ -381,19 +366,6 @@ void FourAxisFabricationManager::restoreFrequencies() {
         FourAxisFabrication::restoreFrequencies(nIterations, heightfieldAngle, originalMesh, smoothedMesh, data);
 
         t.stopAndPrint();
-
-
-
-        if (recheckVisibility) {
-            cg3::Timer tCheck("Recheck association after frequencies have been restored");
-
-            //Check if it is a valid association
-                    FourAxisFabrication::checkVisibilityAfterFrequenciesAreRestored(data, heightfieldAngle, checkMode);
-
-            tCheck.stopAndPrint();            
-
-            std::cout << "Non-visible triangles after frequency restoring: " << data.restoredMeshNonVisibleFaces.size() << std::endl;
-        }
 
 
         areFrequenciesRestored = true;
@@ -404,17 +376,43 @@ void FourAxisFabricationManager::restoreFrequencies() {
 
 
 /**
+ * @brief Recheck visibility after frequencies are restored
+ */
+void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
+    if (!isVisibilityRecheckedAfterRestore) {
+        restoreFrequencies();
+
+        //Get UI data
+        FourAxisFabrication::CheckMode checkMode = (ui->checkVisibilityRayRadio->isChecked() ?
+                FourAxisFabrication::RAYSHOOTING :
+                FourAxisFabrication::PROJECTION);
+        double heightfieldAngle = ui->checkVisibilityHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        bool reassign = ui->recheckVisibilityReassignNonVisibleCheckBox->isChecked();
+
+
+        cg3::Timer tCheck("Recheck visibility after frequencies have been restored");
+
+        //Check if it is a valid association
+        FourAxisFabrication::recheckVisibilityAfterRestore(data, heightfieldAngle, reassign, checkMode);
+
+        tCheck.stopAndPrint();
+
+        std::cout << "Non-visible triangles after recheck: " << data.restoredMeshNonVisibleFaces.size() << std::endl;
+
+        isVisibilityRecheckedAfterRestore = true;
+
+        updateDrawableRestoredMesh();
+    }
+}
+
+
+
+/**
  * @brief Cut components
  */
 void FourAxisFabricationManager::cutComponents() {
     if (!areComponentsCut) {
-        optimalOrientation();
-        selectExtremes();
-        checkVisibility();
-        getTargetDirections();
-        getAssociation();
-        optimizeAssociation();
-        restoreFrequencies();
+        recheckVisibilityAfterRestore();
 
 
         cg3::Timer t("Cut components");
@@ -435,13 +433,6 @@ void FourAxisFabricationManager::cutComponents() {
  */
 void FourAxisFabricationManager::extractResults() {
     if (!areResultsExtracted) {
-        optimalOrientation();
-        selectExtremes();
-        checkVisibility();
-        getTargetDirections();
-        getAssociation();
-        optimizeAssociation();
-        restoreFrequencies();
         cutComponents();
 
         //Get UI data
@@ -551,7 +542,7 @@ void FourAxisFabricationManager::addDrawableResults() {
  * @brief Update drawable meshes
  */
 void FourAxisFabricationManager::updateDrawableMeshes() {
-    //Create drawable meshes (already in the canvas)
+    //Update drawable meshes (already in the canvas)
     bool originalVisibility = drawableOriginalMesh.isVisible();
     bool smoothVisibility = drawableSmoothedMesh.isVisible();
 
@@ -560,6 +551,18 @@ void FourAxisFabricationManager::updateDrawableMeshes() {
 
     mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, originalVisibility);
     mainWindow.setDrawableObjectVisibility(&drawableSmoothedMesh, smoothVisibility);
+}
+
+/**
+ * @brief Update drawable meshes
+ */
+void FourAxisFabricationManager::updateDrawableRestoredMesh() {
+    //Update drawable meshes (already in the canvas)
+    bool restoredVisibility = drawableRestoredMesh.isVisible();
+
+    drawableRestoredMesh = cg3::DrawableEigenMesh(data.restoredMesh);
+
+    mainWindow.setDrawableObjectVisibility(&drawableRestoredMesh, restoredVisibility);
 }
 
 /**
@@ -985,7 +988,7 @@ void FourAxisFabricationManager::showCurrentStatusDescription()
         ss << " Non-visible: " << data.nonVisibleFaces.size() << ".";
         if (isAssociationOptimized)
             ss << " Ass: " << data.associationNonVisibleFaces.size() << ".";
-        if (areFrequenciesRestored)
+        if (isVisibilityRecheckedAfterRestore)
             ss << " Freq: "<<  data.restoredMeshNonVisibleFaces.size() << ".";
 
         //Update description label
@@ -1299,8 +1302,24 @@ void FourAxisFabricationManager::on_optimizationButton_clicked()
 }
 
 void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
-    //Check visibility by the chosen directions
+    //Restore frequencies
     restoreFrequencies();
+
+    //Visualize association
+    ui->associationRadio->setChecked(true);
+    initializeVisualizationSlider();
+
+    //Update canvas and fit the scene
+    mainWindow.canvas.update();
+    mainWindow.canvas.fitScene();
+
+    updateUI();
+}
+
+void FourAxisFabricationManager::on_recheckVisibilityButton_clicked()
+{
+    //Recheck visibility
+    recheckVisibilityAfterRestore();
 
     //Visualize association
     ui->associationRadio->setChecked(true);

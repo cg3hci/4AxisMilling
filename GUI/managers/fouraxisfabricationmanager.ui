@@ -461,16 +461,6 @@
         </property>
        </widget>
       </item>
-      <item row="15" column="3">
-       <widget class="QCheckBox" name="restoreFrequenciesRecheckCheckBox">
-        <property name="text">
-         <string>Recheck</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item row="8" column="2">
        <widget class="QDoubleSpinBox" name="getAssociationFreeCostAngleSpinBox">
         <property name="maximum">
@@ -774,6 +764,23 @@
        <widget class="QCheckBox" name="optimizationLoseHolesCheckBox">
         <property name="text">
          <string>Lose holes</string>
+        </property>
+       </widget>
+      </item>
+      <item row="16" column="5">
+       <widget class="QPushButton" name="recheckVisibilityButton">
+        <property name="text">
+         <string>Recheck</string>
+        </property>
+       </widget>
+      </item>
+      <item row="16" column="1" colspan="4">
+       <widget class="QCheckBox" name="recheckVisibilityReassignNonVisibleCheckBox">
+        <property name="text">
+         <string>Reassing non-visible triangles to adjacent chart</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

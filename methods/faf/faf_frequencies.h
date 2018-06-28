@@ -23,9 +23,10 @@ void restoreFrequencies(
         Data& data);
 
 
-void checkVisibilityAfterFrequenciesAreRestored(
+void recheckVisibilityAfterRestore(
         Data& data,
         const double heightFieldAngle,
+        const bool reassign,
         CheckMode checkMode = PROJECTION);
 
 }

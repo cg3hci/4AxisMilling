@@ -42,12 +42,14 @@ void cutComponents(
     if (!data.maxExtremes.empty() && !data.minExtremes.empty()) {
         //Get minimum x in the faces of the max extremes
         double maxLevelSetX = restoredMesh.getVertex(restoredMesh.getFace(data.maxExtremes[0]).x()).x();
-        for (int maxIndex : data.maxExtremes) {
-            cg3::Pointi face = restoredMesh.getFace(maxIndex);
+        for (int maxFace : data.maxExtremes) {
+            if (data.restoredMeshAssociation[maxFace] == maxLabel) {
+                cg3::Pointi face = restoredMesh.getFace(maxFace);
 
-            maxLevelSetX = std::min(maxLevelSetX, restoredMesh.getVertex(face.x()).x());
-            maxLevelSetX = std::min(maxLevelSetX, restoredMesh.getVertex(face.y()).x());
-            maxLevelSetX = std::min(maxLevelSetX, restoredMesh.getVertex(face.z()).x());
+                maxLevelSetX = std::min(maxLevelSetX, restoredMesh.getVertex(face.x()).x());
+                maxLevelSetX = std::min(maxLevelSetX, restoredMesh.getVertex(face.y()).x());
+                maxLevelSetX = std::min(maxLevelSetX, restoredMesh.getVertex(face.z()).x());
+            }
         }
         //Set max extremes bounding box
         cg3::BoundingBox maxBB = bb;
@@ -56,12 +58,14 @@ void cutComponents(
 
         //Get maximum x in the faces of the min extremes
         double minLevelSetX = restoredMesh.getVertex(restoredMesh.getFace(data.minExtremes[0]).x()).x();
-        for (int minIndex : data.minExtremes) {
-            cg3::Pointi face = restoredMesh.getFace(minIndex);
+        for (int minFace : data.minExtremes) {
+            if (data.restoredMeshAssociation[minFace] == minLabel) {
+                cg3::Pointi face = restoredMesh.getFace(minFace);
 
-            minLevelSetX = std::max(minLevelSetX, restoredMesh.getVertex(face.x()).x());
-            minLevelSetX = std::max(minLevelSetX, restoredMesh.getVertex(face.y()).x());
-            minLevelSetX = std::max(minLevelSetX, restoredMesh.getVertex(face.z()).x());
+                minLevelSetX = std::max(minLevelSetX, restoredMesh.getVertex(face.x()).x());
+                minLevelSetX = std::max(minLevelSetX, restoredMesh.getVertex(face.y()).x());
+                minLevelSetX = std::max(minLevelSetX, restoredMesh.getVertex(face.z()).x());
+            }
         }
         //Set min extremes bounding box
         cg3::BoundingBox minBB = bb;

@@ -127,17 +127,21 @@ void restoreFrequencies(
 
 
 /**
- * @brief Check visibility of each face of the mesh from the associated direction.
+ * @brief Recheck visibility of each face of the mesh from the associated direction.
  * It is implemented by a ray casting algorithm or checking the intersections
  * in a 2D projection from a given direction.
+ * If assign is true, it tries to solve the visibility problem, assigning triangles
+ * to adjacent directions from which it is visible
  * @param[out] data Four axis fabrication data
  * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
+ * @param[in] reassign Reassign the non-visible triangles to an adjacent chart
  * @param[in] checkMode Visibility check mode. Default is projection mode.
  * @returns The number of no longer visible triangles
  */
-void checkVisibilityAfterFrequenciesAreRestored(
+void recheckVisibilityAfterRestore(
         Data& data,
         const double heightfieldAngle,
+        const bool reassign,
         CheckMode checkMode)
 {
     cg3::EigenMesh& targetMesh = data.restoredMesh;
@@ -158,6 +162,66 @@ void checkVisibilityAfterFrequenciesAreRestored(
         if (newData.visibility(data.restoredMeshAssociation[faceId], faceId) < 1) {
             data.restoredMeshNonVisibleFaces.push_back(faceId);
         }
+    }
+
+    std::cout << "Non-visible triangles after frequencies restore: " << data.restoredMeshNonVisibleFaces.size() << std::endl;
+
+
+
+    if (reassign) {
+        unsigned int facesReassigned = 0;
+
+        //Get face-face adjacencies
+        const std::vector<std::vector<int>> ffAdj =
+                cg3::libigl::faceToFaceAdjacencies(data.restoredMesh);
+
+
+        bool done;
+
+        do {
+            done = true;
+
+            std::vector<unsigned int> newNonVisibleFaces;
+
+            for (unsigned int fId : data.restoredMeshNonVisibleFaces) {
+                cg3::Vec3 normal = data.restoredMesh.getFaceNormal(fId);
+                const std::vector<int>& adjacentFaces = ffAdj.at(fId);
+
+                //The best label for the face is one among the adjacent
+                //which has the less dot product with the normal
+                double maxDot = -1;
+                int bestLabel = -1;
+
+                for (const unsigned int adjId : adjacentFaces) {
+                    int adjLabel = data.restoredMeshAssociation[adjId];
+
+                    //If it is visible
+                    if (data.restoredMeshVisibility(adjLabel, fId) > 0) {
+                        double dot = normal.dot(data.directions[adjLabel]);
+
+                        if (dot >= maxDot) {
+                            maxDot = dot;
+                            bestLabel = adjLabel;
+                        }
+                    }
+                }
+
+                if (bestLabel >= 0) {
+                    data.restoredMeshAssociation[fId] = bestLabel;
+                    facesReassigned++;
+
+                    done = false;
+                }
+                else {
+                    newNonVisibleFaces.push_back(fId);
+                }
+            }
+
+            data.restoredMeshNonVisibleFaces = newNonVisibleFaces;
+
+        } while (!done);
+
+        std::cout << "Faces reassigned: " << facesReassigned << std::endl;
     }
 }
 

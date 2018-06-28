@@ -86,6 +86,7 @@ private:
     bool isAssociationComputed;
     bool isAssociationOptimized;
     bool areFrequenciesRestored;
+    bool isVisibilityRecheckedAfterRestore;
     bool areComponentsCut;
     bool areResultsExtracted;
 
@@ -105,6 +106,7 @@ private:
     void getAssociation();
     void optimizeAssociation();
     void restoreFrequencies();
+    void recheckVisibilityAfterRestore();
     void cutComponents();
     void extractResults();
 
@@ -116,6 +118,7 @@ private:
     void addDrawableCutComponents();
     void addDrawableResults();
     void updateDrawableMeshes();
+    void updateDrawableRestoredMesh();
 
     void deleteDrawableObjects();
 
@@ -159,6 +162,7 @@ private slots:
     void on_getAssociationButton_clicked();
     void on_optimizationButton_clicked();
     void on_restoreFrequenciesButton_clicked();
+    void on_recheckVisibilityButton_clicked();
     void on_cutComponentsButton_clicked();
     void on_extractResultsButton_clicked();
 
