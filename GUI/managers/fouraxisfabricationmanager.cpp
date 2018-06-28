@@ -209,14 +209,13 @@ void FourAxisFabricationManager::selectExtremes() {
         //Get UI data
         bool selectExtremes = ui->selectExtremesCheckbox->isChecked();
 
-        if (selectExtremes) {
-            cg3::Timer t("Select extremes");
+        cg3::Timer t("Select extremes");
 
-            //Get extremes on x-axis to be selected
-            FourAxisFabrication::selectExtremesOnXAxis(smoothedMesh, data);
+        //Get extremes on x-axis to be selected
+        FourAxisFabrication::selectExtremesOnXAxis(smoothedMesh, selectExtremes, data);
 
-            t.stopAndPrint();
-        }
+        t.stopAndPrint();
+
 
         areExtremesSelected = true;
     }

@@ -14,6 +14,8 @@
 
 #include <cg3/libigl/mesh_adjacencies.h>
 
+#include <unordered_set>
+
 #define MAXCOST GCO_MAX_ENERGYTERM
 
 namespace FourAxisFabrication {
@@ -158,7 +160,9 @@ void optimization(
     ChartData& chartData = data.chartData;
 
     const unsigned int nFaces = mesh.getNumberFaces();
-    const unsigned int nLabels = targetDirections.size();
+
+    //Get mesh adjacencies
+    std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
 
     //Get chart data
     chartData = getChartData(mesh, association);
@@ -207,28 +211,97 @@ void optimization(
         unsigned int facesNoLongerVisible = 0;
         unsigned int chartAffected = 0;
 
-        //For each chart
-        for (const Chart& chart : chartData.charts) {
-            //Chart area
-            double chartArea = 0;
-            for (unsigned int fId : chart.faces)
-                chartArea += mesh.getFaceArea(fId);
+        //Smallest chart
+        int smallestChartId;
 
-            if (chartArea < limitArea) {
-                //TODO
+        do {
+            smallestChartId = -1;
+            double smallestArea = meshArea; //Smallest chart area
 
-                //TODO ADD NON VISIBLE-FACES TO ASSOCIATION
-//                if (visibility(surroundingChartLabel, fId)) {
-//                    associationNonVisibleFaces.push_back(fId);
-//                    facesNoLongerVisible++;
-//                }
+            //For each chart
+            for (size_t cId = 0; cId < chartData.charts.size(); cId++) {
+                const Chart& chart = chartData.charts.at(cId);
+
+                //Chart area
+                double chartArea = 0;
+                for (unsigned int fId : chart.faces)
+                    chartArea += mesh.getFaceArea(fId);
+
+                //Get the smallest chart which has area less than the limit area
+                if (chartArea <= limitArea && chartArea <= smallestArea) {
+                    smallestChartId = chart.id;
+                    smallestArea = chartArea;
+                }
             }
-        }
 
-        if (chartAffected > 0) {
-            //Get new chart data
-            chartData = getChartData(mesh, association);
-        }
+            //If a target chart exists
+            if (smallestChartId >= 0) {
+                const Chart& chart = chartData.charts.at(smallestChartId);
+
+                int chartLabel = chart.label;
+
+                //Border faces to be computed
+                std::vector<unsigned int> borderFaces = chart.borderFaces;
+
+                std::unordered_set<unsigned int> visitedFaces;
+                std::queue<unsigned int> queue;
+
+                //Add each face in the border in the queue
+                for (unsigned int fId : borderFaces) {
+                    queue.push(fId);
+                }
+
+                while (!queue.empty()) {
+                    unsigned int fId = queue.front();
+                    queue.pop();
+
+                    visitedFaces.insert(fId);
+
+                    cg3::Vec3 normal = mesh.getFaceNormal(fId);
+                    const std::vector<int>& adjacentFaces = ffAdj.at(fId);
+
+                    //The best label for the face is one among the adjacent
+                    //which has the less dot product with the normal
+                    double maxDot = -1;
+                    int bestLabel = -1;
+
+                    for (const unsigned int adjId : adjacentFaces) {
+                        int adjLabel = association[adjId];
+
+                        if (chartLabel == adjLabel && chartData.faceChartMap.at(adjId) == chart.id) {
+                            //Add the not visited faces in the border to the queue
+                            if (visitedFaces.find(adjId) == visitedFaces.end())
+                                queue.push(adjId);
+                        }
+                        else {
+                            double dot = normal.dot(directions[adjLabel]);
+
+                            if (dot >= maxDot) {
+                                maxDot = dot;
+                                bestLabel = adjLabel;
+                            }
+                        }
+                    }
+
+                    association[fId] = bestLabel;
+
+                    facesAffected++;
+
+                    if (visibility(bestLabel, fId) == 0) {
+                        associationNonVisibleFaces.push_back(fId);
+                        facesNoLongerVisible++;
+                    }
+                }
+
+                chartAffected++;
+
+
+                //Get new chart data
+                chartData = getChartData(mesh, association);
+            }
+        } while (smallestChartId >= 0);
+
+
 
         std::cout << "Small chart details lost for " << chartAffected << " charts. Faces affected: " << facesAffected << ". Faces no longer visible: " << facesNoLongerVisible << std::endl;
     }

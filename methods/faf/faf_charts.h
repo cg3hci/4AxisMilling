@@ -22,9 +22,10 @@ struct Chart {
     std::set<unsigned int> adjacentFaces;
     std::set<int> adjacentLabels;
 
+    std::vector<unsigned int> borderFaces;
+    std::vector<std::vector<unsigned int>> holeFaces;
     std::vector<unsigned int> borderVertices;
     std::vector<std::vector<unsigned int>> holeVertices;
-
     std::set<size_t> borderCharts;
     std::set<size_t> holeCharts;
 };

@@ -164,13 +164,20 @@ ChartData getChartData(
             unsigned int vStart;
             unsigned int vCurrent;
 
+
             //Get external borders
             vStart = (unsigned int) furthestVertex;
             vCurrent = vStart;
             do {
+                const HalfEdge* he = vHeMap.at(vCurrent);
+
+                unsigned int fId = he->getFace()->getId();
+                unsigned int adjId = he->getTwin()->getFace()->getId();
+
                 //Add adjacent chart
-                unsigned int adjId = vHeMap.at(vCurrent)->getTwin()->getFace()->getId();
                 chart.borderCharts.insert(chartData.faceChartMap.at(adjId));
+
+                chart.borderFaces.push_back(fId);
 
                 chart.borderVertices.push_back(vCurrent);
 
@@ -180,19 +187,27 @@ ChartData getChartData(
             }
             while (vCurrent != vStart);
 
+
             //Get holes
             while (!remainingVertices.empty()) {
                 vStart = *(remainingVertices.begin());
                 vCurrent = vStart;
 
-                std::vector<unsigned int> hole;
+                std::vector<unsigned int> currentHoleVertices;
+                std::vector<unsigned int> currentHoleFaces;
 
                 do {
+                    const HalfEdge* he = vHeMap.at(vCurrent);
+
+                    unsigned int fId = he->getFace()->getId();
+                    unsigned int adjId = he->getTwin()->getFace()->getId();
+
                     //Add adjacent hole chart
-                    unsigned int adjId = vHeMap.at(vCurrent)->getTwin()->getFace()->getId();
                     chart.holeCharts.insert(chartData.faceChartMap.at(adjId));
 
-                    hole.push_back(vCurrent);
+                    currentHoleFaces.push_back(fId);
+
+                    currentHoleVertices.push_back(vCurrent);
 
                     remainingVertices.erase(vCurrent);
 
@@ -200,7 +215,8 @@ ChartData getChartData(
                 }
                 while (vCurrent != vStart);
 
-                chart.holeVertices.push_back(hole);
+                chart.holeVertices.push_back(currentHoleVertices);
+                chart.holeFaces.push_back(currentHoleFaces);
             }
         }
     }
