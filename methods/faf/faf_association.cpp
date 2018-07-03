@@ -286,11 +286,6 @@ void optimization(
                     association[fId] = bestLabel;
 
                     facesAffected++;
-
-                    if (visibility(bestLabel, fId) == 0) {
-                        associationNonVisibleFaces.push_back(fId);
-                        facesNoLongerVisible++;
-                    }
                 }
 
                 chartAffected++;
@@ -323,7 +318,6 @@ void optimization(
                     facesAffected++;
 
                     if (visibility(surroundingChartLabel, fId) == 0) {
-                        associationNonVisibleFaces.push_back(fId);
                         facesNoLongerVisible++;
                     }
                 }
@@ -338,6 +332,15 @@ void optimization(
         }
 
         std::cout << "Lost details for " << chartAffected << " hole charts. Faces affected: " << facesAffected << ". Faces no longer visible: " << facesNoLongerVisible << std::endl;
+    }
+
+
+    //Update association non-visible faces
+    associationNonVisibleFaces.clear();
+    for (unsigned int fId = 0; fId < nFaces; fId++){
+        if (visibility(association[fId], fId) == 0) {
+            associationNonVisibleFaces.push_back(fId);
+        }
     }
 
     //The remaining directions are the new target directions

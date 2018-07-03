@@ -128,8 +128,10 @@ void FourAxisFabricationManager::updateUI() {
     ui->extractResultsStockLengthSpinBox->setEnabled(!areResultsExtracted);
     ui->extractResultsStockDiameterLabel->setEnabled(!areResultsExtracted);
     ui->extractResultsStockDiameterSpinBox->setEnabled(!areResultsExtracted);
-    ui->extractResultsAngleLabel->setEnabled(!areResultsExtracted);
-    ui->extractResultsAngleSpinBox->setEnabled(!areResultsExtracted);
+    ui->extractResultsStepHeightLabel->setEnabled(!areResultsExtracted);
+    ui->extractResultsStepHeightSpinBox->setEnabled(!areResultsExtracted);
+    ui->extractResultsStepWidthLabel->setEnabled(!areResultsExtracted);
+    ui->extractResultsStepWidthSpinBox->setEnabled(!areResultsExtracted);
     ui->extractResultsRotateCheckBox->setEnabled(!areResultsExtracted);
 
 
@@ -438,13 +440,14 @@ void FourAxisFabricationManager::extractResults() {
         //Get UI data
         double stockLength = ui->extractResultsStockLengthSpinBox->value();
         double stockDiameter = ui->extractResultsStockDiameterSpinBox->value();
-        double surroundingAngle = ui->extractResultsAngleSpinBox->value() / 180.0 * M_PI;
+        double stepHeight = ui->extractResultsStepHeightSpinBox->value();
+        double stepWidth = ui->extractResultsStepWidthSpinBox->value();
         bool rotateSurfaces = ui->extractResultsRotateCheckBox->isChecked();
 
         cg3::Timer t("Extract results");
 
         //Extract results
-        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, surroundingAngle, rotateSurfaces);
+        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, stepHeight, stepWidth, rotateSurfaces);
 
         t.stopAndPrint();
 

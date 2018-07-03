@@ -120,7 +120,7 @@ void restoreFrequencies(
     targetMesh.updateBoundingBox();
 
     data.restoredMeshAssociation = data.association;
-    data.restoredMeshNonVisibleFaces = data.nonVisibleFaces;
+    data.restoredMeshNonVisibleFaces = data.associationNonVisibleFaces;
     data.restoredMeshVisibility = data.visibility;
 }
 
@@ -157,9 +157,8 @@ void recheckVisibilityAfterRestore(
     data.restoredMeshVisibility = newData.visibility;
 
     data.restoredMeshNonVisibleFaces.clear();
-
     for (size_t faceId = 0; faceId < data.restoredMeshAssociation.size(); faceId++) {
-        if (newData.visibility(data.restoredMeshAssociation[faceId], faceId) < 1) {
+        if (data.restoredMeshVisibility(data.restoredMeshAssociation[faceId], faceId) == 0) {
             data.restoredMeshNonVisibleFaces.push_back(faceId);
         }
     }
