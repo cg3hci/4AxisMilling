@@ -231,8 +231,8 @@ void computeVisibility(
     Eigen::Matrix3d rotationMatrix;
     Eigen::Matrix3d rotationMatrixDirection;
     cg3::Vec3 rotationAxis(1,0,0);
-    cg3::getRotationMatrix(rotationAxis, stepAngle, rotationMatrix);
-    cg3::getRotationMatrix(rotationAxis, -stepAngle, rotationMatrixDirection);
+    cg3::rotationMatrix(rotationAxis, stepAngle, rotationMatrix);
+    cg3::rotationMatrix(rotationAxis, -stepAngle, rotationMatrixDirection);
 
     //Vector that is opposite to the milling direction
     cg3::Vec3 dir(0,0,1);

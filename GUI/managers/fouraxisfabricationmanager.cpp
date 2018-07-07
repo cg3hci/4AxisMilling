@@ -1462,7 +1462,7 @@ void FourAxisFabricationManager::on_rotateButton_clicked() {
         double angle = ui->angleSpinBox->value() * M_PI/180;
 
         Eigen::Matrix3d m;
-        cg3::getRotationMatrix(axis, angle, m);
+        cg3::rotationMatrix(axis, angle, m);
 
         originalMesh.rotate(m);
         smoothedMesh.rotate(m);

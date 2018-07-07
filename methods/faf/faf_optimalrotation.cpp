@@ -36,20 +36,20 @@ void rotateToOptimalOrientation(
     cg3::BoundingBox b = mesh.getBoundingBox();
 
     //If Y length is the greatest one then rotate by 90° around zAxis
-    if (b.getLengthY() > b.getLengthX() && b.getLengthY() > b.getLengthZ()){
+    if (b.lengthY() > b.lengthX() && b.lengthY() > b.lengthZ()){
         cg3::Vec3 zAxis(0,0,1);
         double angle = M_PI/2;
 
-        mesh.rotate(cg3::getRotationMatrix(zAxis, angle));
-        smoothedMesh.rotate(cg3::getRotationMatrix(zAxis, angle));
+        mesh.rotate(cg3::rotationMatrix(zAxis, angle));
+        smoothedMesh.rotate(cg3::rotationMatrix(zAxis, angle));
     }
     //If Z length is the greatest one then rotate by 90° around yAxis
-    else if (b.getLengthZ() > b.getLengthX() && b.getLengthZ() > b.getLengthY()){
+    else if (b.lengthZ() > b.lengthX() && b.lengthZ() > b.lengthY()){
         cg3::Vec3 yAxis(0,1,0);
         double angle = M_PI/2;
 
-        mesh.rotate(cg3::getRotationMatrix(yAxis, angle));
-        smoothedMesh.rotate(cg3::getRotationMatrix(yAxis, angle));
+        mesh.rotate(cg3::rotationMatrix(yAxis, angle));
+        smoothedMesh.rotate(cg3::rotationMatrix(yAxis, angle));
     }
 
     //Translate meshes to the center

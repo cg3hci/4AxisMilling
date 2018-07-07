@@ -31,7 +31,7 @@ ChartData getChartData(
     //Result
     ChartData chartData;
 
-    unsigned int nFaces = dcel.getNumberFaces();
+    unsigned int nFaces = dcel.numberFaces();
 
     chartData.faceChartMap.resize(nFaces);
 
@@ -69,7 +69,7 @@ ChartData getChartData(
 
                 visited[currentFaceId] = true;
 
-                Face* currentFace = dcel.getFace(currentFaceId);
+                Face* currentFace = dcel.face(currentFaceId);
 
                 //Add face index to the chart
                 chart.faces.push_back(currentFaceId);
@@ -124,7 +124,7 @@ ChartData getChartData(
             //Center of the chart
             cg3::Pointd chartCenter(0,0,0);
             for (const unsigned int& vId : chart.vertices) {
-                const Vertex* vertex = dcel.getVertex(vId);
+                const Vertex* vertex = dcel.vertex(vId);
                 chartCenter += vertex->getCoordinate();
             }
             chartCenter /= nVertices;
@@ -153,7 +153,7 @@ ChartData getChartData(
 
                 //Get furthest point from center: it is certainly part of the external borders
                 const cg3::Vec3 vec = fromV->getCoordinate() - chartCenter;
-                double distance = vec.getLength();
+                double distance = vec.length();
                 if (distance >= maxDistance) {
                     maxDistance = distance;
                     furthestVertex = fromId;

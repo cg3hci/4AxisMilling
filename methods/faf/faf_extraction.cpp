@@ -106,8 +106,8 @@ void extractResults(
 
     //Get the scale factor
     cg3::BoundingBox bb = fourAxisComponent.getBoundingBox();
-    double minX = bb.getMinX();
-    double maxX = bb.getMaxX();
+    double minX = bb.minX();
+    double maxX = bb.maxX();
     const double scaleFactor = stockLength / (maxX - minX);
 
     //Scale meshes
@@ -164,7 +164,7 @@ void extractResults(
                 maxLabel);
 
     if (rotateMeshes) {
-        cg3::getRotationMatrix(yAxis, -M_PI/2, rotationMatrix);
+        cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
         maxSurface.rotate(rotationMatrix);
         maxSurface.translate(-maxSurface.getBoundingBox().center());
     }
@@ -195,12 +195,14 @@ void extractResults(
 
         //Rotate the mesh in the z-axis
         double angle = data.angles[targetLabel];
-        cg3::getRotationMatrix(xAxis, angle, rotationMatrix);
+        cg3::rotationMatrix(xAxis, angle, rotationMatrix);
         result.rotate(rotationMatrix);
 
+        //Compute external borders
         std::vector<unsigned int> externalBorders = internal::computeExternalBorder(result);
 
 
+        //Compute barycenter
         cg3::Pointd barycenter = 0;
         double minZ = std::numeric_limits<double>::max();
         for (unsigned int currentBorderId : externalBorders) {
@@ -211,19 +213,18 @@ void extractResults(
         }
         barycenter /= externalBorders.size();
 
-        double currentHeight = minZ + stepHeight;
 
-
-
+        //Width of the box
         const double width = stockHalfLength*1.2;
         const double height = stockRadius*1.2;
 
 
         //Compute steps layer
-        while (currentHeight < height) {
-            double eps = 0.0001;
+        double layerHeight = minZ + stepHeight;
+        while (layerHeight < height) {
+            double angle = M_PI/6;
 
-            // ----- Creating vertices upon the external borders -----
+            // ----- Creating vertices above the external borders -----
 
             //Compute new layer vertices
             std::vector<unsigned int> newLayer(externalBorders.size());
@@ -231,17 +232,24 @@ void extractResults(
                 unsigned int currentBorderId = externalBorders[i];
                 cg3::Pointd currentPoint = result.getVertex(currentBorderId);
 
-                cg3::Pointd translateVec = eps * (currentPoint - barycenter);
+                //TODO NOT BARYCENTER! TROVARE UNA COSA MIGLIORE! DOT PRODUCT TRA I DUE VERTICI (SENSO ANTIORARIO)
+                cg3::Pointd translateVec = (currentPoint - barycenter);
+                translateVec.normalize();
 
-                cg3::Pointd newPoint = currentPoint + translateVec;
-                newPoint.setZ(currentHeight);
+                double multiplier = sin(angle) * stepHeight;
+                cg3::Pointd newPoint = currentPoint + (multiplier * translateVec);
+                newPoint.setZ(layerHeight);
+
+                if (currentPoint.z() > layerHeight) {
+                    //TODO
+                }
 
                 unsigned int newPointId = result.addVertex(newPoint);
 
                 newLayer[i] = newPointId;
             }
 
-            //Add faces of the layer
+            //Add faces to the layer
             for (size_t i = 0; i < externalBorders.size(); i++) {
                 unsigned int currentBorderId = externalBorders[i];
                 unsigned int nextBorderId = externalBorders[(i+1) % externalBorders.size()];
@@ -285,13 +293,10 @@ void extractResults(
             newExternalBordersProjection[3] = cg3::Point2Dd(bb.minX() - stepWidth, bb.maxY() + stepWidth);
 
 
-            std::vector<unsigned int> newExternalSquare(4);
             for (size_t i = 0; i < newExternalBordersProjection.size(); i++) {
                 cg3::Point2Dd& squarePoint = newExternalBordersProjection[i];
 
-                unsigned int vid = result.addVertex(squarePoint.x(), squarePoint.y(), currentHeight);
-                newExternalSquare[i] = vid;
-
+                unsigned int vid = result.addVertex(squarePoint.x(), squarePoint.y(), layerHeight);
                 projectionMap[squarePoint] = vid;
 
                 newExternalBorders.push_back(vid);
@@ -313,7 +318,7 @@ void extractResults(
                 unsigned int v[3];
 
                 for (unsigned int i = 0; i < 3 && isValid; i++) {
-                    //If the vertex is not new
+                    //If the vertex is not new (new triangle could be created
                     if (projectionMap.find(triangle[i]) != projectionMap.end()) {
                         v[i] = projectionMap.at(triangle[i]);
                     }
@@ -330,7 +335,7 @@ void extractResults(
 
             // ----- Setting data for next iteration -----
 
-            currentHeight += stepHeight;
+            layerHeight += stepHeight;
             externalBorders = newExternalBorders;
         }
 
@@ -361,12 +366,13 @@ void extractResults(
         result.addFace(externalBorders[7], externalBorders[2], externalBorders[6]);
 
 
+        //Intersection with the stock
         result = cg3::libigl::intersection(stock, result);
 
 
         if (!rotateMeshes) {
             //Rotate back the mesh
-            cg3::getRotationMatrix(xAxis, -angle, rotationMatrix);
+            cg3::rotationMatrix(xAxis, -angle, rotationMatrix);
             result.rotate(rotationMatrix);
         }
 
@@ -477,7 +483,7 @@ void extractResults(
 
     //Min result
     cg3::EigenMesh minResult = minScaled;
-    cg3::getRotationMatrix(yAxis, M_PI/2, rotationMatrix);
+    cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
 
     if (rotateMeshes) {
         minResult.rotate(rotationMatrix);
@@ -490,7 +496,7 @@ void extractResults(
 
     //Max result
     cg3::EigenMesh maxResult = maxScaled;
-    cg3::getRotationMatrix(yAxis, -M_PI/2, rotationMatrix);
+    cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
 
     if (rotateMeshes) {
         maxResult.rotate(rotationMatrix);
@@ -626,7 +632,7 @@ std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m)
 
             //Get furthest point from center: it is certainly part of the external borders
             const cg3::Vec3 vec = fromV->getCoordinate() - chartCenter;
-            double distance = vec.getLength();
+            double distance = vec.length();
             if (distance >= maxDistance) {
                 maxDistance = distance;
                 furthestVertex = fromId;
