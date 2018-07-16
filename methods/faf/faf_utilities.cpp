@@ -18,10 +18,10 @@ namespace internal {
  */
 BarycenterXComparator::BarycenterXComparator(const cg3::SimpleEigenMesh& m) : m(m) {}
 bool BarycenterXComparator::operator()(unsigned int f1, unsigned int f2){
-    const cg3::Pointi& ff1 = m.getFace(f1);
-    const cg3::Pointi& ff2 = m.getFace(f2);
-    cg3::Pointd c1 = (m.getVertex(ff1.x()) + m.getVertex(ff1.y()) + m.getVertex(ff1.z()))/3;
-    cg3::Pointd c2 = (m.getVertex(ff2.x()) + m.getVertex(ff2.y()) + m.getVertex(ff2.z()))/3;
+    const cg3::Pointi& ff1 = m.face(f1);
+    const cg3::Pointi& ff2 = m.face(f2);
+    cg3::Pointd c1 = (m.vertex(ff1.x()) + m.vertex(ff1.y()) + m.vertex(ff1.z()))/3;
+    cg3::Pointd c2 = (m.vertex(ff2.x()) + m.vertex(ff2.y()) + m.vertex(ff2.z()))/3;
     return c1 < c2;
 }
 
@@ -31,10 +31,10 @@ bool BarycenterXComparator::operator()(unsigned int f1, unsigned int f2){
  */
 BarycenterZComparator::BarycenterZComparator(const cg3::SimpleEigenMesh& m) : m(m) {}
 bool BarycenterZComparator::operator()(unsigned int f1, unsigned int f2){
-    const cg3::Pointi& ff1 = m.getFace(f1);
-    const cg3::Pointi& ff2 = m.getFace(f2);
-    cg3::Pointd c1 = (m.getVertex(ff1.x()) + m.getVertex(ff1.y()) + m.getVertex(ff1.z()))/3;
-    cg3::Pointd c2 = (m.getVertex(ff2.x()) + m.getVertex(ff2.y()) + m.getVertex(ff2.z()))/3;
+    const cg3::Pointi& ff1 = m.face(f1);
+    const cg3::Pointi& ff2 = m.face(f2);
+    cg3::Pointd c1 = (m.vertex(ff1.x()) + m.vertex(ff1.y()) + m.vertex(ff1.z()))/3;
+    cg3::Pointd c2 = (m.vertex(ff2.x()) + m.vertex(ff2.y()) + m.vertex(ff2.z()))/3;
     if (c1.z() < c2.z())
         return true;
     if (c2.z() < c1.z())

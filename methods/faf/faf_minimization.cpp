@@ -34,7 +34,7 @@ void getTargetDirections(
     //Clear current data (if any)
     targetDirections.clear();
 
-    int nOrientations = visibility.getSizeX();
+    int nOrientations = visibility.sizeX();
 
     //We keep each direction if it is chosen or if there are non-visible triangles
     if (!setCoverage || nonVisibleFaces.size() > 0) {
@@ -45,7 +45,7 @@ void getTargetDirections(
 
 #ifdef GUROBI_DEFINED
 
-        int nFaces = visibility.getSizeY();
+        int nFaces = visibility.sizeY();
 
         //If gurobi is defined, we solve the set coverage problem
         try {

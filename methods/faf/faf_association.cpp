@@ -67,7 +67,7 @@ void getAssociation(
     std::vector<int>& association = data.association;
     std::vector<unsigned int>& associationNonVisibleFaces = data.associationNonVisibleFaces;
 
-    const unsigned int nFaces = mesh.getNumberFaces();
+    const unsigned int nFaces = mesh.numberFaces();
     const unsigned int nLabels = targetDirections.size();
 
     //Get mesh adjacencies
@@ -159,7 +159,7 @@ void optimization(
     std::vector<unsigned int>& associationNonVisibleFaces = data.associationNonVisibleFaces;
     ChartData& chartData = data.chartData;
 
-    const unsigned int nFaces = mesh.getNumberFaces();
+    const unsigned int nFaces = mesh.numberFaces();
 
     //Get mesh adjacencies
     std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
@@ -202,7 +202,7 @@ void optimization(
         //Mesh area
         double meshArea = 0;
         for (unsigned int fId = 0; fId < nFaces; fId++)
-            meshArea += mesh.getFaceArea(fId);
+            meshArea += mesh.faceArea(fId);
 
         double limitArea = meshArea * minChartArea;
 
@@ -225,7 +225,7 @@ void optimization(
                 //Chart area
                 double chartArea = 0;
                 for (unsigned int fId : chart.faces)
-                    chartArea += mesh.getFaceArea(fId);
+                    chartArea += mesh.faceArea(fId);
 
                 //Get the smallest chart which has area less than the limit area
                 if (chartArea <= limitArea && chartArea <= smallestArea) {
@@ -257,7 +257,7 @@ void optimization(
 
                     visitedFaces.insert(fId);
 
-                    cg3::Vec3 normal = mesh.getFaceNormal(fId);
+                    cg3::Vec3 normal = mesh.faceNormal(fId);
                     const std::vector<int>& adjacentFaces = ffAdj.at(fId);
 
                     //The best label for the face is one among the adjacent
@@ -384,7 +384,7 @@ void setupDataCost(
     const std::vector<unsigned int>& minExtremes = data.minExtremes;
     const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
 
-    const unsigned int nFaces = mesh.getNumberFaces();
+    const unsigned int nFaces = mesh.numberFaces();
     const unsigned int nLabels = targetDirections.size();
 
     #pragma omp parallel for
@@ -397,7 +397,7 @@ void setupDataCost(
 
             //Visible
             if (visibility(directionIndex, faceId) == 1) {
-                const cg3::Vec3 faceNormal = mesh.getFaceNormal(faceId);
+                const cg3::Vec3 faceNormal = mesh.faceNormal(faceId);
 
                 double dot = faceNormal.dot(labelNormal);
                 double angle = acos(dot);

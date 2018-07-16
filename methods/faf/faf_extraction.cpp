@@ -99,13 +99,13 @@ void extractResults(
     cg3::EigenMesh maxScaled = maxComponent;
 
     //Center mesh
-    cg3::Vec3 translateVec = -fourAxisScaled.getBoundingBox().center();
+    cg3::Vec3 translateVec = -fourAxisScaled.boundingBox().center();
     fourAxisScaled.translate(translateVec);
     minScaled.translate(translateVec);
     maxScaled.translate(translateVec);
 
     //Get the scale factor
-    cg3::BoundingBox bb = fourAxisComponent.getBoundingBox();
+    cg3::BoundingBox bb = fourAxisComponent.boundingBox();
     double minX = bb.minX();
     double maxX = bb.maxX();
     const double scaleFactor = stockLength / (maxX - minX);
@@ -166,7 +166,7 @@ void extractResults(
     if (rotateMeshes) {
         cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
         maxSurface.rotate(rotationMatrix);
-        maxSurface.translate(-maxSurface.getBoundingBox().center());
+        maxSurface.translate(-maxSurface.boundingBox().center());
     }
 
     surfaces.push_back(maxSurface);
@@ -206,7 +206,7 @@ void extractResults(
         cg3::Pointd barycenter = 0;
         double minZ = std::numeric_limits<double>::max();
         for (unsigned int currentBorderId : externalBorders) {
-            cg3::Pointd currentPoint = result.getVertex(currentBorderId);
+            cg3::Pointd currentPoint = result.vertex(currentBorderId);
             minZ = std::min(minZ, currentPoint.z());
 
             barycenter += currentPoint;
@@ -230,14 +230,9 @@ void extractResults(
             std::vector<unsigned int> newLayer(externalBorders.size());
             for (size_t i = 0; i < externalBorders.size(); i++) {
                 unsigned int currentBorderId = externalBorders[i];
-                cg3::Pointd currentPoint = result.getVertex(currentBorderId);
+                cg3::Pointd currentPoint = result.vertex(currentBorderId);
 
-                //TODO NOT BARYCENTER! TROVARE UNA COSA MIGLIORE! DOT PRODUCT TRA I DUE VERTICI (SENSO ANTIORARIO)
-                cg3::Pointd translateVec = (currentPoint - barycenter);
-                translateVec.normalize();
-
-                double multiplier = sin(angle) * stepHeight;
-                cg3::Pointd newPoint = currentPoint + (multiplier * translateVec);
+                cg3::Pointd newPoint = currentPoint;
                 newPoint.setZ(layerHeight);
 
                 if (currentPoint.z() > layerHeight) {
@@ -267,14 +262,14 @@ void extractResults(
 
             //Get bounding box
             result.updateBoundingBox();
-            cg3::BoundingBox bb = result.getBoundingBox();
+            cg3::BoundingBox bb = result.boundingBox();
 
             std::map<cg3::Point2Dd, unsigned int> projectionMap;
 
             //Internal borders
             std::vector<cg3::Point2Dd> projectionHole(newLayer.size());
             for (unsigned int i = 0; i < newLayer.size(); i++) {
-                cg3::Pointd point3D = result.getVertex(newLayer[i]);
+                cg3::Pointd point3D = result.vertex(newLayer[i]);
                 cg3::Point2Dd projection = cg3::Point2Dd(point3D.x(), point3D.y());
 
                 projectionHole[i] = projection;
@@ -367,7 +362,7 @@ void extractResults(
 
 
         //Intersection with the stock
-        result = cg3::libigl::intersection(stock, result);
+//        result = cg3::libigl::intersection(stock, result);
 
 
         if (!rotateMeshes) {
@@ -389,7 +384,7 @@ void extractResults(
 //        std::vector<cg3::Point2Dd> internalBorder(internalBorderIds.size());
 
 //        for (unsigned int i = 0; i < internalBorderIds.size(); i++) {
-//            cg3::Pointd point3D = surface.getVertex(internalBorderIds[i]);
+//            cg3::Pointd point3D = surface.vertex(internalBorderIds[i]);
 //            cg3::Point2Dd projection = cg3::Point2Dd(point3D.x(), point3D.y());
 
 //            internalBorder[i] = projection;
@@ -487,7 +482,7 @@ void extractResults(
 
     if (rotateMeshes) {
         minResult.rotate(rotationMatrix);
-        minResult.translate(-minResult.getBoundingBox().center());
+        minResult.translate(-minResult.boundingBox().center());
     }
 
     results.push_back(minResult);
@@ -500,7 +495,7 @@ void extractResults(
 
     if (rotateMeshes) {
         maxResult.rotate(rotationMatrix);
-        maxResult.translate(-maxResult.getBoundingBox().center());
+        maxResult.translate(-maxResult.boundingBox().center());
     }
 
     results.push_back(maxResult);
@@ -542,11 +537,11 @@ cg3::EigenMesh extractSurfaceWithLabel(
     cg3::EigenMesh result;
 
     //Data structures to keep track of the new vertex
-    std::vector<int> newVertexMap(mesh.getNumberVertices(), -1);
+    std::vector<int> newVertexMap(mesh.numberVertices(), -1);
     unsigned int newVertexId = 0;
 
     //For each vertex
-    for (unsigned int vId = 0; vId < mesh.getNumberVertices(); vId++) {
+    for (unsigned int vId = 0; vId < mesh.numberVertices(); vId++) {
         const std::vector<int>& adjFaces = vfAdj[vId];
 
         //Check if the vertex belongs to at least one face with the given target label
@@ -559,15 +554,15 @@ cg3::EigenMesh extractSurfaceWithLabel(
 
         //Add vertex and fill map
         if (valid) {
-            result.addVertex(mesh.getVertex(vId));
+            result.addVertex(mesh.vertex(vId));
             newVertexMap[vId] = newVertexId;
             newVertexId++;
         }
     }
 
     //For each face
-    for (unsigned int fId = 0; fId < mesh.getNumberFaces(); fId++) {
-        const cg3::Pointi face = mesh.getFace(fId);
+    for (unsigned int fId = 0; fId < mesh.numberFaces(); fId++) {
+        const cg3::Pointi face = mesh.face(fId);
 
         if (association[fId] == (int) targetLabel) {
             result.addFace(
@@ -598,15 +593,15 @@ std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m)
     //Result
     std::vector<unsigned int> externalBorders;
 
-    if (m.getNumberFaces() == 0)
+    if (m.numberFaces() == 0)
         return externalBorders;
 
-    unsigned int nVertices = m.getNumberVertices();
+    unsigned int nVertices = m.numberVertices();
 
     //Center of the chart
     cg3::Pointd chartCenter(0,0,0);
     for (const Vertex* vertex : dcel.vertexIterator()) {
-        chartCenter += vertex->getCoordinate();
+        chartCenter += vertex->coordinate();
     }
     chartCenter /= nVertices;
 
@@ -619,19 +614,19 @@ std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m)
     double maxDistance = 0;
 
     for (const HalfEdge* he : dcel.halfEdgeIterator()) {
-        if (he->getTwin() == nullptr) {
-            const Vertex* fromV = he->getFromVertex();
-            const Vertex* toV = he->getToVertex();
+        if (he->twin() == nullptr) {
+            const Vertex* fromV = he->fromVertex();
+            const Vertex* toV = he->toVertex();
 
-            const unsigned int fromId = fromV->getId();
-            const unsigned int toId = toV->getId();
+            const unsigned int fromId = fromV->id();
+            const unsigned int toId = toV->id();
 
             //Fill next map
             assert(vNext.find(fromId) == vNext.end());
             vNext[fromId] = toId;
 
             //Get furthest point from center: it is certainly part of the external borders
-            const cg3::Vec3 vec = fromV->getCoordinate() - chartCenter;
+            const cg3::Vec3 vec = fromV->coordinate() - chartCenter;
             double distance = vec.length();
             if (distance >= maxDistance) {
                 maxDistance = distance;

@@ -43,7 +43,7 @@ void selectExtremesOnXAxis(
         heightFieldMax.clear();
 
         //Initializing vector of face indices
-        std::vector<unsigned int> fIndices(mesh.getNumberFaces());
+        std::vector<unsigned int> fIndices(mesh.numberFaces());
         for (unsigned int i = 0; i < fIndices.size(); i++)
             fIndices[i] = i;
 
@@ -52,31 +52,31 @@ void selectExtremesOnXAxis(
 
         //Get min height-field faces
         size_t iMin = 0;
-        while(mesh.getFaceNormal(fIndices[iMin]).dot(minDirection) >= -std::numeric_limits<double>::epsilon()){
+        while(mesh.faceNormal(fIndices[iMin]).dot(minDirection) >= -std::numeric_limits<double>::epsilon()){
             heightFieldMin.push_back(fIndices[iMin]);
             iMin++;
         }
 
         //Get the min x coordinate of the non-selected faces (level set)
-        double levelSetMinX = mesh.getVertex(mesh.getFace(fIndices[iMin]).x()).x();
+        double levelSetMinX = mesh.vertex(mesh.face(fIndices[iMin]).x()).x();
         while(iMin < fIndices.size()){
-            cg3::Pointi face = mesh.getFace(fIndices[iMin]);
+            cg3::Pointi face = mesh.face(fIndices[iMin]);
 
-            levelSetMinX = std::min(levelSetMinX, mesh.getVertex(face.x()).x());
-            levelSetMinX = std::min(levelSetMinX, mesh.getVertex(face.y()).x());
-            levelSetMinX = std::min(levelSetMinX, mesh.getVertex(face.z()).x());
+            levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.x()).x());
+            levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.y()).x());
+            levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.z()).x());
 
             iMin++;
         }
 
         //Get the min extremes
         for (unsigned int faceId : heightFieldMin) {
-            cg3::Pointi face = mesh.getFace(faceId);
+            cg3::Pointi face = mesh.face(faceId);
 
             //If every face coordinate is under the level set
-            if (mesh.getVertex(face.x()).x() < levelSetMinX &&
-                mesh.getVertex(face.y()).x() < levelSetMinX &&
-                mesh.getVertex(face.z()).x() < levelSetMinX)
+            if (mesh.vertex(face.x()).x() < levelSetMinX &&
+                mesh.vertex(face.y()).x() < levelSetMinX &&
+                mesh.vertex(face.z()).x() < levelSetMinX)
             {
                 minExtremes.push_back(faceId);
             }
@@ -86,31 +86,31 @@ void selectExtremesOnXAxis(
 
         //Get max height-field faces
         int iMax = fIndices.size()-1;
-        while(mesh.getFaceNormal(fIndices[iMax]).dot(maxDirection) >= -std::numeric_limits<double>::epsilon()){
+        while(mesh.faceNormal(fIndices[iMax]).dot(maxDirection) >= -std::numeric_limits<double>::epsilon()){
             heightFieldMax.push_back(fIndices[iMax]);
             iMax--;
         }
 
         //Get the max x coordinate of the non-selected faces (level set)
-        double levelSetMaxX = mesh.getVertex(mesh.getFace(fIndices[iMax]).x()).x();
+        double levelSetMaxX = mesh.vertex(mesh.face(fIndices[iMax]).x()).x();
         while(iMax >= 0){
-            cg3::Pointi face = mesh.getFace(fIndices[iMax]);
+            cg3::Pointi face = mesh.face(fIndices[iMax]);
 
-            levelSetMaxX = std::max(levelSetMaxX, mesh.getVertex(face.x()).x());
-            levelSetMaxX = std::max(levelSetMaxX, mesh.getVertex(face.y()).x());
-            levelSetMaxX = std::max(levelSetMaxX, mesh.getVertex(face.z()).x());
+            levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.x()).x());
+            levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.y()).x());
+            levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.z()).x());
 
             iMax--;
         }
 
         //Get the max extremes
         for (unsigned int faceId : heightFieldMax) {
-            cg3::Pointi face = mesh.getFace(faceId);
+            cg3::Pointi face = mesh.face(faceId);
 
             //If every face coordinate is above the level set
-            if (mesh.getVertex(face.x()).x() > levelSetMaxX &&
-                mesh.getVertex(face.y()).x() > levelSetMaxX &&
-                mesh.getVertex(face.z()).x() > levelSetMaxX)
+            if (mesh.vertex(face.x()).x() > levelSetMaxX &&
+                mesh.vertex(face.y()).x() > levelSetMaxX &&
+                mesh.vertex(face.z()).x() > levelSetMaxX)
             {
                 maxExtremes.push_back(faceId);
             }

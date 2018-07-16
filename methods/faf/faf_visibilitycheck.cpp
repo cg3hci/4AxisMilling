@@ -152,12 +152,12 @@ void initializeDataForVisibilityCheck(
 
     //Initialize visibility (number of directions, two for extremes)
     visibility.clear();
-    visibility.resize(2*nDirections + 2, mesh.getNumberFaces());
+    visibility.resize(2*nDirections + 2, mesh.numberFaces());
     visibility.fill(0);
 
     //Initialize to -1 direction association for each face
     association.clear();
-    association.resize(mesh.getNumberFaces());
+    association.resize(mesh.numberFaces());
     std::fill(association.begin(), association.end(), -1);
 
     //Initialize direction vector
@@ -217,7 +217,7 @@ void computeVisibility(
     //Set target faces to be checked
     std::vector<unsigned int> targetFaces;
 
-    for (unsigned int i = 0; i < mesh.getNumberFaces(); i++) {
+    for (unsigned int i = 0; i < mesh.numberFaces(); i++) {
         targetFaces.push_back(i);
     }
 
@@ -280,11 +280,11 @@ void detectNonVisibleFaces(
 
     //Detect non-visible faces
     nonVisibleFaces.clear();
-    for (unsigned int faceId = 0; faceId < visibility.getSizeY(); faceId++){
+    for (unsigned int faceId = 0; faceId < visibility.sizeY(); faceId++){
         //Check if at least a direction has been found for each face
         bool found = false;
 
-        for (unsigned int i = 0; i < visibility.getSizeX() && !found; i++){
+        for (unsigned int i = 0; i < visibility.sizeX() && !found; i++){
             if (visibility(i, faceId) == 1) {
                 found = true;
             }
@@ -325,15 +325,15 @@ void getVisibilityRayShootingOnZ(
     cg3::cgal::AABBTree tree(mesh);
 
     //Get bounding box min and max z-coordinate
-    double minZ = mesh.getBoundingBox().minZ()-50;
-    double maxZ = mesh.getBoundingBox().maxZ()+50;
+    double minZ = mesh.boundingBox().minZ()-50;
+    double maxZ = mesh.boundingBox().maxZ()+50;
 
     for(unsigned int faceIndex : faces){
         //Get the face data
-        cg3::Pointi f = mesh.getFace(faceIndex);
-        cg3::Vec3 v1 = mesh.getVertex(f.x());
-        cg3::Vec3 v2 = mesh.getVertex(f.y());
-        cg3::Vec3 v3 = mesh.getVertex(f.z());
+        cg3::Pointi f = mesh.face(faceIndex);
+        cg3::Vec3 v1 = mesh.vertex(f.x());
+        cg3::Vec3 v2 = mesh.vertex(f.y());
+        cg3::Vec3 v3 = mesh.vertex(f.z());
 
         //Barycenter of the face
         cg3::Pointd bar((v1 + v2 + v3) / 3);
@@ -371,11 +371,11 @@ void getVisibilityRayShootingOnZ(
 
         for (int intersectedFace : barIntersection) {
             //Get the face data
-            cg3::Pointi faceData = mesh.getFace(intersectedFace);
+            cg3::Pointi faceData = mesh.face(intersectedFace);
             cg3::Pointd currentBarycenter = (
-                        mesh.getVertex(faceData.x()) +
-                        mesh.getVertex(faceData.y()) +
-                        mesh.getVertex(faceData.z())
+                        mesh.vertex(faceData.x()) +
+                        mesh.vertex(faceData.y()) +
+                        mesh.vertex(faceData.z())
             ) / 3;
 
 
@@ -383,7 +383,7 @@ void getVisibilityRayShootingOnZ(
             //Save face with the maximum Z barycenter and that is visible
             //from (0,0,1)
             if (currentBarycenter.z() > maxZCoordinate &&
-                    zDirMax.dot(mesh.getFaceNormal(intersectedFace)) >= heightFieldLimit)
+                    zDirMax.dot(mesh.faceNormal(intersectedFace)) >= heightFieldLimit)
             {
                 maxZFace = intersectedFace;
                 maxZCoordinate = currentBarycenter.z();
@@ -392,7 +392,7 @@ void getVisibilityRayShootingOnZ(
             //Save face with the minimum Z barycenter and that is visible
             //from (0,0,-1) direction
             if (currentBarycenter.z() < minZCoordinate &&
-                    zDirMin.dot(mesh.getFaceNormal(intersectedFace)) >= heightFieldLimit)
+                    zDirMin.dot(mesh.faceNormal(intersectedFace)) >= heightFieldLimit)
             {
                 minZFace = intersectedFace;
                 minZCoordinate = currentBarycenter.z();
@@ -405,11 +405,11 @@ void getVisibilityRayShootingOnZ(
 
 
 
-        assert(zDirMax.dot(mesh.getFaceNormal(maxZFace)) >= heightFieldLimit);
+        assert(zDirMax.dot(mesh.faceNormal(maxZFace)) >= heightFieldLimit);
 #ifdef RELEASECHECK
         //TO BE DELETED ON FINAL RELEASE
-        if (zDirMax.dot(mesh.getFaceNormal(maxZFace)) < heightFieldLimit) {
-            std::cout << "ERROR: not visible triangle, dot product with z-axis is less than 0 for the direction " << mesh.getFaceNormal(maxZFace) << std::endl;
+        if (zDirMax.dot(mesh.faceNormal(maxZFace)) < heightFieldLimit) {
+            std::cout << "ERROR: not visible triangle, dot product with z-axis is less than 0 for the direction " << mesh.faceNormal(maxZFace) << std::endl;
             exit(1);
         }
 #endif
@@ -423,11 +423,11 @@ void getVisibilityRayShootingOnZ(
         }
 #endif
 
-        assert(zDirMin.dot(mesh.getFaceNormal(minZFace)) >= heightFieldLimit);
+        assert(zDirMin.dot(mesh.faceNormal(minZFace)) >= heightFieldLimit);
 #ifdef RELEASECHECK
         //TO BE DELETED ON FINAL RELEASE
-        if (zDirMin.dot(mesh.getFaceNormal(minZFace)) < heightFieldLimit) {
-            std::cout << "ERROR: not visible triangle, dot product with opposite of z-axis is less than 0 for the direction " << mesh.getFaceNormal(minZFace) << std::endl;
+        if (zDirMin.dot(mesh.faceNormal(minZFace)) < heightFieldLimit) {
+            std::cout << "ERROR: not visible triangle, dot product with opposite of z-axis is less than 0 for the direction " << mesh.faceNormal(minZFace) << std::endl;
             exit(1);
         }
 #endif
@@ -523,11 +523,11 @@ void getVisibilityProjectionOnZ(
     const double heightFieldLimit = cos(heightfieldAngle);
 
     //If it is visible (checking the angle between normal and the target direction)
-    if (direction.dot(mesh.getFaceNormal(faceId)) >= heightFieldLimit) {
-        const cg3::Pointi& faceData = mesh.getFace(faceId);
-        const cg3::Pointd& v1 = mesh.getVertex(faceData.x());
-        const cg3::Pointd& v2 = mesh.getVertex(faceData.y());
-        const cg3::Pointd& v3 = mesh.getVertex(faceData.z());
+    if (direction.dot(mesh.faceNormal(faceId)) >= heightFieldLimit) {
+        const cg3::Pointi& faceData = mesh.face(faceId);
+        const cg3::Pointd& v1 = mesh.vertex(faceData.x());
+        const cg3::Pointd& v2 = mesh.vertex(faceData.y());
+        const cg3::Pointd& v3 = mesh.vertex(faceData.z());
 
         //Project on the z plane
         cg3::Point2Dd v1Projected(v1.x(), v1.y());

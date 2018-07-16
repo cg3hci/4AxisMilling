@@ -79,23 +79,23 @@ void restoreFrequencies(
         cg3::EigenMesh& smoothedMesh,
         Data& data)
 {
-    assert(originalMesh.getNumberVertices() == smoothedMesh.getNumberVertices());
-    assert(originalMesh.getNumberFaces() == smoothedMesh.getNumberFaces());
+    assert(originalMesh.numberVertices() == smoothedMesh.numberVertices());
+    assert(originalMesh.numberFaces() == smoothedMesh.numberFaces());
 
     //Get vertex-vertex adjacencies
     const std::vector<std::vector<int>> vvAdj =
             cg3::libigl::vertexToVertexAdjacencies(originalMesh);
-    assert(vvAdj.size() == originalMesh.getNumberVertices());
+    assert(vvAdj.size() == originalMesh.numberVertices());
 
     //Get vertex-face adjacencies
     const std::vector<std::vector<int>> vfAdj =
             cg3::libigl::vertexToFaceIncidences(originalMesh);
-    assert(vfAdj.size() == originalMesh.getNumberVertices());
+    assert(vfAdj.size() == originalMesh.numberVertices());
 
     //Get face-face adjacencies
     const std::vector<std::vector<int>> ffAdj =
             cg3::libigl::faceToFaceAdjacencies(originalMesh);
-    assert(ffAdj.size() == originalMesh.getNumberFaces());
+    assert(ffAdj.size() == originalMesh.numberFaces());
 
     const std::vector<cg3::Vec3> differentialCoordinates =
             internal::computeDifferentialCoordinates(originalMesh, vvAdj);
@@ -183,7 +183,7 @@ void recheckVisibilityAfterRestore(
             std::vector<unsigned int> newNonVisibleFaces;
 
             for (unsigned int fId : data.restoredMeshNonVisibleFaces) {
-                cg3::Vec3 normal = data.restoredMesh.getFaceNormal(fId);
+                cg3::Vec3 normal = data.restoredMesh.faceNormal(fId);
                 const std::vector<int>& adjacentFaces = ffAdj.at(fId);
 
                 //The best label for the face is one among the adjacent
@@ -250,9 +250,9 @@ bool restoreFrequenciesValidHeightfields(
         const double heightfieldAngle)
 {
     bool aVertexHasMoved = false;
-    for(unsigned int vId = 0; vId < targetMesh.getNumberVertices(); ++vId) {
+    for(unsigned int vId = 0; vId < targetMesh.numberVertices(); ++vId) {
         //Get current and target point
-        cg3::Pointd currentPoint = targetMesh.getVertex(vId);
+        cg3::Pointd currentPoint = targetMesh.vertex(vId);
         cg3::Pointd targetPoint = internal::getTargetPoint(targetMesh, differentialCoordinates, vId, vertexVertexAdjacencies);
 
         //Do binary search until the face normals do not violate the heightfield conditions
@@ -286,17 +286,17 @@ std::vector<cg3::Vec3> computeDifferentialCoordinates(
 {
     //Resulting vector
     std::vector<cg3::Vec3> differentialCoordinates;
-    differentialCoordinates.resize(mesh.getNumberVertices());
+    differentialCoordinates.resize(mesh.numberVertices());
 
     #pragma omp parallel for
-    for(unsigned int vId = 0; vId < mesh.getNumberVertices(); ++vId) {
+    for(unsigned int vId = 0; vId < mesh.numberVertices(); ++vId) {
         //Calculate differential coordinates for each point
-        cg3::Pointd currentPoint = mesh.getVertex(vId);
+        cg3::Pointd currentPoint = mesh.vertex(vId);
         cg3::Vec3 delta(0,0,0);
 
         const std::vector<int>& neighbors = vertexVertexAdjacencies.at(vId);
         for(const int& neighborId : neighbors) {
-            delta += currentPoint - mesh.getVertex(neighborId);
+            delta += currentPoint - mesh.vertex(neighborId);
         }
 
         delta /= neighbors.size();
@@ -328,7 +328,7 @@ cg3::Pointd getTargetPoint(
 
     //Calculate delta
     for(const int& neighborId : neighbors) {
-        delta += targetMesh.getVertex(neighborId);
+        delta += targetMesh.vertex(neighborId);
     }
     delta /= neighbors.size();
 
@@ -360,25 +360,25 @@ bool isHeightFieldValid(
 
     const std::vector<int>& faces = vertexFaceAdjacencies.at(vId);
     for (const int& fId : faces) {
-        const cg3::Pointi face = targetMesh.getFace(fId);
+        const cg3::Pointi face = targetMesh.face(fId);
 
         cg3::Pointd p1, p2, p3;
 
         //Get the triangle with new point
         if (face.x() == vId) {
             p1 = newPoint;
-            p2 = targetMesh.getVertex(face.y());
-            p3 = targetMesh.getVertex(face.z());
+            p2 = targetMesh.vertex(face.y());
+            p3 = targetMesh.vertex(face.z());
         }
         else if (face.y() == vId) {
-            p1 = targetMesh.getVertex(face.x());
+            p1 = targetMesh.vertex(face.x());
             p2 = newPoint;
-            p3 = targetMesh.getVertex(face.z());
+            p3 = targetMesh.vertex(face.z());
         }
         else {
             assert(face.z() == vId);
-            p1 = targetMesh.getVertex(face.x());
-            p2 = targetMesh.getVertex(face.y());
+            p1 = targetMesh.vertex(face.x());
+            p2 = targetMesh.vertex(face.y());
             p3 = newPoint;
         }
         cg3::Triangle3Dd triangle(p1, p2, p3);

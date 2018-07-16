@@ -42,7 +42,7 @@ ChartData getChartData(
     std::vector<std::vector<const HalfEdge*>> borderHalfEdges;
 
     for (const Face* face : dcel.faceIterator()) {
-        unsigned int startFaceId = face->getId();
+        unsigned int startFaceId = face->id();
 
         if (!visited[startFaceId]) {
             int label = association[startFaceId];
@@ -76,14 +76,14 @@ ChartData getChartData(
 
                 //Add vertices
                 for (const Vertex* vertex : currentFace->incidentVertexIterator()) {
-                    chart.vertices.insert(vertex->getId());
+                    chart.vertices.insert(vertex->id());
                 }
 
                 //Add adjacent faces
                 for (const HalfEdge* he : currentFace->incidentHalfEdgeIterator()) {
-                    const Face* adjFace = he->getTwin()->getFace();
+                    const Face* adjFace = he->twin()->face();
 
-                    unsigned int adjId = adjFace->getId();
+                    unsigned int adjId = adjFace->id();
                     int adjLabel = association[adjId];
 
                     //If the adjacent face has the same label
@@ -125,7 +125,7 @@ ChartData getChartData(
             cg3::Pointd chartCenter(0,0,0);
             for (const unsigned int& vId : chart.vertices) {
                 const Vertex* vertex = dcel.vertex(vId);
-                chartCenter += vertex->getCoordinate();
+                chartCenter += vertex->coordinate();
             }
             chartCenter /= nVertices;
 
@@ -139,10 +139,10 @@ ChartData getChartData(
             double maxDistance = 0;
 
             for (const HalfEdge* he : chartBorderHalfEdges){
-                const Vertex* fromV = he->getFromVertex();
-                const Vertex* toV = he->getToVertex();
-                const unsigned int fromId = fromV->getId();
-                const unsigned int toId = toV->getId();
+                const Vertex* fromV = he->fromVertex();
+                const Vertex* toV = he->toVertex();
+                const unsigned int fromId = fromV->id();
+                const unsigned int toId = toV->id();
 
                 //Fill maps
                 vNext[fromId] = toId;
@@ -152,7 +152,7 @@ ChartData getChartData(
                 remainingVertices.insert(fromId);
 
                 //Get furthest point from center: it is certainly part of the external borders
-                const cg3::Vec3 vec = fromV->getCoordinate() - chartCenter;
+                const cg3::Vec3 vec = fromV->coordinate() - chartCenter;
                 double distance = vec.length();
                 if (distance >= maxDistance) {
                     maxDistance = distance;
@@ -171,8 +171,8 @@ ChartData getChartData(
             do {
                 const HalfEdge* he = vHeMap.at(vCurrent);
 
-                unsigned int fId = he->getFace()->getId();
-                unsigned int adjId = he->getTwin()->getFace()->getId();
+                unsigned int fId = he->face()->id();
+                unsigned int adjId = he->twin()->face()->id();
 
                 //Add adjacent chart
                 chart.borderCharts.insert(chartData.faceChartMap.at(adjId));
@@ -199,8 +199,8 @@ ChartData getChartData(
                 do {
                     const HalfEdge* he = vHeMap.at(vCurrent);
 
-                    unsigned int fId = he->getFace()->getId();
-                    unsigned int adjId = he->getTwin()->getFace()->getId();
+                    unsigned int fId = he->face()->id();
+                    unsigned int adjId = he->twin()->face()->id();
 
                     //Add adjacent hole chart
                     chart.holeCharts.insert(chartData.faceChartMap.at(adjId));

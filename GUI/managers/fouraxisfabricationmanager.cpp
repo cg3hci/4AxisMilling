@@ -14,6 +14,8 @@
 #include <cg3/utilities/string.h>
 #include <cg3/utilities/timer.h>
 
+#include <cg3/libigl/mesh_distance.h>
+
 
 
 /* ----- CONSTRUCTORS/DESTRUCTOR ------ */
@@ -369,6 +371,12 @@ void FourAxisFabricationManager::restoreFrequencies() {
 
         t.stopAndPrint();
 
+        double haussDistance = cg3::libigl::hausdorffDistance(originalMesh, data.restoredMesh);
+        cg3::BoundingBox originalMeshBB = originalMesh.boundingBox();
+        double haussDistanceBB = haussDistance/originalMeshBB.diag();
+
+        std::cout << "Haussdorff distance: " << haussDistance << std::endl;
+        std::cout << "Haussdorff distance (w.r.t. bounding box): " << haussDistanceBB << std::endl;
 
         areFrequenciesRestored = true;
 
@@ -667,7 +675,7 @@ void FourAxisFabricationManager::initializeVisualizationSlider() {
     }
     else if (ui->visibilityRadio->isChecked()) {
         ui->visualizationSlider->setMinimum(0);
-        ui->visualizationSlider->setMaximum(data.visibility.getSizeX());
+        ui->visualizationSlider->setMaximum(data.visibility.sizeX());
         ui->visualizationSlider->setValue(0);
         ui->showNonVisibleCheck->setEnabled(true);
     }
@@ -799,7 +807,7 @@ void FourAxisFabricationManager::colorizeVisibility() {
         color.setHsv(subd * chosenDirectionIndex, 255, 255);
 
         //Color the faces visible from that direction
-        for (unsigned int j = 0; j < data.visibility.getSizeY(); j++) {
+        for (unsigned int j = 0; j < data.visibility.sizeY(); j++) {
             if (data.visibility(chosenDirectionIndex, j) == 1) {
                 //Set the color
                 drawableSmoothedMesh.setFaceColor(color, j);
@@ -851,7 +859,7 @@ void FourAxisFabricationManager::colorizeTargetDirections() {
         color.setHsv(subd * chosenDirectionIndex, 255, 255);
 
         //Color the faces visible from that direction
-        for (unsigned int j = 0; j < data.visibility.getSizeY(); j++) {
+        for (unsigned int j = 0; j < data.visibility.sizeY(); j++) {
             if (data.visibility(chosenDirectionIndex, j) == 1) {
                 //Set the color
                 drawableSmoothedMesh.setFaceColor(color, j);
@@ -945,7 +953,7 @@ void FourAxisFabricationManager::colorizeAssociation(
     drawableMesh.setFaceColor(cg3::Color(128,128,128));
 
     //For each face of the drawable smoothed mesh
-    for (unsigned int faceId = 0; faceId < drawableMesh.getNumberFaces(); faceId++) {
+    for (unsigned int faceId = 0; faceId < drawableMesh.numberFaces(); faceId++) {
         //Get direction index associated to the current face
         int associatedDirectionIndex = association[faceId];
 
@@ -1055,9 +1063,9 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
                     std::cout << std::endl;
 
                     std::cout << "Mesh file: \"" << meshFile << "\"" << std::endl <<
-                                 "Number of faces: " << originalMesh.getNumberFaces() << std::endl;
+                                 "Number of faces: " << originalMesh.numberFaces() << std::endl;
                     std::cout << "Smoothed mesh file: \"" << loadedSmoothedMeshFile << "\"" << std::endl <<
-                                 "Number of faces: " << smoothedMesh.getNumberFaces() << std::endl;
+                                 "Number of faces: " << smoothedMesh.numberFaces() << std::endl;
                 }
                 else {
                     clearData();
@@ -1372,8 +1380,8 @@ void FourAxisFabricationManager::on_extractResultsButton_clicked() {
 void FourAxisFabricationManager::on_centerOnOriginButton_clicked() {
     if (isMeshLoaded){
         //Translation of the mesh
-        originalMesh.translate(-smoothedMesh.getBoundingBox().center());
-        smoothedMesh.translate(-smoothedMesh.getBoundingBox().center());
+        originalMesh.translate(-smoothedMesh.boundingBox().center());
+        smoothedMesh.translate(-smoothedMesh.boundingBox().center());
 
         //Update canvas and fit the scene
         mainWindow.canvas.update();
