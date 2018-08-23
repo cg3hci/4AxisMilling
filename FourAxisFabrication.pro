@@ -16,6 +16,7 @@ CONFIG += ALL
 ALL {
     #CONFIG += USE_LIBIGL_EIGEN
     CONFIG += MULTI_LABEL_OPTIMIZATION
+    CONFIG += CLIPPER
     CONFIG += CG3_ALL
     include(cg3lib/cg3.pri)
 }
@@ -49,6 +50,13 @@ MULTI_LABEL_OPTIMIZATION {
         lib/MultiLabelOptimization/LinkedBlockList.cpp \
         lib/MultiLabelOptimization/maxflow.cpp \
         lib/MultiLabelOptimization/example.cpp
+}
+
+CLIPPER {
+    DEFINES += CLIPPER_INCLUDED
+    INCLUDEPATH += $$PWD/lib/clipper
+    SOURCES += \
+        lib/clipper/clipper.cpp
 }
 
 HEADERS += \

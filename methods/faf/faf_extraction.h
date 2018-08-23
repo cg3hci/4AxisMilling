@@ -17,8 +17,7 @@ void extractResults(
         Data& data,
         const double stockLength,
         const double stockDiameter,
-        const double stepHeight,
-        const double stepWidth,
+        const double millableAngle,
         const bool rotateMeshes);
 
 }

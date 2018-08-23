@@ -130,10 +130,8 @@ void FourAxisFabricationManager::updateUI() {
     ui->extractResultsStockLengthSpinBox->setEnabled(!areResultsExtracted);
     ui->extractResultsStockDiameterLabel->setEnabled(!areResultsExtracted);
     ui->extractResultsStockDiameterSpinBox->setEnabled(!areResultsExtracted);
-    ui->extractResultsStepHeightLabel->setEnabled(!areResultsExtracted);
-    ui->extractResultsStepHeightSpinBox->setEnabled(!areResultsExtracted);
-    ui->extractResultsStepWidthLabel->setEnabled(!areResultsExtracted);
-    ui->extractResultsStepWidthSpinBox->setEnabled(!areResultsExtracted);
+    ui->extractResultsMillableAngleLabel->setEnabled(!areResultsExtracted);
+    ui->extractResultsMillableAngleSpinBox->setEnabled(!areResultsExtracted);
     ui->extractResultsRotateCheckBox->setEnabled(!areResultsExtracted);
 
 
@@ -364,6 +362,12 @@ void FourAxisFabricationManager::restoreFrequencies() {
         unsigned int nIterations = (unsigned int) ui->restoreFrequenciesIterationsSpinBox->value();
         double heightfieldAngle = ui->checkVisibilityHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
 
+        double haussDistance = cg3::libigl::hausdorffDistance(originalMesh, smoothedMesh);
+        cg3::BoundingBox originalMeshBB = originalMesh.boundingBox();
+        double haussDistanceBB = haussDistance/originalMeshBB.diag();
+
+        std::cout << "Smoothed -> Haussdorff distance: " << haussDistance << " (w.r.t. bounding box: " << haussDistanceBB << ")" << std::endl;
+
         cg3::Timer t("Restore frequencies");
 
         //Restore frequencies
@@ -371,12 +375,11 @@ void FourAxisFabricationManager::restoreFrequencies() {
 
         t.stopAndPrint();
 
-        double haussDistance = cg3::libigl::hausdorffDistance(originalMesh, data.restoredMesh);
-        cg3::BoundingBox originalMeshBB = originalMesh.boundingBox();
-        double haussDistanceBB = haussDistance/originalMeshBB.diag();
+        haussDistance = cg3::libigl::hausdorffDistance(originalMesh, data.restoredMesh);
+        originalMeshBB = originalMesh.boundingBox();
+        haussDistanceBB = haussDistance/originalMeshBB.diag();
 
-        std::cout << "Haussdorff distance: " << haussDistance << std::endl;
-        std::cout << "Haussdorff distance (w.r.t. bounding box): " << haussDistanceBB << std::endl;
+        std::cout << "Restored -> Haussdorff distance: " << haussDistance << " (w.r.t. bounding box: " << haussDistanceBB << ")" << std::endl;
 
         areFrequenciesRestored = true;
 
@@ -448,14 +451,13 @@ void FourAxisFabricationManager::extractResults() {
         //Get UI data
         double stockLength = ui->extractResultsStockLengthSpinBox->value();
         double stockDiameter = ui->extractResultsStockDiameterSpinBox->value();
-        double stepHeight = ui->extractResultsStepHeightSpinBox->value();
-        double stepWidth = ui->extractResultsStepWidthSpinBox->value();
+        double millableAngle = ui->extractResultsMillableAngleSpinBox->value() / 180.0 * M_PI;
         bool rotateSurfaces = ui->extractResultsRotateCheckBox->isChecked();
 
         cg3::Timer t("Extract results");
 
         //Extract results
-        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, stepHeight, stepWidth, rotateSurfaces);
+        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, millableAngle, rotateSurfaces);
 
         t.stopAndPrint();
 

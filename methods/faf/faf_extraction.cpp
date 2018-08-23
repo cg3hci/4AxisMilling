@@ -13,10 +13,14 @@
 #include <cg3/meshes/dcel/dcel.h>
 
 #include <cg3/cgal/2d/triangulation2d.h>
+
 #include <cg3/geometry/2d/utils2d.h>
+#include <cg3/geometry/2d/intersections2d.h>
 
 #include <cg3/libigl/booleans.h>
 #include <cg3/libigl/connected_components.h>
+
+#include <lib/clipper/clipper.hpp>
 
 #define CYLINDER_SUBD 100
 
@@ -34,6 +38,8 @@ cg3::EigenMesh extractSurfaceWithLabel(
 
 std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m);
 
+std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, const double offset);
+
 } //namespace internal
 
 
@@ -44,16 +50,17 @@ std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m);
  * @param[in] stockDiameter Diameter of the stock
  * @param[in] stepHeight Max millable height
  * @param[in] stepWidth Length of each step
+ * @param[in] millableAngle Angle needed to allow the fabrication of the surface
  * @param[in] rotateMeshes Rotate resulting meshes on the given direction
  */
 void extractResults(
         Data& data,
         const double stockLength,
         const double stockDiameter,
-        const double stepHeight,
-        const double stepWidth,
+        const double millableAngle,
         const bool rotateMeshes)
 {
+
     //Referencing input data
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
 
@@ -79,7 +86,6 @@ void extractResults(
     unsigned int minLabel = data.targetDirections[data.targetDirections.size()-2];
     unsigned int maxLabel = data.targetDirections[data.targetDirections.size()-1];
 
-    Eigen::Matrix3d rotationMatrix;
     const cg3::Vec3 xAxis(1,0,0);
     const cg3::Vec3 yAxis(0,1,0);
 
@@ -123,7 +129,7 @@ void extractResults(
     //Split the component in surface components
     for (size_t i = 0; i < targetDirections.size()-2; i++) {
         //Current direction label
-        int targetLabel = targetDirections[i];
+        unsigned int targetLabel = targetDirections[i];
 
         //New surface mesh
         cg3::EigenMesh surface = internal::extractSurfaceWithLabel(
@@ -164,6 +170,7 @@ void extractResults(
                 maxLabel);
 
     if (rotateMeshes) {
+        Eigen::Matrix3d rotationMatrix;
         cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
         maxSurface.rotate(rotationMatrix);
         maxSurface.translate(-maxSurface.boundingBox().center());
@@ -181,320 +188,296 @@ void extractResults(
     double stockHalfLength = stockLength/2;
     stock = cg3::EigenMesh(cg3::EigenMeshAlgorithms::makeCylinder(cg3::Pointd(-stockHalfLength,0,0), cg3::Pointd(+stockHalfLength,0,0), stockRadius, CYLINDER_SUBD));
 
+    //Size of the box
+    const double boxWidth = stockLength*2;
+    const double boxHeight = stockDiameter*2;
 
-
+    //Offset to get the millable angle
+    double offset = tan(millableAngle) * stockDiameter; //TODO QUESTO NON E' GIUSTO!!!
 
     /* ----- RESULTS ----- */
 
-    //Split the component in result components
+    //Triangulation structures
+    std::vector<std::array<cg3::Point2Dd, 3>> triangulation;
+    std::vector<std::vector<cg3::Point2Dd>> holes;
+
     for (size_t sId = 0; sId < surfaces.size()-2; sId++) {
         //Copying the surface and getting its label
         cg3::EigenMesh result = surfaces[sId];
+        cg3::EigenMesh rotateResult = result;
 
-        int targetLabel = surfacesAssociation[sId];
+        unsigned int targetLabel = surfacesAssociation[sId];
 
-        //Rotate the mesh in the z-axis
-        double angle = data.angles[targetLabel];
-        cg3::rotationMatrix(xAxis, angle, rotationMatrix);
-        result.rotate(rotationMatrix);
+        //Get projection matrix and its inverse for 2D projection
+        Eigen::Matrix3d projectionMatrix;
+        Eigen::Matrix3d inverseProjectionMatrix;
+        double directionAngle = data.angles[targetLabel];
+        cg3::rotationMatrix(xAxis, directionAngle, projectionMatrix);
+        cg3::rotationMatrix(xAxis, -directionAngle, inverseProjectionMatrix);
+
+        //Project the copy of the mesh
+        rotateResult.rotate(projectionMatrix);
 
         //Compute external borders
-        std::vector<unsigned int> externalBorders = internal::computeExternalBorder(result);
+        std::vector<unsigned int> extVertices = internal::computeExternalBorder(result);
 
-
-        //Compute barycenter
-        cg3::Pointd barycenter = 0;
+        //Compute minZ
         double minZ = std::numeric_limits<double>::max();
-        for (unsigned int currentBorderId : externalBorders) {
-            cg3::Pointd currentPoint = result.vertex(currentBorderId);
-            minZ = std::min(minZ, currentPoint.z());
-
-            barycenter += currentPoint;
+        for (unsigned int vId : extVertices) {
+            cg3::Pointd p = rotateResult.vertex(vId);
+            minZ = std::min(minZ, p.z());
         }
-        barycenter /= externalBorders.size();
 
 
-        //Width of the box
-        const double width = stockHalfLength*1.2;
-        const double height = stockRadius*1.2;
 
+        //Get the 2D projection of the borders
+        std::map<cg3::Point2Dd, unsigned int> extProjectionMap;
+        std::vector<cg3::Point2Dd> polygon2D;
+        for (unsigned int vId : extVertices) {
+            cg3::Pointd p = rotateResult.vertex(vId);
+            cg3::Point2Dd p2D(p.x(), p.y());
+            polygon2D.push_back(p2D);
 
-        //Compute steps layer
-        double layerHeight = minZ + stepHeight;
-        while (layerHeight < height) {
-            double angle = M_PI/6;
+            extProjectionMap[p2D] = vId;
+        }
 
-            // ----- Creating vertices above the external borders -----
+        //Get offset polygon
+        std::vector<cg3::Point2Dd> offsetPolygon2D =
+                internal::offsetPolygon(polygon2D, offset);
 
-            //Compute new layer vertices
-            std::vector<unsigned int> newLayer(externalBorders.size());
-            for (size_t i = 0; i < externalBorders.size(); i++) {
-                unsigned int currentBorderId = externalBorders[i];
-                cg3::Pointd currentPoint = result.vertex(currentBorderId);
+        //Set for finding points belonging to offset polygon
+        std::set<cg3::Point2Dd> offsetPolygonPointSet;
+        for (const cg3::Point2Dd& p : offsetPolygon2D) {
+            offsetPolygonPointSet.insert(p);
+        }
 
-                cg3::Pointd newPoint = currentPoint;
-                newPoint.setZ(layerHeight);
+        //Delaunay triangulation of the offset with the surface
+        holes.resize(1);
+        holes[0] = offsetPolygon2D;
+        triangulation = cg3::cgal::triangulate(polygon2D, holes);
 
-                if (currentPoint.z() > layerHeight) {
-                    //TODO
+        //Add triangulation to result
+        std::map<cg3::Point2Dd, unsigned int> newProjectionMap;
+        for (std::array<cg3::Point2Dd, 3>& triangle : triangulation) {
+            //Flag to check if the triangle is not composed of only vertices of the offset polygon
+            bool isThereExtVertex = false;
+
+            //Flag to check if a new point has been created (flipped triangles on projection)
+            bool isThereNewVertex = false;
+
+            for (unsigned int i = 0; i < 3 && !isThereNewVertex; i++) {
+                //If the vertex is among the external vertices
+                if (extProjectionMap.find(triangle[i]) != extProjectionMap.end()) {
+                    isThereExtVertex = true;
                 }
-
-                unsigned int newPointId = result.addVertex(newPoint);
-
-                newLayer[i] = newPointId;
+                //If the vertex is not among the existing vertices
+                else if (offsetPolygonPointSet.find(triangle[i]) == offsetPolygonPointSet.end()) {
+                    isThereNewVertex = true;
+                }
             }
 
-            //Add faces to the layer
-            for (size_t i = 0; i < externalBorders.size(); i++) {
-                unsigned int currentBorderId = externalBorders[i];
-                unsigned int nextBorderId = externalBorders[(i+1) % externalBorders.size()];
-
-                unsigned int currentNewId = newLayer[i];
-                unsigned int nextNewId = newLayer[(i+1) % newLayer.size()];
-
-                result.addFace(currentBorderId, currentNewId, nextBorderId);
-                result.addFace(nextBorderId, currentNewId, nextNewId);
-            }
-
-
-
-            // ----- Triangulation among the layer vertices and the borders -----
-
-            //Get bounding box
-            result.updateBoundingBox();
-            cg3::BoundingBox bb = result.boundingBox();
-
-            std::map<cg3::Point2Dd, unsigned int> projectionMap;
-
-            //Internal borders
-            std::vector<cg3::Point2Dd> projectionHole(newLayer.size());
-            for (unsigned int i = 0; i < newLayer.size(); i++) {
-                cg3::Pointd point3D = result.vertex(newLayer[i]);
-                cg3::Point2Dd projection = cg3::Point2Dd(point3D.x(), point3D.y());
-
-                projectionHole[i] = projection;
-
-                projectionMap[projection] = newLayer[i];
-            }
-
-            //External borders
-            std::vector<unsigned int> newExternalBorders;
-
-            //Create new 2D square
-            std::vector<cg3::Point2Dd> newExternalBordersProjection(4);
-            newExternalBordersProjection[0] = cg3::Point2Dd(bb.minX() - stepWidth, bb.minY() - stepWidth);
-            newExternalBordersProjection[1] = cg3::Point2Dd(bb.maxX() + stepWidth, bb.minY() - stepWidth);
-            newExternalBordersProjection[2] = cg3::Point2Dd(bb.maxX() + stepWidth, bb.maxY() + stepWidth);
-            newExternalBordersProjection[3] = cg3::Point2Dd(bb.minX() - stepWidth, bb.maxY() + stepWidth);
-
-
-            for (size_t i = 0; i < newExternalBordersProjection.size(); i++) {
-                cg3::Point2Dd& squarePoint = newExternalBordersProjection[i];
-
-                unsigned int vid = result.addVertex(squarePoint.x(), squarePoint.y(), layerHeight);
-                projectionMap[squarePoint] = vid;
-
-                newExternalBorders.push_back(vid);
-            }
-
-            //Holes
-            std::vector<std::vector<cg3::Point2Dd>> holes;
-            holes.push_back(projectionHole);
-
-            //Triangulation
-            std::vector<std::array<cg3::Point2Dd, 3>> triang =
-                    cg3::cgal::triangulate(newExternalBordersProjection, holes);
-
-            //Add triangulation to result
-            for (std::array<cg3::Point2Dd, 3>& triangle : triang) {
-                //Flag to check if a new point has been created (flipped triangles on projection)
-                bool isValid = true;
-
+            if (isThereExtVertex && !isThereNewVertex) {
                 unsigned int v[3];
 
-                for (unsigned int i = 0; i < 3 && isValid; i++) {
-                    //If the vertex is not new (new triangle could be created
-                    if (projectionMap.find(triangle[i]) != projectionMap.end()) {
-                        v[i] = projectionMap.at(triangle[i]);
+                //Find new vertices which have to be higher in z-coordinate
+                std::vector<unsigned int> triangleNewVertices;
+                std::vector<unsigned int> triangleExtVertices;
+
+                for (unsigned int i = 0; i < 3; i++) {
+                    unsigned int newPointId;
+
+                    if (offsetPolygonPointSet.find(triangle[i]) != offsetPolygonPointSet.end()) {
+                        std::map<cg3::Point2Dd, unsigned int>::const_iterator findIt = newProjectionMap.find(triangle[i]);
+
+                        if (findIt != newProjectionMap.end()) {
+                            newPointId = findIt->second;
+                        }
+                        else {
+                            const cg3::Point2Dd& p = triangle[i];
+                            cg3::Pointd newPoint(p.x(), p.y(), stockDiameter);
+
+                            //Inverse projection
+                            newPoint.rotate(inverseProjectionMatrix);
+
+                            newPointId = result.addVertex(newPoint);
+                            triangleNewVertices.push_back(newPointId);
+
+                            newProjectionMap[p] = newPointId;
+                        }
+
+                        v[i] = newPointId;
                     }
                     else {
-                        isValid = false;
+                        unsigned int extPointId = extProjectionMap.at(triangle[i]);
+                        triangleExtVertices.push_back(extPointId);
+
+                        v[i] = extPointId;
                     }
                 }
 
-                if (isValid) {
-                    result.addFace(v[0], v[1], v[2]);
+                result.addFace(v[0], v[1], v[2]);
+            }
+        }
+
+        //Get the vertices of the offset polygon that have been included
+        std::vector<unsigned int> newVertices;
+        std::vector<cg3::Point2Dd> remainingOffsetPolygon2D;
+        for (const cg3::Point2Dd& p : offsetPolygon2D) {
+            std::map<cg3::Point2Dd, unsigned int>::const_iterator findIt = newProjectionMap.find(p);
+            if (findIt != newProjectionMap.end()) {
+                remainingOffsetPolygon2D.push_back(p);
+                newVertices.push_back(findIt->second);
+            }
+        }
+
+        //Get bounding box
+        rotateResult = result;
+        rotateResult.rotate(projectionMatrix);
+        rotateResult.updateBoundingBox();
+        cg3::BoundingBox bb = rotateResult.boundingBox();
+
+        //Create new 2D square
+        std::map<cg3::Point2Dd, unsigned int> squareProjectionMap;
+        std::vector<cg3::Point2Dd> squarePolygon(4);
+        squarePolygon[0] = cg3::Point2Dd(-boxWidth, -boxHeight);
+        squarePolygon[1] = cg3::Point2Dd(+boxWidth, -boxHeight);
+        squarePolygon[2] = cg3::Point2Dd(+boxWidth, +boxHeight);
+        squarePolygon[3] = cg3::Point2Dd(-boxWidth, +boxHeight);
+
+        //Adding box vertices
+        std::vector<unsigned int> squareVertices(4);
+
+        for (size_t i = 0; i < squarePolygon.size(); i++) {
+            const cg3::Point2Dd& countourPoint = squarePolygon[i];
+            cg3::Pointd newPoint(countourPoint.x(), countourPoint.y(), boxHeight);
+            newPoint.rotate(inverseProjectionMatrix);
+
+            unsigned int vid = result.addVertex(newPoint);
+            squareVertices[i] = vid;
+
+            squareProjectionMap[countourPoint] = vid;
+        }
+
+        //Delaunay triangulation between offset polygon and square polygon
+        holes[0] = remainingOffsetPolygon2D;
+        std::vector<std::array<cg3::Point2Dd, 3>> triang =
+                cg3::cgal::triangulate(squarePolygon, holes);
+
+        //Add triangulation to result
+        for (std::array<cg3::Point2Dd, 3>& triangle : triang) {
+            //Flag to check if a new point has been created (flipped triangles on projection)
+            bool isValid = true;
+
+            unsigned int v[3];
+
+            for (unsigned int i = 0; i < 3 && isValid; i++) {
+                if (newProjectionMap.find(triangle[i]) != newProjectionMap.end()) {
+                    v[i] = newProjectionMap.at(triangle[i]);
+                }
+                else if (squareProjectionMap.find(triangle[i]) != squareProjectionMap.end()) {
+                    v[i] = squareProjectionMap.at(triangle[i]);
+                }
+                //If the vertex is not among the existing vertices
+                else {
+                    isValid = false;
                 }
             }
 
-
-            // ----- Setting data for next iteration -----
-
-            layerHeight += stepHeight;
-            externalBorders = newExternalBorders;
+            if (isValid) {
+                result.addFace(v[0], v[1], v[2]);
+            }
         }
 
-        //Creating new points of the mesh block
-        result.setVertex(externalBorders[0], -width, -height, height);
-        result.setVertex(externalBorders[1], width, -height, height);
-        result.setVertex(externalBorders[2], width, height, height);
-        result.setVertex(externalBorders[3], -width, height, height);
-        externalBorders.push_back(result.addVertex(cg3::Pointd(-width, -height, -height)));
-        externalBorders.push_back(result.addVertex(cg3::Pointd(width, -height, -height)));
-        externalBorders.push_back(result.addVertex(cg3::Pointd(width, height, -height)));
-        externalBorders.push_back(result.addVertex(cg3::Pointd(-width, height, -height)));
+        //Box for closing the mesh
+        std::vector<unsigned int> boxVertices;
+        boxVertices.reserve(8);
+
+        boxVertices.push_back(squareVertices[0]);
+        boxVertices.push_back(squareVertices[1]);
+        boxVertices.push_back(squareVertices[2]);
+        boxVertices.push_back(squareVertices[3]);
+
+        cg3::Pointd p;
+
+        p = cg3::Pointd(-boxWidth, -boxHeight, -boxHeight);
+        p.rotate(inverseProjectionMatrix);
+        boxVertices.push_back(result.addVertex(p));
+
+        p = cg3::Pointd(boxWidth, -boxHeight, -boxHeight);
+        p.rotate(inverseProjectionMatrix);
+        boxVertices.push_back(result.addVertex(p));
+
+        p = cg3::Pointd(boxWidth, boxHeight, -boxHeight);
+        p.rotate(inverseProjectionMatrix);
+        boxVertices.push_back(result.addVertex(p));
+
+        p = cg3::Pointd(-boxWidth, boxHeight, -boxHeight);
+        p.rotate(inverseProjectionMatrix);
+        boxVertices.push_back(result.addVertex(p));
 
         //Creating faces to close the mesh
-        result.addFace(externalBorders[2], externalBorders[1], externalBorders[5]);
-        result.addFace(externalBorders[2], externalBorders[5], externalBorders[6]);
+        result.addFace(boxVertices[2], boxVertices[1], boxVertices[5]);
+        result.addFace(boxVertices[2], boxVertices[5], boxVertices[6]);
 
-        result.addFace(externalBorders[5], externalBorders[1], externalBorders[0]);
-        result.addFace(externalBorders[5], externalBorders[0], externalBorders[4]);
+        result.addFace(boxVertices[5], boxVertices[1], boxVertices[0]);
+        result.addFace(boxVertices[5], boxVertices[0], boxVertices[4]);
 
-        result.addFace(externalBorders[6], externalBorders[5], externalBorders[4]);
-        result.addFace(externalBorders[6], externalBorders[4], externalBorders[7]);
+        result.addFace(boxVertices[6], boxVertices[5], boxVertices[4]);
+        result.addFace(boxVertices[6], boxVertices[4], boxVertices[7]);
 
-        result.addFace(externalBorders[7], externalBorders[4], externalBorders[0]);
-        result.addFace(externalBorders[7], externalBorders[0], externalBorders[3]);
+        result.addFace(boxVertices[7], boxVertices[4], boxVertices[0]);
+        result.addFace(boxVertices[7], boxVertices[0], boxVertices[3]);
 
-        result.addFace(externalBorders[7], externalBorders[3], externalBorders[2]);
-        result.addFace(externalBorders[7], externalBorders[2], externalBorders[6]);
+        result.addFace(boxVertices[7], boxVertices[3], boxVertices[2]);
+        result.addFace(boxVertices[7], boxVertices[2], boxVertices[6]);
 
+
+        //Union with the original mesh
+        unsigned int resultNFaces = result.numberFaces();
+
+        result = cg3::libigl::union_(fourAxisScaled, result);
+
+        //Check if there is some difference with the number of faces
+        int diffFaces = static_cast<int>(result.numberFaces()) - static_cast<int>(resultNFaces);
+        if (diffFaces != 0)
+            std::cout << "Result " << sId << ": difference of " << diffFaces << " faces." << std::endl;
 
         //Intersection with the stock
-//        result = cg3::libigl::intersection(stock, result);
-
-
-        if (!rotateMeshes) {
-            //Rotate back the mesh
-            cg3::rotationMatrix(xAxis, -angle, rotationMatrix);
-            result.rotate(rotationMatrix);
-        }
+        result = cg3::libigl::intersection(stock, result);
 
         results.push_back(result);
         resultsAssociation.push_back(targetLabel);
-
-
-
-//        //Point-id map
-//        std::map<cg3::Point2Dd, unsigned int> idMap;
-
-//        //Compute mesh borders and project in 2D
-//        std::vector<unsigned int> internalBorderIds = internal::computeExternalBorder(surface);
-//        std::vector<cg3::Point2Dd> internalBorder(internalBorderIds.size());
-
-//        for (unsigned int i = 0; i < internalBorderIds.size(); i++) {
-//            cg3::Pointd point3D = surface.vertex(internalBorderIds[i]);
-//            cg3::Point2Dd projection = cg3::Point2Dd(point3D.x(), point3D.y());
-
-//            internalBorder[i] = projection;
-
-//            idMap[projection] = internalBorderIds[i];
-//        }
-
-
-//        const double length = stockHalfLength*1.2;
-//        const double height = stockRadius*1.2;
-//        const double zHeightUp = height * sin(surroundingAngle);
-//        const double zHeightDown = stockRadius*1.2;
-
-//        //Creating new points of the mesh block
-//        std::vector<cg3::Pointd> newPoints(8);
-//        std::vector<unsigned int> newPointsId(8);
-
-//        newPoints[0] = cg3::Pointd(-length, -height, zHeightUp);
-//        newPoints[1] = cg3::Pointd(length, -height, zHeightUp);
-//        newPoints[2] = cg3::Pointd(length, height, zHeightUp);
-//        newPoints[3] = cg3::Pointd(-length, height, zHeightUp);
-//        newPoints[4] = cg3::Pointd(-length, -height, -zHeightDown);
-//        newPoints[5] = cg3::Pointd(length, -height, -zHeightDown);
-//        newPoints[6] = cg3::Pointd(length, height, -zHeightDown);
-//        newPoints[7] = cg3::Pointd(-length, height, -zHeightDown);
-
-//        for (unsigned int i = 0; i < newPoints.size(); i++) {
-//            unsigned int vid = surface.addVertex(newPoints[i]);
-//            newPointsId[i] = vid;
-//        }
-
-//        surface.addFace(newPointsId[2], newPointsId[1], newPointsId[5]);
-//        surface.addFace(newPointsId[2], newPointsId[5], newPointsId[6]);
-
-//        surface.addFace(newPointsId[5], newPointsId[1], newPointsId[0]);
-//        surface.addFace(newPointsId[5], newPointsId[0], newPointsId[4]);
-
-//        surface.addFace(newPointsId[6], newPointsId[5], newPointsId[4]);
-//        surface.addFace(newPointsId[6], newPointsId[4], newPointsId[7]);
-
-//        surface.addFace(newPointsId[7], newPointsId[4], newPointsId[0]);
-//        surface.addFace(newPointsId[7], newPointsId[0], newPointsId[3]);
-
-//        surface.addFace(newPointsId[7], newPointsId[3], newPointsId[2]);
-//        surface.addFace(newPointsId[7], newPointsId[2], newPointsId[6]);
-
-//        //External border
-//        std::vector<cg3::Point2Dd> externalBorder(4);
-//        for (int i = 0; i < 4; i++) {
-//            externalBorder[i] = cg3::Point2Dd(newPoints[i].x(), newPoints[i].y());
-//            idMap[externalBorder[i]] = newPointsId[i];
-//        }
-
-//        //Holes
-//        std::vector<std::vector<cg3::Point2Dd>> holes;
-//        holes.push_back(internalBorder);
-
-//        //Triangulation
-//        std::vector<std::array<cg3::Point2Dd, 3>> triang =
-//                cg3::cgal::triangulate(externalBorder, holes);
-
-//        for (std::array<cg3::Point2Dd, 3>& triangle : triang) {
-//            //Flag to check if a new point has been created (flipped triangles on projection)
-//            bool isValid = true;
-
-//            unsigned int v[3];
-
-//            for (unsigned int i = 0; i < 3 && isValid; i++) {
-//                if (idMap.find(triangle[i]) != idMap.end()) {
-//                    v[i] = idMap.at(triangle[i]);
-//                }
-//                else {
-//                    isValid = false;
-//                }
-//            }
-
-//            if (isValid) {
-//                surface.addFace(v[0], v[1], v[2]);
-//            }
-//        }
-
-
-
-//        result = cg3::libigl::intersection(stock, result);
-
-
-//        results.push_back(result);
-//        resultsAssociation.push_back(targetLabel);
     }
-
 
     //Min result
     cg3::EigenMesh minResult = minScaled;
-    cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
 
     if (rotateMeshes) {
-        minResult.rotate(rotationMatrix);
+        Eigen::Matrix3d minRotationMatrix;
+        cg3::rotationMatrix(yAxis, M_PI/2, minRotationMatrix);
+
+        minResult.rotate(minRotationMatrix);
+
         minResult.translate(-minResult.boundingBox().center());
     }
+
+    minResult.updateBoundingBox();
+    minResult.updateFacesAndVerticesNormals();
 
     results.push_back(minResult);
     resultsAssociation.push_back(minLabel);
 
 
     //Max result
-    cg3::EigenMesh maxResult = maxScaled;
-    cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
+    cg3::EigenMesh maxResult = maxScaled;    
+
 
     if (rotateMeshes) {
-        maxResult.rotate(rotationMatrix);
+        Eigen::Matrix3d maxRotationMatrix;
+        cg3::rotationMatrix(yAxis, -M_PI/2, maxRotationMatrix);
+
+        maxResult.rotate(maxRotationMatrix);
+
         maxResult.translate(-maxResult.boundingBox().center());
     }
 
@@ -509,7 +492,19 @@ void extractResults(
         surface.updateBoundingBox();
         surface.updateFacesAndVerticesNormals();
     }
-    for (cg3::EigenMesh& result : data.results) {
+    for (size_t i = 0; i < data.results.size(); i++) {
+        cg3::EigenMesh& result = data.results[i];
+
+        if (rotateMeshes) {
+            unsigned int& targetLabel = data.resultsAssociation[i];
+
+            Eigen::Matrix3d resultRotationMatrix;
+            double directionAngle = data.angles[targetLabel];
+            cg3::rotationMatrix(xAxis, directionAngle, resultRotationMatrix);
+
+            result.rotate(resultRotationMatrix);
+        }
+
         result.updateBoundingBox();
         result.updateFacesAndVerticesNormals();
     }
@@ -651,6 +646,53 @@ std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m)
 
     return externalBorders;
 }
+
+/**
+ * @brief Compute polygon offset
+ * @param polygon Polygon
+ * @param offset Offset
+ * @return
+ */
+std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, const double offset) {
+    using namespace ClipperLib;
+
+    const double INT_DOUBLE_TRANSLATION = 1e+6;
+
+    Path subj;
+    Paths solution;
+
+    for (cg3::Point2Dd& point : polygon) {
+        subj <<
+                IntPoint(
+                    static_cast<long long int>(point.x() * INT_DOUBLE_TRANSLATION),
+                    static_cast<long long int>(point.y() * INT_DOUBLE_TRANSLATION));
+    }
+
+    ClipperOffset co;
+    co.AddPath(subj, jtSquare, etClosedPolygon);
+    co.Execute(solution, offset * INT_DOUBLE_TRANSLATION);
+
+    size_t bestIndex = 0;
+    long long int bestDifference = std::numeric_limits<long long int>::max();
+    for (size_t i = 0; i < solution.size(); i++) {
+        Path& path = solution[i];
+        long long int difference = static_cast<long long int>(path.size() - polygon.size());
+        if (difference < 0)
+            difference = -difference;
+
+        if (difference < bestDifference) {
+            bestDifference = difference;
+            bestIndex = i;
+        }
+    }
+
+    std::vector<cg3::Point2Dd> result;
+    for (IntPoint& ip : solution[bestIndex]) {
+        result.push_back(cg3::Point2Dd(ip.X / INT_DOUBLE_TRANSLATION, ip.Y / INT_DOUBLE_TRANSLATION));
+    }
+    return result;
+}
+
 
 } //namespace internal
 
