@@ -538,8 +538,13 @@ void FourAxisFabricationManager::addDrawableResults() {
 
 
     //Add stock (hidden by default)
-    drawableStock = cg3::DrawableEigenMesh(data.stock);
-    mainWindow.pushDrawableObject(&drawableStock, "Stock", false);
+    drawableStocksContainer.clear();
+    drawableStocks.resize(data.stocks.size());
+    for (size_t i = 0; i < data.stocks.size(); i++) {
+        drawableStocks[i] = cg3::DrawableEigenMesh(data.stocks[i]);
+        drawableStocksContainer.pushBack(&drawableStocks[i], "Stock " + std::to_string(i));
+    }
+    mainWindow.pushDrawableObject(&drawableStocksContainer, "Stocks", false);
 
     //Draw components
     drawableResultsContainer.clear();
@@ -615,8 +620,8 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
                     drawableSurfaces.clear();
 
 
-                    mainWindow.deleteDrawableObject(&drawableStock);
-                    drawableStock.clear();
+                    mainWindow.deleteDrawableObject(&drawableStocksContainer);
+                    drawableStocksContainer.clear();
 
 
                     mainWindow.deleteDrawableObject(&drawableResultsContainer);
@@ -1200,8 +1205,11 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
                         mesh.saveOnObj(rawname + "_surface_" + std::to_string(i) + ".obj");
                     }
 
-                    data.stock.setVertexColor(128,128,128);
-                    data.stock.saveOnObj(rawname + "_stock.obj");
+                    for (size_t i = 0; i < data.stocks.size(); i++) {
+                        cg3::EigenMesh& mesh = data.stocks[i];
+                        mesh.setVertexColor(128,128,128);
+                        mesh.saveOnObj(rawname + "_stock_" + std::to_string(i) + ".obj");
+                    }
 
                     for (size_t i = 0; i < data.results.size(); i++) {
                         cg3::EigenMesh& mesh = data.results[i];

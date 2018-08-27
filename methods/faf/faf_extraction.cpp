@@ -72,8 +72,8 @@ void extractResults(
     const std::vector<int>& minComponentAssociation = data.minComponentAssociation;
     const std::vector<int>& maxComponentAssociation = data.maxComponentAssociation;
 
-    //Referencing output data
-    cg3::EigenMesh& stock = data.stock;
+    //Referencing output data    
+    std::vector<cg3::EigenMesh>& stocks = data.stocks;
 
     std::vector<cg3::EigenMesh>& results = data.results;
     std::vector<unsigned int>& resultsAssociation = data.resultsAssociation;
@@ -186,7 +186,7 @@ void extractResults(
     //Creating stock mesh
     double stockRadius = stockDiameter/2;
     double stockHalfLength = stockLength/2;
-    stock = cg3::EigenMesh(cg3::EigenMeshAlgorithms::makeCylinder(cg3::Pointd(-stockHalfLength,0,0), cg3::Pointd(+stockHalfLength,0,0), stockRadius, CYLINDER_SUBD));
+    cg3::EigenMesh stock = cg3::EigenMesh(cg3::EigenMeshAlgorithms::makeCylinder(cg3::Pointd(-stockHalfLength,0,0), cg3::Pointd(+stockHalfLength,0,0), stockRadius, CYLINDER_SUBD));
 
     //Size of the box
     const double boxWidth = stockLength*2;
@@ -431,9 +431,8 @@ void extractResults(
         result.addFace(boxVertices[7], boxVertices[3], boxVertices[2]);
         result.addFace(boxVertices[7], boxVertices[2], boxVertices[6]);
 
+        unsigned int resultNFaces = result.numberFaces();                
 
-        //Union with the original mesh
-        unsigned int resultNFaces = result.numberFaces();
 
         result = cg3::libigl::union_(fourAxisScaled, result);
 
@@ -445,8 +444,16 @@ void extractResults(
         //Intersection with the stock
         result = cg3::libigl::intersection(stock, result);
 
+
+        //Add results
         results.push_back(result);
         resultsAssociation.push_back(targetLabel);
+
+        //Add stock
+        stocks.push_back(stock);
+
+        //New stock for next iteration
+        stock = result;
     }
 
     //Min result

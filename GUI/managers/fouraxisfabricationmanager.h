@@ -35,7 +35,7 @@ public:
 
     /* Constructor/Destructors */
 
-    explicit FourAxisFabricationManager(QWidget *parent = 0);
+    explicit FourAxisFabricationManager(QWidget *parent = nullptr);
     ~FourAxisFabricationManager();
 
 
@@ -63,7 +63,8 @@ private:
     std::vector<cg3::DrawableEigenMesh> drawableSurfaces;
     cg3::DrawableContainer drawableSurfacesContainer;
 
-    cg3::DrawableEigenMesh drawableStock;
+    std::vector<cg3::DrawableEigenMesh> drawableStocks;
+    cg3::DrawableContainer drawableStocksContainer;
     std::vector<cg3::DrawableEigenMesh> drawableResults;
     cg3::DrawableContainer drawableResultsContainer;
 

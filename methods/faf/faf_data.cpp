@@ -45,7 +45,7 @@ void Data::clear() {
     surfaces.clear();
     surfacesAssociation.clear();
 
-    stock.clear();
+    stocks.clear();
 
     results.clear();
     resultsAssociation.clear();

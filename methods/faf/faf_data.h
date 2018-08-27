@@ -80,8 +80,7 @@ struct Data {
 
     /* Results */
 
-    cg3::EigenMesh stock;
-
+    std::vector<cg3::EigenMesh> stocks;
     std::vector<cg3::EigenMesh> results;
     std::vector<unsigned int> resultsAssociation;
 
