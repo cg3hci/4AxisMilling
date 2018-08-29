@@ -158,6 +158,13 @@ void extractResults(
                 minVFAdj,
                 minLabel);
 
+    if (rotateMeshes) {
+        Eigen::Matrix3d rotationMatrix;
+        cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
+        minSurface.rotate(rotationMatrix);
+        minSurface.translate(-minSurface.boundingBox().center());
+    }
+
     surfaces.push_back(minSurface);
     surfacesAssociation.push_back(minLabel);
 
@@ -460,11 +467,9 @@ void extractResults(
     cg3::EigenMesh minResult = minScaled;
 
     if (rotateMeshes) {
-        Eigen::Matrix3d minRotationMatrix;
-        cg3::rotationMatrix(yAxis, M_PI/2, minRotationMatrix);
-
-        minResult.rotate(minRotationMatrix);
-
+        Eigen::Matrix3d rotationMatrix;
+        cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
+        minResult.rotate(rotationMatrix);
         minResult.translate(-minResult.boundingBox().center());
     }
 
@@ -476,17 +481,17 @@ void extractResults(
 
 
     //Max result
-    cg3::EigenMesh maxResult = maxScaled;    
-
+    cg3::EigenMesh maxResult = maxScaled;
 
     if (rotateMeshes) {
-        Eigen::Matrix3d maxRotationMatrix;
-        cg3::rotationMatrix(yAxis, -M_PI/2, maxRotationMatrix);
-
-        maxResult.rotate(maxRotationMatrix);
-
+        Eigen::Matrix3d rotationMatrix;
+        cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
+        maxResult.rotate(rotationMatrix);
         maxResult.translate(-maxResult.boundingBox().center());
     }
+
+    maxResult.updateBoundingBox();
+    maxResult.updateFacesAndVerticesNormals();
 
     results.push_back(maxResult);
     resultsAssociation.push_back(maxLabel);
@@ -495,11 +500,41 @@ void extractResults(
 
 
     //Update meshes data
-    for (cg3::EigenMesh& surface : data.surfaces) {
+    for (size_t i = 0; i < data.surfaces.size()-2; i++) {
+        cg3::EigenMesh& surface = data.surfaces[i];
+
+        if (rotateMeshes) {
+            unsigned int& targetLabel = data.resultsAssociation[i];
+
+            Eigen::Matrix3d resultRotationMatrix;
+            double directionAngle = data.angles[targetLabel];
+            cg3::rotationMatrix(xAxis, directionAngle, resultRotationMatrix);
+
+            surface.rotate(resultRotationMatrix);
+        }
+
         surface.updateBoundingBox();
         surface.updateFacesAndVerticesNormals();
     }
-    for (size_t i = 0; i < data.results.size(); i++) {
+
+    for (size_t i = 0; i < data.stocks.size(); i++) {
+        cg3::EigenMesh& stock = data.stocks[i];
+
+        if (rotateMeshes) {
+            unsigned int& targetLabel = data.resultsAssociation[i];
+
+            Eigen::Matrix3d resultRotationMatrix;
+            double directionAngle = data.angles[targetLabel];
+            cg3::rotationMatrix(xAxis, directionAngle, resultRotationMatrix);
+
+            stock.rotate(resultRotationMatrix);
+        }
+
+        stock.updateBoundingBox();
+        stock.updateFacesAndVerticesNormals();
+    }
+
+    for (size_t i = 0; i < data.results.size()-2; i++) {
         cg3::EigenMesh& result = data.results[i];
 
         if (rotateMeshes) {
