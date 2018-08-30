@@ -371,111 +371,10 @@
       <string>Four Axis Fabrication</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="19" column="1">
-       <widget class="QLabel" name="extractResultsMillableAngleLabel">
+      <item row="4" column="3">
+       <widget class="QLabel" name="checkVisibilityDirectionsLabel">
         <property name="text">
-         <string>Millable angle:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="15" column="2">
-       <widget class="QSpinBox" name="restoreFrequenciesIterationsSpinBox">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="maximum">
-         <number>1000</number>
-        </property>
-        <property name="value">
-         <number>50</number>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="2">
-       <widget class="QCheckBox" name="optimizationLoseHolesCheckBox">
-        <property name="text">
-         <string>Lose holes</string>
-        </property>
-       </widget>
-      </item>
-      <item row="16" column="5">
-       <widget class="QPushButton" name="recheckVisibilityButton">
-        <property name="text">
-         <string>Recheck</string>
-        </property>
-       </widget>
-      </item>
-      <item row="18" column="4">
-       <widget class="QDoubleSpinBox" name="extractResultsStockDiameterSpinBox">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>130.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="5">
-       <widget class="QPushButton" name="selectExtremesButton">
-        <property name="text">
-         <string>Extremes</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="4">
-       <widget class="QDoubleSpinBox" name="getAssociationDataSigmaSpinBox">
-        <property name="minimum">
-         <double>0.050000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>100.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.500000000000000</double>
-        </property>
-        <property name="value">
-         <double>4.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="18" column="2">
-       <widget class="QDoubleSpinBox" name="extractResultsStockLengthSpinBox">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>100.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="10" column="1">
-       <widget class="QLabel" name="getAssociationMaxLabelAngleLabel">
-        <property name="text">
-         <string>Max label angle:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="15" column="5">
-       <widget class="QPushButton" name="restoreFrequenciesButton">
-        <property name="text">
-         <string>Frequencies</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1" colspan="2">
-       <widget class="QCheckBox" name="selectExtremesCheckbox">
-        <property name="text">
-         <string>Compute extremes</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="5">
-       <widget class="QPushButton" name="optimizationButton">
-        <property name="text">
-         <string>Optimization</string>
+         <string>Directions:</string>
         </property>
        </widget>
       </item>
@@ -536,23 +435,94 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="2">
-       <widget class="QDoubleSpinBox" name="checkVisibilityHeightfieldAngleSpinBox">
-        <property name="minimum">
-         <double>0.010000000000000</double>
+      <item row="7" column="5">
+       <widget class="QPushButton" name="targetDirectionsButton">
+        <property name="text">
+         <string>Directions</string>
         </property>
+       </widget>
+      </item>
+      <item row="19" column="2">
+       <widget class="QDoubleSpinBox" name="extractResultsMillableAngleSpinBox">
         <property name="maximum">
          <double>90.000000000000000</double>
         </property>
         <property name="value">
-         <double>90.000000000000000</double>
+         <double>30.000000000000000</double>
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
-       <widget class="QLabel" name="checkVisibilityHeightfieldAngleLabel">
+      <item row="13" column="1">
+       <widget class="QCheckBox" name="optimizationRelaxHolesCheckBox">
         <property name="text">
-         <string>HF angle:</string>
+         <string>Relax holes</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="18" column="3">
+       <widget class="QLabel" name="extractResultsStockDiameterLabel">
+        <property name="text">
+         <string>Stock diameter:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="4">
+       <widget class="QDoubleSpinBox" name="getAssociationDataSigmaSpinBox">
+        <property name="minimum">
+         <double>0.050000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>100.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.500000000000000</double>
+        </property>
+        <property name="value">
+         <double>4.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="18" column="2">
+       <widget class="QDoubleSpinBox" name="extractResultsStockLengthSpinBox">
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>100.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1">
+       <widget class="QLabel" name="getAssociationMaxLabelAngleLabel">
+        <property name="text">
+         <string>Max label angle:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="15" column="5">
+       <widget class="QPushButton" name="restoreFrequenciesButton">
+        <property name="text">
+         <string>Frequencies</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1" colspan="2">
+       <widget class="QCheckBox" name="selectExtremesCheckbox">
+        <property name="text">
+         <string>Compute extremes</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="13" column="5">
+       <widget class="QPushButton" name="optimizationButton">
+        <property name="text">
+         <string>Optimization</string>
         </property>
        </widget>
       </item>
@@ -596,37 +566,47 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="5">
-       <widget class="QPushButton" name="targetDirectionsButton">
-        <property name="text">
-         <string>Directions</string>
+      <item row="15" column="2">
+       <widget class="QSpinBox" name="restoreFrequenciesIterationsSpinBox">
+        <property name="minimum">
+         <number>1</number>
         </property>
-       </widget>
-      </item>
-      <item row="19" column="2">
-       <widget class="QDoubleSpinBox" name="extractResultsMillableAngleSpinBox">
         <property name="maximum">
-         <double>90.000000000000000</double>
+         <number>1000</number>
         </property>
         <property name="value">
-         <double>30.000000000000000</double>
+         <number>50</number>
         </property>
        </widget>
       </item>
-      <item row="13" column="1">
-       <widget class="QCheckBox" name="optimizationRelaxHolesCheckBox">
+      <item row="13" column="2">
+       <widget class="QCheckBox" name="optimizationLoseHolesCheckBox">
         <property name="text">
-         <string>Relax holes</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
+         <string>Lose holes</string>
         </property>
        </widget>
       </item>
-      <item row="18" column="3">
-       <widget class="QLabel" name="extractResultsStockDiameterLabel">
+      <item row="16" column="5">
+       <widget class="QPushButton" name="recheckVisibilityButton">
         <property name="text">
-         <string>Stock diameter:</string>
+         <string>Recheck</string>
+        </property>
+       </widget>
+      </item>
+      <item row="18" column="4">
+       <widget class="QDoubleSpinBox" name="extractResultsStockDiameterSpinBox">
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>130.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="5">
+       <widget class="QPushButton" name="selectExtremesButton">
+        <property name="text">
+         <string>Extremes</string>
         </property>
        </widget>
       </item>
@@ -700,6 +680,13 @@
         </property>
        </widget>
       </item>
+      <item row="19" column="1">
+       <widget class="QLabel" name="extractResultsMillableAngleLabel">
+        <property name="text">
+         <string>Millable angle:</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="2">
        <widget class="QSpinBox" name="optimalOrientationOrientationsSpinBox">
         <property name="minimum">
@@ -763,13 +750,6 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="5">
-       <widget class="QPushButton" name="checkVisibilityButton">
-        <property name="text">
-         <string>Visibility</string>
-        </property>
-       </widget>
-      </item>
       <item row="10" column="3">
        <widget class="QLabel" name="getAssociationCompactnessLabel">
         <property name="text">
@@ -777,10 +757,30 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="3">
-       <widget class="QLabel" name="checkVisibilityDirectionsLabel">
+      <item row="3" column="3">
+       <widget class="QLabel" name="selectExtremesHeightfieldAngleLabel">
         <property name="text">
-         <string>Directions:</string>
+         <string>HF angle:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="4">
+       <widget class="QDoubleSpinBox" name="selectExtremesHeightfieldAngleSpinBox">
+        <property name="minimum">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>90.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>90.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="5">
+       <widget class="QPushButton" name="checkVisibilityButton">
+        <property name="text">
+         <string>Visibility</string>
         </property>
        </widget>
       </item>

@@ -71,8 +71,14 @@ void rotateToOptimalOrientation(
     }
 
     //Translate meshes to the center
+    mesh.updateBoundingBox();
+    smoothedMesh.updateBoundingBox();
+
     mesh.translate(-mesh.boundingBox().center());
     smoothedMesh.translate(-smoothedMesh.boundingBox().center());
+
+    mesh.updateFacesAndVerticesNormals();
+    smoothedMesh.updateFacesAndVerticesNormals();
 }
 
 namespace internal {

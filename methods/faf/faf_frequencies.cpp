@@ -19,7 +19,6 @@
 
 #include <cg3/geometry/transformations.h>
 
-#include "faf_utilities.h"
 #include "faf_visibilitycheck.h"
 #include "faf_minimization.h"
 #include "faf_association.h"

@@ -80,14 +80,14 @@ void FourAxisFabricationManager::updateUI() {
     //Select extremes
     ui->selectExtremesButton->setEnabled(!areExtremesSelected);
     ui->selectExtremesCheckbox->setEnabled(!areExtremesSelected);
+    ui->selectExtremesHeightfieldAngleLabel->setEnabled(!areExtremesSelected);
+    ui->selectExtremesHeightfieldAngleSpinBox->setEnabled(!areExtremesSelected);
 
     //Check visibility
     ui->checkVisibilityButton->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityDirectionsLabel->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityDirectionsSpinBox->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityMethodFrame->setEnabled(!isVisibilityChecked);
-    ui->checkVisibilityHeightfieldAngleLabel->setEnabled(!isVisibilityChecked);
-    ui->checkVisibilityHeightfieldAngleSpinBox->setEnabled(!isVisibilityChecked);    
 
     //Get the target directions
     ui->targetDirectionsButton->setEnabled(!areTargetDirectionsFound);
@@ -214,11 +214,12 @@ void FourAxisFabricationManager::selectExtremes() {
 
         //Get UI data
         bool selectExtremes = ui->selectExtremesCheckbox->isChecked();
+        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
 
         cg3::Timer t("Select extremes");
 
         //Get extremes on x-axis to be selected
-        FourAxisFabrication::selectExtremesOnXAxis(smoothedMesh, selectExtremes, data);
+        FourAxisFabrication::selectExtremesOnXAxis(smoothedMesh, selectExtremes, heightfieldAngle, data);
 
         t.stopAndPrint();
 
@@ -236,7 +237,7 @@ void FourAxisFabricationManager::checkVisibility() {
 
         //Get UI data
         unsigned int nDirections = (unsigned int) ui->checkVisibilityDirectionsSpinBox->value();
-        double heightfieldAngle = ui->checkVisibilityHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
         FourAxisFabrication::CheckMode checkMode = (ui->checkVisibilityRayRadio->isChecked() ?
                 FourAxisFabrication::RAYSHOOTING :
                 FourAxisFabrication::PROJECTION);
@@ -360,7 +361,7 @@ void FourAxisFabricationManager::restoreFrequencies() {
 
         //Get UI data
         unsigned int nIterations = (unsigned int) ui->restoreFrequenciesIterationsSpinBox->value();
-        double heightfieldAngle = ui->checkVisibilityHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
 
         double haussDistance = cg3::libigl::hausdorffDistance(originalMesh, smoothedMesh);
         cg3::BoundingBox originalMeshBB = originalMesh.boundingBox();
@@ -399,7 +400,7 @@ void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
         FourAxisFabrication::CheckMode checkMode = (ui->checkVisibilityRayRadio->isChecked() ?
                 FourAxisFabrication::RAYSHOOTING :
                 FourAxisFabrication::PROJECTION);
-        double heightfieldAngle = ui->checkVisibilityHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
         bool reassign = ui->recheckVisibilityReassignNonVisibleCheckBox->isChecked();
 
 
