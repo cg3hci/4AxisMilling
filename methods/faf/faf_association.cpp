@@ -177,12 +177,32 @@ void optimization(
             for (unsigned int holeChartId : surroundingChart.holeCharts) {
                 const Chart& holeChart = chartData.charts.at(holeChartId);
 
-                for (const int fId : holeChart.faces) {
-                    if (visibility(surroundingChartLabel, fId) > 0) {
+                std::set<unsigned int> remainingHoleChartFaces(holeChart.faces.begin(), holeChart.faces.end());
+
+                std::vector<unsigned int> facesToBeRelaxed;
+                do {
+                    facesToBeRelaxed.clear();
+
+                    for (const unsigned int fId : remainingHoleChartFaces) {
+                        bool isOnBorder = false;
+                        for (const int adjF : ffAdj[fId]) {
+                            if (association[adjF] == surroundingChartLabel) {
+                                isOnBorder = true;
+                            }
+                        }
+
+                        if (isOnBorder && visibility(surroundingChartLabel, fId) > 0)
+                            facesToBeRelaxed.push_back(fId);
+                    }
+
+                    for (const unsigned int fId : facesToBeRelaxed) {
                         association[fId] = surroundingChartLabel;
                         facesAffected++;
+
+                        remainingHoleChartFaces.erase(fId);
                     }
                 }
+                while (!facesToBeRelaxed.empty());
 
                 chartAffected++;
             }

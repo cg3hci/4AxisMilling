@@ -130,8 +130,8 @@ ChartData getChartData(
             chartCenter /= nVertices;
 
             //Next map and set of vertices in the borders
-            std::unordered_map<unsigned int, unsigned int> vNext;
-            std::unordered_map<unsigned int, const HalfEdge*> vHeMap;
+            std::unordered_map<unsigned int, std::vector<unsigned int>> vNext;
+            std::unordered_map<unsigned int, std::vector<const HalfEdge*>> vHeMap;
             std::set<unsigned int> remainingVertices;
 
             //Furthest vertex
@@ -144,9 +144,15 @@ ChartData getChartData(
                 const unsigned int fromId = fromV->id();
                 const unsigned int toId = toV->id();
 
+                //Create vectors in the map
+                if (vNext.find(fromId) == vNext.end()) {
+                    vNext.insert(std::make_pair(fromId, std::vector<unsigned int>()));
+                    vHeMap.insert(std::make_pair(fromId, std::vector<const HalfEdge*>()));
+                }
+
                 //Fill maps
-                vNext[fromId] = toId;
-                vHeMap[fromId] = he;
+                vNext.at(fromId).push_back(toId);
+                vHeMap.at(fromId).push_back(he);
 
                 //Fill set of vertices
                 remainingVertices.insert(fromId);
@@ -169,7 +175,7 @@ ChartData getChartData(
             vStart = (unsigned int) furthestVertex;
             vCurrent = vStart;
             do {
-                const HalfEdge* he = vHeMap.at(vCurrent);
+                const HalfEdge* he = vHeMap.at(vCurrent).at(0);
 
                 unsigned int fId = he->face()->id();
                 unsigned int adjId = he->twin()->face()->id();
@@ -183,7 +189,7 @@ ChartData getChartData(
 
                 remainingVertices.erase(vCurrent);
 
-                vCurrent = vNext.at(vCurrent);
+                vCurrent = vNext.at(vCurrent).at(0);
             }
             while (vCurrent != vStart);
 
@@ -196,8 +202,18 @@ ChartData getChartData(
                 std::vector<unsigned int> currentHoleVertices;
                 std::vector<unsigned int> currentHoleFaces;
 
+                const HalfEdge* he = vHeMap.at(vStart).at(0);
+                size_t currentHoleChartId = chartData.faceChartMap.at(he->twin()->face()->id());
+
                 do {
-                    const HalfEdge* he = vHeMap.at(vCurrent);
+                    size_t vecPos = 0;
+
+                    he = vHeMap.at(vCurrent).at(vecPos);
+
+                    while (chartData.faceChartMap.at(he->twin()->face()->id()) != currentHoleChartId) {
+                        vecPos++;
+                        he = vHeMap.at(vCurrent).at(vecPos);
+                    }
 
                     unsigned int fId = he->face()->id();
                     unsigned int adjId = he->twin()->face()->id();
@@ -211,7 +227,7 @@ ChartData getChartData(
 
                     remainingVertices.erase(vCurrent);
 
-                    vCurrent = vNext.at(vCurrent);
+                    vCurrent = vNext.at(vCurrent).at(vecPos);
                 }
                 while (vCurrent != vStart);
 
