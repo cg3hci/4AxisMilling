@@ -443,7 +443,7 @@ void setupDataCost(
     //Fix extremes on the +x and -x
     if (fixExtremes) {
         #pragma omp parallel for
-        for (unsigned int label = 0; label < nLabels - 2; ++label) {
+        for (unsigned int label = 0; label < nLabels-2; ++label) {
             #pragma omp parallel for
             for (size_t i = 0; i < minExtremes.size(); i++) {
                 unsigned int faceId = minExtremes[i];

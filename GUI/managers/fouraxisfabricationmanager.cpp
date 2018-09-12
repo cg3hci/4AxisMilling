@@ -88,6 +88,7 @@ void FourAxisFabricationManager::updateUI() {
     ui->checkVisibilityDirectionsLabel->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityDirectionsSpinBox->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityMethodFrame->setEnabled(!isVisibilityChecked);
+    ui->checkVisibilityXDirectionsCheckBox->setEnabled(!isVisibilityChecked);
 
     //Get the target directions
     ui->targetDirectionsButton->setEnabled(!areTargetDirectionsFound);
@@ -238,6 +239,7 @@ void FourAxisFabricationManager::checkVisibility() {
         //Get UI data
         unsigned int nDirections = (unsigned int) ui->checkVisibilityDirectionsSpinBox->value();
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
         FourAxisFabrication::CheckMode checkMode = (ui->checkVisibilityRayRadio->isChecked() ?
                 FourAxisFabrication::RAYSHOOTING :
                 FourAxisFabrication::PROJECTION);
@@ -254,6 +256,7 @@ void FourAxisFabricationManager::checkVisibility() {
                     nDirections,
                     data,
                     heightfieldAngle,
+                    includeXDirections,
                     checkMode);
 
 
@@ -401,13 +404,14 @@ void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
                 FourAxisFabrication::RAYSHOOTING :
                 FourAxisFabrication::PROJECTION);
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
         bool reassign = ui->recheckVisibilityReassignNonVisibleCheckBox->isChecked();
 
 
         cg3::Timer tCheck("Recheck visibility after frequencies have been restored");
 
         //Check if it is a valid association
-        FourAxisFabrication::recheckVisibilityAfterRestore(data, heightfieldAngle, reassign, checkMode);
+        FourAxisFabrication::recheckVisibilityAfterRestore(data, heightfieldAngle, reassign, includeXDirections, checkMode);
 
         tCheck.stopAndPrint();
 

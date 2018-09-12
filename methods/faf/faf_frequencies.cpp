@@ -141,6 +141,7 @@ void recheckVisibilityAfterRestore(
         Data& data,
         const double heightfieldAngle,
         const bool reassign,
+        const bool includeXDirections,
         CheckMode checkMode)
 {
     cg3::EigenMesh& targetMesh = data.restoredMesh;
@@ -152,7 +153,7 @@ void recheckVisibilityAfterRestore(
     newData.maxExtremes = data.maxExtremes;
 
     //Get new visibility
-    getVisibility(targetMesh, nDirections, newData, heightfieldAngle, checkMode);
+    getVisibility(targetMesh, nDirections, newData, heightfieldAngle, includeXDirections, checkMode);
     data.restoredMeshVisibility = newData.visibility;
 
     data.restoredMeshNonVisibleFaces.clear();

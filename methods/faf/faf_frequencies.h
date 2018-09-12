@@ -27,6 +27,7 @@ void recheckVisibilityAfterRestore(
         Data& data,
         const double heightFieldAngle,
         const bool reassign,
+        const bool includeXDirections,
         CheckMode checkMode = PROJECTION);
 
 }

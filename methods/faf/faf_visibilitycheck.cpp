@@ -42,6 +42,9 @@ void computeVisibility(
         std::vector<cg3::Vec3>& directions,
         std::vector<double>& directionsAngle,
         cg3::Array2D<int>& visibility,
+        const std::vector<unsigned int>& minExtremes,
+        const std::vector<unsigned int>& maxExtremes,
+        const bool includeXDirections,
         const double heightfieldAngle,
         CheckMode checkMode = PROJECTION);
 
@@ -55,8 +58,8 @@ void detectNonVisibleFaces(
 void getVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
-        const unsigned int nDirections,
         const unsigned int directionIndex,
+        const int oppositeDirectionIndex,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle);
 
@@ -75,9 +78,9 @@ void getVisibilityRayShootingOnZ(
 
 void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
-        const std::vector<unsigned int>& faces,
-        const unsigned int nDirections,
+        const std::vector<unsigned int>& faces,        
         const unsigned int directionIndex,
+        const int oppositeDirectionIndex,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle);
 
@@ -93,9 +96,9 @@ void getVisibilityProjectionOnZ(
 
 /* Comparators */
 
-struct BarycenterZComparator {
+struct TriangleZComparator {
     const cg3::SimpleEigenMesh& m;
-    BarycenterZComparator(const cg3::SimpleEigenMesh& m);
+    TriangleZComparator(const cg3::SimpleEigenMesh& m);
     bool operator()(unsigned int f1, unsigned int f2);
 };
 bool triangle2DComparator(const cg3::Triangle2Dd& t1, const cg3::Triangle2Dd& t2);
@@ -132,10 +135,11 @@ void getVisibility(
         const unsigned int nDirections,
         Data& data,
         const double heightfieldAngle,
+        const bool includeXDirections,
         CheckMode checkMode)
 {
     internal::initializeDataForVisibilityCheck(mesh, nDirections, data);
-    internal::computeVisibility(mesh, nDirections, data.directions, data.angles, data.visibility, heightfieldAngle, checkMode);
+    internal::computeVisibility(mesh, nDirections, data.directions, data.angles, data.visibility, data.minExtremes, data.maxExtremes, includeXDirections, heightfieldAngle, checkMode);
     internal::detectNonVisibleFaces(data);
 }
 
@@ -160,12 +164,9 @@ void initializeDataForVisibilityCheck(
         const unsigned int nDirections,
         Data& data)
 {
-    const std::vector<unsigned int>& minExtremes = data.minExtremes;
-    const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
     cg3::Array2D<int>& visibility = data.visibility;
     std::vector<int>& association = data.association;
     std::vector<cg3::Vec3>& directions = data.directions;
-
 
     //Initialize visibility (number of directions, two for extremes)
     visibility.clear();
@@ -180,33 +181,6 @@ void initializeDataForVisibilityCheck(
     //Initialize direction vector
     directions.clear();
     directions.resize(2*nDirections + 2);
-
-
-
-    //Index for min, max extremes
-    unsigned int minIndex = 2*nDirections;
-    unsigned int maxIndex = 2*nDirections + 1;
-
-
-    //Add min and max extremes directions
-    directions[minIndex] = cg3::Vec3(-1,0,0);
-    directions[maxIndex] = cg3::Vec3(1,0,0);
-
-
-    //Set visibility of the min extremes
-    #pragma omp parallel for
-    for (size_t i = 0; i < minExtremes.size(); i++){
-        unsigned int faceId = minExtremes[i];
-        visibility(minIndex, faceId) = 1;
-    }
-
-    //Set visibility of the max extremes
-    #pragma omp parallel for
-    for (size_t i = 0; i < maxExtremes.size(); i++){
-        unsigned int faceId = maxExtremes[i];
-        visibility(maxIndex, faceId) = 1;
-    }
-
 }
 
 /**
@@ -228,6 +202,9 @@ void computeVisibility(
         std::vector<cg3::Vec3>& directions,
         std::vector<double>& angles,
         cg3::Array2D<int>& visibility,
+        const std::vector<unsigned int>& minExtremes,
+        const std::vector<unsigned int>& maxExtremes,
+        const bool includeXDirections,
         const double heightfieldAngle,
         CheckMode checkMode)
 {
@@ -244,12 +221,14 @@ void computeVisibility(
     //Step angle for getting all the directions (on 180 degrees)
     double stepAngle = M_PI / nDirections;
 
+    const cg3::Vec3 xAxis(1,0,0);
+    const cg3::Vec3 yAxis(0,1,0);
+
     //Get rotation matrix
     Eigen::Matrix3d rotationMatrix;
     Eigen::Matrix3d rotationMatrixDirection;
-    cg3::Vec3 rotationAxis(1,0,0);
-    cg3::rotationMatrix(rotationAxis, stepAngle, rotationMatrix);
-    cg3::rotationMatrix(rotationAxis, -stepAngle, rotationMatrixDirection);
+    cg3::rotationMatrix(xAxis, stepAngle, rotationMatrix);
+    cg3::rotationMatrix(xAxis, -stepAngle, rotationMatrixDirection);
 
     //Vector that is opposite to the milling direction
     cg3::Vec3 dir(0,0,1);
@@ -266,11 +245,11 @@ void computeVisibility(
     for(unsigned int dirIndex = 0; dirIndex < nDirections; dirIndex++){
         if (checkMode == RAYSHOOTING) {
             //Check visibility ray shooting
-            internal::getVisibilityRayShootingOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility, heightfieldAngle);
+            internal::getVisibilityRayShootingOnZ(rotatingMesh, targetFaces, dirIndex, nDirections + dirIndex, visibility, heightfieldAngle);
         }
         else {
             //Check visibility with projection
-            internal::getVisibilityProjectionOnZ(rotatingMesh, targetFaces, nDirections, dirIndex, visibility, heightfieldAngle);
+            internal::getVisibilityProjectionOnZ(rotatingMesh, targetFaces, dirIndex, nDirections + dirIndex, visibility, heightfieldAngle);
         }
 
         //Add the current directions
@@ -282,6 +261,44 @@ void computeVisibility(
 
         //Rotate the current
         dir.rotate(rotationMatrixDirection);
+    }
+
+    //Index for min, max extremes
+    unsigned int minIndex = nDirections*2;
+    unsigned int maxIndex = nDirections*2 + 1;
+
+    //Add min and max extremes directions
+    directions[minIndex] = cg3::Vec3(-1,0,0);
+    directions[maxIndex] = cg3::Vec3(1,0,0);
+
+    if (includeXDirections) {
+        //Compute -x and +x visibility
+        rotatingMesh = mesh;
+        cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
+        rotatingMesh.rotate(rotationMatrix);
+        if (checkMode == RAYSHOOTING) {
+            //Check visibility ray shooting
+            internal::getVisibilityRayShootingOnZ(rotatingMesh, targetFaces, minIndex, maxIndex, visibility, heightfieldAngle);
+        }
+        else {
+            //Check visibility with projection
+            internal::getVisibilityProjectionOnZ(rotatingMesh, targetFaces, minIndex, maxIndex, visibility, heightfieldAngle);
+        }
+    }
+    else {
+        //Set visibility of the min extremes
+        #pragma omp parallel for
+        for (size_t i = 0; i < minExtremes.size(); i++){
+            unsigned int faceId = minExtremes[i];
+            visibility(minIndex, faceId) = 1;
+        }
+
+        //Set visibility of the max extremes
+        #pragma omp parallel for
+        for (size_t i = 0; i < maxExtremes.size(); i++){
+            unsigned int faceId = maxExtremes[i];
+            visibility(maxIndex, faceId) = 1;
+        }
     }
 }
 
@@ -307,7 +324,7 @@ void detectNonVisibleFaces(
             }
         }
 
-        //Set visibility to the unknown index
+        //Add to the non-visible face
         if (!found)
             nonVisibleFaces.push_back(faceId);
     }
@@ -331,8 +348,8 @@ void detectNonVisibleFaces(
 void getVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
-        const unsigned int nDirections,
         const unsigned int directionIndex,
+        const int oppositeDirectionIndex,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle)
 {
@@ -342,8 +359,8 @@ void getVisibilityRayShootingOnZ(
     cg3::cgal::AABBTree tree(mesh);
 
     //Get bounding box min and max z-coordinate
-    double minZ = mesh.boundingBox().minZ()-50;
-    double maxZ = mesh.boundingBox().maxZ()+50;
+    double minZ = mesh.boundingBox().minZ()-1;
+    double maxZ = mesh.boundingBox().maxZ()+1;
 
     for(unsigned int faceIndex : faces){
         //Get the face data
@@ -406,20 +423,25 @@ void getVisibilityRayShootingOnZ(
                 maxZCoordinate = currentBarycenter.z();
             }
 
-            //Save face with the minimum Z barycenter and that is visible
-            //from (0,0,-1) direction
-            if (currentBarycenter.z() < minZCoordinate &&
-                    zDirMin.dot(mesh.faceNormal(intersectedFace)) >= heightFieldLimit)
-            {
-                minZFace = intersectedFace;
-                minZCoordinate = currentBarycenter.z();
+
+            if (oppositeDirectionIndex >= 0) {
+                //Save face with the minimum Z barycenter and that is visible
+                //from (0,0,-1) direction
+                if (currentBarycenter.z() < minZCoordinate &&
+                        zDirMin.dot(mesh.faceNormal(intersectedFace)) >= heightFieldLimit)
+                {
+                    minZFace = intersectedFace;
+                    minZCoordinate = currentBarycenter.z();
+                }
             }
         }
 
         //Set the visibility
         visibility(directionIndex, maxZFace) = 1;
-        visibility(nDirections + directionIndex, minZFace) = 1;
 
+        if (oppositeDirectionIndex >= 0) {
+            visibility(oppositeDirectionIndex, minZFace) = 1;
+        }
 
 
         assert(zDirMax.dot(mesh.faceNormal(maxZFace)) >= heightFieldLimit);
@@ -440,23 +462,26 @@ void getVisibilityRayShootingOnZ(
         }
 #endif
 
-        assert(zDirMin.dot(mesh.faceNormal(minZFace)) >= heightFieldLimit);
+
+        if (oppositeDirectionIndex >= 0) {
+            assert(zDirMin.dot(mesh.faceNormal(minZFace)) >= heightFieldLimit);
 #ifdef RELEASECHECK
-        //TO BE DELETED ON FINAL RELEASE
-        if (zDirMin.dot(mesh.faceNormal(minZFace)) < heightFieldLimit) {
-            std::cout << "ERROR: not visible triangle, dot product with opposite of z-axis is less than 0 for the direction " << mesh.faceNormal(minZFace) << std::endl;
-            exit(1);
-        }
+            //TO BE DELETED ON FINAL RELEASE
+            if (zDirMin.dot(mesh.faceNormal(minZFace)) < heightFieldLimit) {
+                std::cout << "ERROR: not visible triangle, dot product with opposite of z-axis is less than 0 for the direction " << mesh.faceNormal(minZFace) << std::endl;
+                exit(1);
+            }
 #endif
 
-        assert(minZFace >= 0);
+            assert(minZFace >= 0);
 #ifdef RELEASECHECK
-        //TO BE DELETED ON FINAL RELEASE
-        if (minZFace < 0) {
-            std::cout << "ERROR: no candidate min face has been found" << std::endl;
-            exit(1);
-        }
+            //TO BE DELETED ON FINAL RELEASE
+            if (minZFace < 0) {
+                std::cout << "ERROR: no candidate min face has been found" << std::endl;
+                exit(1);
+            }
 #endif
+        }
     }
 }
 
@@ -480,8 +505,8 @@ void getVisibilityRayShootingOnZ(
 void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
         const std::vector<unsigned int>& faces,
-        const unsigned int nDirections,
         const unsigned int directionIndex,
+        const int oppositeDirectionIndex,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle)
 {
@@ -492,7 +517,7 @@ void getVisibilityProjectionOnZ(
 
     //Order the face by z-coordinate of the barycenter
     std::vector<unsigned int> orderedZFaces(faces);
-    std::sort(orderedZFaces.begin(), orderedZFaces.end(), internal::BarycenterZComparator(mesh));
+    std::sort(orderedZFaces.begin(), orderedZFaces.end(), internal::TriangleZComparator(mesh));
 
     //Directions to be checked
     cg3::Vec3 zDirMax(0,0,1);
@@ -506,12 +531,14 @@ void getVisibilityProjectionOnZ(
                     mesh, faceId, directionIndex, zDirMax, aabbTreeMax, visibility, heightfieldAngle);
     }
 
-    //Start from the min z-coordinate face
-    for (unsigned int i = 0; i < orderedZFaces.size(); i++) {
-        unsigned int faceId = orderedZFaces[i];
+    if (oppositeDirectionIndex >= 0) {
+        //Start from the min z-coordinate face
+        for (unsigned int i = 0; i < orderedZFaces.size(); i++) {
+            unsigned int faceId = orderedZFaces[i];
 
-        internal::getVisibilityProjectionOnZ(
-                    mesh, faceId, nDirections + directionIndex, zDirMin, aabbTreeMin, visibility, heightfieldAngle);
+            internal::getVisibilityProjectionOnZ(
+                        mesh, faceId, oppositeDirectionIndex, zDirMin, aabbTreeMin, visibility, heightfieldAngle);
+        }
     }
 }
 
@@ -577,17 +604,13 @@ void getVisibilityProjectionOnZ(
  * @brief Comparator for barycenter on z values
  * @param m Input mesh
  */
-BarycenterZComparator::BarycenterZComparator(const cg3::SimpleEigenMesh& m) : m(m) {}
-bool BarycenterZComparator::operator()(unsigned int f1, unsigned int f2){
+TriangleZComparator::TriangleZComparator(const cg3::SimpleEigenMesh& m) : m(m) {}
+bool TriangleZComparator::operator()(unsigned int f1, unsigned int f2){
     const cg3::Pointi& ff1 = m.face(f1);
     const cg3::Pointi& ff2 = m.face(f2);
-    cg3::Pointd c1 = (m.vertex(ff1.x()) + m.vertex(ff1.y()) + m.vertex(ff1.z()))/3;
-    cg3::Pointd c2 = (m.vertex(ff2.x()) + m.vertex(ff2.y()) + m.vertex(ff2.z()))/3;
-    if (c1.z() < c2.z())
-        return true;
-    if (c2.z() < c1.z())
-        return false;
-    return c1 < c2;
+    double minZ1 = std::min(std::min(m.vertex(ff1.x()).z(), m.vertex(ff1.y()).z()),m.vertex(ff1.z()).z());
+    double minZ2 = std::min(std::min(m.vertex(ff2.x()).z(), m.vertex(ff2.y()).z()),m.vertex(ff2.z()).z());
+    return minZ1 < minZ2;
 }
 
 /**
