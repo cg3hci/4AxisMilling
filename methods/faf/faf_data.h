@@ -74,12 +74,16 @@ struct Data {
 
     /* Surface results */
 
+    cg3::EigenMesh minSurface;
+    cg3::EigenMesh maxSurface;
     std::vector<cg3::EigenMesh> surfaces;
     std::vector<unsigned int> surfacesAssociation;
 
 
     /* Results */
 
+    cg3::EigenMesh minResult;
+    cg3::EigenMesh maxResult;
     std::vector<cg3::EigenMesh> stocks;
     std::vector<cg3::EigenMesh> results;
     std::vector<unsigned int> resultsAssociation;

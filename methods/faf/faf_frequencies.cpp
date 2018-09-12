@@ -100,13 +100,13 @@ void restoreFrequencies(
             internal::computeDifferentialCoordinates(originalMesh, vvAdj);
 
     //Copy the target mesh
-    cg3::EigenMesh& targetMesh = data.restoredMesh;
-    targetMesh = smoothedMesh;
+    cg3::EigenMesh& restoredMesh = data.restoredMesh;
+    restoredMesh = smoothedMesh;
 
 
     for (unsigned int i = 0; i < iterations; ++i) {
         internal::restoreFrequenciesValidHeightfields(
-                    targetMesh,
+                    restoredMesh,
                     differentialCoordinates,
                     vvAdj,
                     vfAdj,
@@ -115,8 +115,8 @@ void restoreFrequencies(
     }
 
     //Needed because they changed
-    targetMesh.updateFacesAndVerticesNormals();
-    targetMesh.updateBoundingBox();
+    restoredMesh.updateFacesAndVerticesNormals();
+    restoredMesh.updateBoundingBox();
 
     data.restoredMeshAssociation = data.association;
     data.restoredMeshNonVisibleFaces = data.associationNonVisibleFaces;

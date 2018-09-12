@@ -124,6 +124,7 @@ void FourAxisFabricationManager::updateUI() {
 
     //Cut components
     ui->cutComponentsButton->setEnabled(!areComponentsCut);
+    ui->cutComponentsCheckBox->setEnabled(!areComponentsCut);
 
     //Extract results
     ui->extractResultsButton->setEnabled(!areResultsExtracted);
@@ -131,6 +132,8 @@ void FourAxisFabricationManager::updateUI() {
     ui->extractResultsStockLengthSpinBox->setEnabled(!areResultsExtracted);
     ui->extractResultsStockDiameterLabel->setEnabled(!areResultsExtracted);
     ui->extractResultsStockDiameterSpinBox->setEnabled(!areResultsExtracted);
+    ui->extractResultsModelLengthLabel->setEnabled(!areResultsExtracted);
+    ui->extractResultsModelLengthSpinBox->setEnabled(!areResultsExtracted);
     ui->extractResultsMillableAngleLabel->setEnabled(!areResultsExtracted);
     ui->extractResultsMillableAngleSpinBox->setEnabled(!areResultsExtracted);
     ui->extractResultsRotateCheckBox->setEnabled(!areResultsExtracted);
@@ -432,11 +435,15 @@ void FourAxisFabricationManager::cutComponents() {
     if (!areComponentsCut) {
         recheckVisibilityAfterRestore();
 
+        //Get UI data
+        bool cutComponents = ui->cutComponentsCheckBox->isChecked();
+
+
 
         cg3::Timer t("Cut components");
 
         //Cut components
-        FourAxisFabrication::cutComponents(data);
+        FourAxisFabrication::cutComponents(data, cutComponents);
 
         t.stopAndPrint();
 
@@ -454,6 +461,7 @@ void FourAxisFabricationManager::extractResults() {
         cutComponents();
 
         //Get UI data
+        double modelLength = ui->extractResultsModelLengthSpinBox->value();
         double stockLength = ui->extractResultsStockLengthSpinBox->value();
         double stockDiameter = ui->extractResultsStockDiameterSpinBox->value();
         double millableAngle = ui->extractResultsMillableAngleSpinBox->value() / 180.0 * M_PI;
@@ -462,7 +470,7 @@ void FourAxisFabricationManager::extractResults() {
         cg3::Timer t("Extract results");
 
         //Extract results
-        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, millableAngle, rotateSurfaces);
+        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, millableAngle, rotateSurfaces);
 
         t.stopAndPrint();
 
@@ -512,15 +520,18 @@ void FourAxisFabricationManager::addDrawableCutComponents() {
     //Hide restored mesh
     mainWindow.setDrawableObjectVisibility(&drawableRestoredMesh, false);
 
-    //Create drawable meshes
-    drawableMinComponent = cg3::DrawableEigenMesh(data.minComponent);
-    drawableMaxComponent = cg3::DrawableEigenMesh(data.maxComponent);
+    //Create drawable meshes and push in the canvas
     drawableFourAxisComponent = cg3::DrawableEigenMesh(data.fourAxisComponent);
-
-    //Push in the canvas
-    mainWindow.pushDrawableObject(&drawableMinComponent, "Min component");
-    mainWindow.pushDrawableObject(&drawableMaxComponent, "Max component");
     mainWindow.pushDrawableObject(&drawableFourAxisComponent, "4-axis component");
+
+    if (data.minComponent.numberFaces() > 0) {
+        drawableMinComponent = cg3::DrawableEigenMesh(data.minComponent);
+        mainWindow.pushDrawableObject(&drawableMinComponent, "Min component");
+    }
+    if (data.maxComponent.numberFaces() > 0) {
+        drawableMaxComponent = cg3::DrawableEigenMesh(data.maxComponent);
+        mainWindow.pushDrawableObject(&drawableMaxComponent, "Max component");
+    }
 }
 
 /**
@@ -528,37 +539,52 @@ void FourAxisFabricationManager::addDrawableCutComponents() {
  */
 void FourAxisFabricationManager::addDrawableResults() {
     //Hide the cut components
+    mainWindow.setDrawableObjectVisibility(&drawableFourAxisComponent, true);
     mainWindow.setDrawableObjectVisibility(&drawableMinComponent, false);
     mainWindow.setDrawableObjectVisibility(&drawableMaxComponent, false);
-    mainWindow.setDrawableObjectVisibility(&drawableFourAxisComponent, false);
 
-    //Draw components (hidden by default)
+    //Draw surfaces (hidden by default)
     drawableSurfacesContainer.clear();
     drawableSurfaces.resize(data.surfaces.size());
     for (size_t i = 0; i < data.surfaces.size(); i++) {
         drawableSurfaces[i] = cg3::DrawableEigenMesh(data.surfaces[i]);
-        drawableSurfacesContainer.pushBack(&drawableSurfaces[i], "Surface " + std::to_string(i));
+        drawableSurfacesContainer.pushBack(&drawableSurfaces[i], "Surface " + std::to_string(i), (i == 0 ? true : false));
     }
     mainWindow.pushDrawableObject(&drawableSurfacesContainer, "Surfaces", false);
-
+    if (data.minSurface.numberFaces() > 0) {
+        drawableMinSurface = cg3::DrawableEigenMesh(data.minSurface);
+        mainWindow.pushDrawableObject(&drawableMinSurface, "Min surface", false);
+    }
+    if (data.maxSurface.numberFaces() > 0) {
+        drawableMaxSurface = cg3::DrawableEigenMesh(data.maxSurface);
+        mainWindow.pushDrawableObject(&drawableMaxSurface, "Max surface", false);
+    }
 
     //Add stock (hidden by default)
     drawableStocksContainer.clear();
     drawableStocks.resize(data.stocks.size());
     for (size_t i = 0; i < data.stocks.size(); i++) {
         drawableStocks[i] = cg3::DrawableEigenMesh(data.stocks[i]);
-        drawableStocksContainer.pushBack(&drawableStocks[i], "Stock " + std::to_string(i));
+        drawableStocksContainer.pushBack(&drawableStocks[i], "Stock " + std::to_string(i), (i == 0 ? true : false));
     }
     mainWindow.pushDrawableObject(&drawableStocksContainer, "Stocks", false);
 
-    //Draw components
+    //Draw results
     drawableResultsContainer.clear();
     drawableResults.resize(data.results.size());
     for (size_t i = 0; i < data.results.size(); i++) {
         drawableResults[i] = cg3::DrawableEigenMesh(data.results[i]);
-        drawableResultsContainer.pushBack(&drawableResults[i], "Result " + std::to_string(i));
+        drawableResultsContainer.pushBack(&drawableResults[i], "Result " + std::to_string(i), (i == 0 ? true : false));
     }
-    mainWindow.pushDrawableObject(&drawableResultsContainer, "Results");
+    mainWindow.pushDrawableObject(&drawableResultsContainer, "Results", false);
+    if (data.minResult.numberFaces() > 0) {
+        drawableMinResult = cg3::DrawableEigenMesh(data.minResult);
+        mainWindow.pushDrawableObject(&drawableMinResult, "Min result", false);
+    }
+    if (data.maxResult.numberFaces() > 0) {
+        drawableMaxResult = cg3::DrawableEigenMesh(data.maxResult);
+        mainWindow.pushDrawableObject(&drawableMaxResult, "Max result", false);
+    }
 }
 
 /**
@@ -608,31 +634,53 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
 
             //Delete cut components
             if (areComponentsCut) {
-                mainWindow.deleteDrawableObject(&drawableMinComponent);
-                mainWindow.deleteDrawableObject(&drawableMaxComponent);
-                mainWindow.deleteDrawableObject(&drawableFourAxisComponent);
-
-                drawableMinComponent.clear();
-                drawableMaxComponent.clear();
+                mainWindow.deleteDrawableObject(&drawableFourAxisComponent);                
                 drawableFourAxisComponent.clear();
+
+                if (data.minComponent.numberFaces() > 0) {
+                    mainWindow.deleteDrawableObject(&drawableMinComponent);
+                    drawableMinComponent.clear();
+                }
+                if (data.maxComponent.numberFaces() > 0) {
+                    mainWindow.deleteDrawableObject(&drawableMaxComponent);
+                    drawableMaxComponent.clear();
+                }
 
 
                 //Delete results
                 if (areResultsExtracted) {
+                    //Delete surfaces
                     mainWindow.deleteDrawableObject(&drawableSurfacesContainer);
                     drawableSurfacesContainer.clear();
 
                     drawableSurfaces.clear();
 
+                    if (data.minSurface.numberFaces() > 0) {
+                        mainWindow.deleteDrawableObject(&drawableMinSurface);
+                        drawableMinSurface.clear();
+                    }
+                    if (data.maxSurface.numberFaces() > 0) {
+                        mainWindow.deleteDrawableObject(&drawableMaxSurface);
+                        drawableMaxSurface.clear();
+                    }
 
+                    //Delete stocks
                     mainWindow.deleteDrawableObject(&drawableStocksContainer);
-                    drawableStocksContainer.clear();
+                    drawableStocksContainer.clear();                    
 
-
+                    //Delete results
                     mainWindow.deleteDrawableObject(&drawableResultsContainer);
                     drawableResultsContainer.clear();
-
                     drawableResults.clear();
+
+                    if (data.minResult.numberFaces() > 0) {
+                        mainWindow.deleteDrawableObject(&drawableMinResult);
+                        drawableMinResult.clear();
+                    }
+                    if (data.maxResult.numberFaces() > 0) {
+                        mainWindow.deleteDrawableObject(&drawableMaxResult);
+                        drawableMaxResult.clear();
+                    }
                 }
             }
 
@@ -1199,9 +1247,13 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
                 data.maxComponent.setVertexColor(128,128,128);
                 data.fourAxisComponent.setVertexColor(128,128,128);
 
-                data.minComponent.saveOnObj(rawname + "_min.obj");
-                data.maxComponent.saveOnObj(rawname + "_max.obj");
-                data.fourAxisComponent.saveOnObj(rawname + "_fouraxis.obj");
+                if (data.minComponent.numberFaces() > 0) {
+                    data.minComponent.saveOnObj(rawname + "_component_min.obj");
+                }
+                if (data.maxComponent.numberFaces() > 0) {
+                    data.maxComponent.saveOnObj(rawname + "_component_max.obj");
+                }
+                data.fourAxisComponent.saveOnObj(rawname + "_component_fouraxis.obj");
 
                 if (areResultsExtracted) {
                     for (size_t i = 0; i < data.surfaces.size(); i++) {
@@ -1220,6 +1272,13 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
                         cg3::EigenMesh& mesh = data.results[i];
                         mesh.setVertexColor(128,128,128);
                         mesh.saveOnObj(rawname + "_result_" + std::to_string(i) + ".obj");
+                    }
+
+                    if (data.minResult.numberFaces() > 0) {
+                        data.minResult.saveOnObj(rawname + "_result_min.obj");
+                    }
+                    if (data.maxResult.numberFaces() > 0) {
+                        data.maxResult.saveOnObj(rawname + "_result_max.obj");
                     }
                 }
             }

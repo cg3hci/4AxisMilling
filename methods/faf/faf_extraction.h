@@ -15,6 +15,7 @@ namespace FourAxisFabrication {
 
 void extractResults(
         Data& data,
+        const double modelLength,
         const double stockLength,
         const double stockDiameter,
         const double millableAngle,

@@ -24,7 +24,8 @@ void resetAssociationData(
  * @param[out] data Four axis fabrication data
  */
 void cutComponents(
-        Data& data)
+        Data& data,
+        const bool cutComponents)
 {    
     typedef cg3::libigl::CSGTree CSGTree;
 
@@ -39,7 +40,7 @@ void cutComponents(
 
 
 
-    if (!data.maxExtremes.empty() && !data.minExtremes.empty()) {
+    if (cutComponents && !data.maxExtremes.empty() && !data.minExtremes.empty()) {
         //Get minimum x in the faces of the max extremes
         double maxLevelSetX = restoredMesh.vertex(restoredMesh.face(data.maxExtremes[0]).x()).x();
         for (int maxFace : data.maxExtremes) {

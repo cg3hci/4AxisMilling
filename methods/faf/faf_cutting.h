@@ -14,7 +14,8 @@
 namespace FourAxisFabrication {
 
 void cutComponents(
-        Data& data);
+        Data& data,
+        const bool cutComponents);
 
 
 }

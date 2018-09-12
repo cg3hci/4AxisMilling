@@ -62,11 +62,15 @@ private:
 
     std::vector<cg3::DrawableEigenMesh> drawableSurfaces;
     cg3::DrawableContainer drawableSurfacesContainer;
+    cg3::DrawableEigenMesh drawableMinSurface;
+    cg3::DrawableEigenMesh drawableMaxSurface;
 
     std::vector<cg3::DrawableEigenMesh> drawableStocks;
     cg3::DrawableContainer drawableStocksContainer;
     std::vector<cg3::DrawableEigenMesh> drawableResults;
-    cg3::DrawableContainer drawableResultsContainer;
+    cg3::DrawableContainer drawableResultsContainer;    
+    cg3::DrawableEigenMesh drawableMinResult;
+    cg3::DrawableEigenMesh drawableMaxResult;
 
 
     /* UI Fields */
