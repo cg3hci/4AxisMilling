@@ -89,6 +89,12 @@ struct Data {
     std::vector<unsigned int> resultsAssociation;
 
 
+    /* Supports */
+
+    cg3::EigenMesh minSupport;
+    cg3::EigenMesh maxSupport;
+
+
     /* Methods */
 
     void clear();

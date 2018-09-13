@@ -136,7 +136,10 @@ void FourAxisFabricationManager::updateUI() {
     ui->extractResultsModelLengthSpinBox->setEnabled(!areResultsExtracted);
     ui->extractResultsMillableAngleLabel->setEnabled(!areResultsExtracted);
     ui->extractResultsMillableAngleSpinBox->setEnabled(!areResultsExtracted);
+    ui->extractResultsSupportHeightSpinBox->setEnabled(!areResultsExtracted);
+    ui->extractResultsSupportHeightLabel->setEnabled(!areResultsExtracted);
     ui->extractResultsRotateCheckBox->setEnabled(!areResultsExtracted);
+
 
 
     // ----- Visualization -----
@@ -464,13 +467,14 @@ void FourAxisFabricationManager::extractResults() {
         double modelLength = ui->extractResultsModelLengthSpinBox->value();
         double stockLength = ui->extractResultsStockLengthSpinBox->value();
         double stockDiameter = ui->extractResultsStockDiameterSpinBox->value();
+        double supportHeight = ui->extractResultsSupportHeightSpinBox->value();
         double millableAngle = ui->extractResultsMillableAngleSpinBox->value() / 180.0 * M_PI;
         bool rotateSurfaces = ui->extractResultsRotateCheckBox->isChecked();
 
         cg3::Timer t("Extract results");
 
         //Extract results
-        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, millableAngle, rotateSurfaces);
+        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, millableAngle, supportHeight, rotateSurfaces);
 
         t.stopAndPrint();
 
@@ -585,6 +589,12 @@ void FourAxisFabricationManager::addDrawableResults() {
         drawableMaxResult = cg3::DrawableEigenMesh(data.maxResult);
         mainWindow.pushDrawableObject(&drawableMaxResult, "Max result", false);
     }
+
+    //Draw supports
+    drawableMinSupport = cg3::DrawableEigenMesh(data.minSupport);
+    mainWindow.pushDrawableObject(&drawableMinSupport, "Min support", false);
+    drawableMaxSupport = cg3::DrawableEigenMesh(data.maxSupport);
+    mainWindow.pushDrawableObject(&drawableMaxSupport, "Max support", false);
 }
 
 /**
@@ -681,6 +691,11 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
                         mainWindow.deleteDrawableObject(&drawableMaxResult);
                         drawableMaxResult.clear();
                     }
+
+                    mainWindow.deleteDrawableObject(&drawableMinSupport);
+                    drawableMinSupport.clear();
+                    mainWindow.deleteDrawableObject(&drawableMaxSupport);
+                    drawableMaxSupport.clear();
                 }
             }
 

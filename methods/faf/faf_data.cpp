@@ -44,11 +44,18 @@ void Data::clear() {
 
     surfaces.clear();
     surfacesAssociation.clear();
+    minSurface.clear();
+    maxSurface.clear();
 
     stocks.clear();
 
     results.clear();
     resultsAssociation.clear();
+    minResult.clear();
+    maxResult.clear();
+
+    minSupport.clear();
+    maxSupport.clear();
 }
 
 }

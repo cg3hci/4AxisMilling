@@ -59,6 +59,7 @@ void extractResults(
         const double stockLength,
         const double stockDiameter,
         const double millableAngle,
+        const double supportHeight,
         const bool rotateMeshes)
 {
 
@@ -74,8 +75,11 @@ void extractResults(
     const std::vector<int>& maxComponentAssociation = data.maxComponentAssociation;
 
     //Referencing output data    
+    std::vector<cg3::EigenMesh>& surfaces = data.surfaces;
+    std::vector<unsigned int>& surfacesAssociation = data.surfacesAssociation;
     cg3::EigenMesh& minSurface = data.minSurface;
     cg3::EigenMesh& maxSurface = data.maxSurface;
+
     std::vector<cg3::EigenMesh>& stocks = data.stocks;
 
     cg3::EigenMesh& minResult = data.minResult;
@@ -83,9 +87,8 @@ void extractResults(
     std::vector<cg3::EigenMesh>& results = data.results;
     std::vector<unsigned int>& resultsAssociation = data.resultsAssociation;
 
-    std::vector<cg3::EigenMesh>& surfaces = data.surfaces;
-    std::vector<unsigned int>& surfacesAssociation = data.surfacesAssociation;
-
+    cg3::EigenMesh& minSupport = data.minSupport;
+    cg3::EigenMesh& maxSupport = data.maxSupport;
 
     //Common values
     unsigned int minLabel = data.targetDirections[data.targetDirections.size()-2];
@@ -466,6 +469,21 @@ void extractResults(
     }
 
 
+    //Create supports
+    cg3::BoundingBox bbScaled = fourAxisScaled.boundingBox();
+
+    cg3::BoundingBox minBB = bbScaled;
+    minBB.setMaxX(bbScaled.minX() + supportHeight);
+    cg3::BoundingBox maxBB = bbScaled;
+    maxBB.setMinX(bbScaled.maxX() - supportHeight);
+
+    cg3::EigenMesh minBBMesh = cg3::EigenMeshAlgorithms::makeBox(minBB);
+    cg3::EigenMesh maxBBMesh = cg3::EigenMeshAlgorithms::makeBox(maxBB);
+
+    minSupport = cg3::libigl::difference(minBBMesh, fourAxisScaled);
+    maxSupport = cg3::libigl::difference(maxBBMesh, fourAxisScaled);
+
+
 
 
     //Update and rotate meshes data
@@ -501,17 +519,16 @@ void extractResults(
         minSurface.rotate(rotationMatrix);
         minSurface.translate(-minSurface.boundingBox().center());
 
-        minSurface.updateBoundingBox();
-        minSurface.updateFacesAndVerticesNormals();
 
         cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
         maxSurface.rotate(rotationMatrix);
         maxSurface.translate(-maxSurface.boundingBox().center());
-
-        maxSurface.updateBoundingBox();
-        maxSurface.updateFacesAndVerticesNormals();
     }
 
+    minSurface.updateBoundingBox();
+    minSurface.updateFacesAndVerticesNormals();
+    maxSurface.updateBoundingBox();
+    maxSurface.updateFacesAndVerticesNormals();
 
     for (size_t i = 0; i < data.stocks.size(); i++) {
         cg3::EigenMesh& stock = data.stocks[i];
@@ -567,21 +584,33 @@ void extractResults(
         Eigen::Matrix3d rotationMatrix;
 
         cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
+        minSupport.rotate(rotationMatrix);
+
+        cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
+        maxSupport.rotate(rotationMatrix);
+    }
+
+    minSupport.updateBoundingBox();
+    minSupport.updateFacesAndVerticesNormals();
+    maxSupport.updateBoundingBox();
+    maxSupport.updateFacesAndVerticesNormals();
+
+    if (rotateMeshes) {
+        Eigen::Matrix3d rotationMatrix;
+
+        cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
         minResult.rotate(rotationMatrix);
         minResult.translate(-minResult.boundingBox().center());
 
         cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
         maxResult.rotate(rotationMatrix);
         maxResult.translate(-maxResult.boundingBox().center());
-
-        minResult.updateBoundingBox();
-        minResult.updateFacesAndVerticesNormals();
-
-        maxResult.updateBoundingBox();
-        maxResult.updateFacesAndVerticesNormals();
     }
 
-
+    minResult.updateBoundingBox();
+    minResult.updateFacesAndVerticesNormals();
+    maxResult.updateBoundingBox();
+    maxResult.updateFacesAndVerticesNormals();
 }
 
 

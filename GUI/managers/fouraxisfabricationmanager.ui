@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>601</width>
+    <width>609</width>
     <height>1318</height>
    </rect>
   </property>
@@ -371,6 +371,89 @@
       <string>Four Axis Fabrication</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
+      <item row="3" column="1" colspan="2">
+       <widget class="QCheckBox" name="selectExtremesCheckbox">
+        <property name="text">
+         <string>Compute extremes</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="QLabel" name="selectExtremesHeightfieldAngleLabel">
+        <property name="text">
+         <string>HF angle:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="3">
+       <widget class="QLabel" name="getAssociationCompactnessLabel">
+        <property name="text">
+         <string>Compactness:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="18" column="1">
+       <widget class="QCheckBox" name="cutComponentsCheckBox">
+        <property name="text">
+         <string>Cut</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="5">
+       <widget class="QPushButton" name="checkVisibilityButton">
+        <property name="text">
+         <string>Visibility</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="QCheckBox" name="checkVisibilityXDirectionsCheckBox">
+        <property name="text">
+         <string>X directions</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="QLabel" name="checkVisibilityDirectionsLabel">
+        <property name="text">
+         <string>Directions:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="23" column="3">
+       <widget class="QLabel" name="extractResultsMillableAngleLabel">
+        <property name="text">
+         <string>Millable angle:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="23" column="2">
+       <widget class="QDoubleSpinBox" name="extractResultsModelLengthSpinBox">
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>80.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="23" column="1">
+       <widget class="QLabel" name="extractResultsModelLengthLabel">
+        <property name="text">
+         <string>Model length:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="24" column="5">
+       <widget class="QPushButton" name="extractResultsButton">
+        <property name="text">
+         <string>Extraction</string>
+        </property>
+       </widget>
+      </item>
       <item row="4" column="1">
        <widget class="QFrame" name="checkVisibilityMethodFrame">
         <property name="frameShape">
@@ -488,16 +571,6 @@
         </property>
         <property name="value">
          <double>30.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="24" column="1">
-       <widget class="QCheckBox" name="extractResultsRotateCheckBox">
-        <property name="text">
-         <string>Rotate</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -732,86 +805,30 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1" colspan="2">
-       <widget class="QCheckBox" name="selectExtremesCheckbox">
+      <item row="24" column="3">
+       <widget class="QCheckBox" name="extractResultsRotateCheckBox">
         <property name="text">
-         <string>Compute extremes</string>
+         <string>Rotate</string>
         </property>
         <property name="checked">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="QLabel" name="selectExtremesHeightfieldAngleLabel">
+      <item row="24" column="1">
+       <widget class="QLabel" name="extractResultsSupportHeightLabel">
         <property name="text">
-         <string>HF angle:</string>
+         <string>Support height:</string>
         </property>
        </widget>
       </item>
-      <item row="11" column="3">
-       <widget class="QLabel" name="getAssociationCompactnessLabel">
-        <property name="text">
-         <string>Compactness:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="18" column="1">
-       <widget class="QCheckBox" name="cutComponentsCheckBox">
-        <property name="text">
-         <string>Cut</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="5">
-       <widget class="QPushButton" name="checkVisibilityButton">
-        <property name="text">
-         <string>Visibility</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="2">
-       <widget class="QCheckBox" name="checkVisibilityXDirectionsCheckBox">
-        <property name="text">
-         <string>X directions</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="3">
-       <widget class="QLabel" name="checkVisibilityDirectionsLabel">
-        <property name="text">
-         <string>Directions:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="23" column="3">
-       <widget class="QLabel" name="extractResultsMillableAngleLabel">
-        <property name="text">
-         <string>Millable angle:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="23" column="2">
-       <widget class="QDoubleSpinBox" name="extractResultsModelLengthSpinBox">
+      <item row="24" column="2">
+       <widget class="QDoubleSpinBox" name="extractResultsSupportHeightSpinBox">
         <property name="maximum">
          <double>10000.000000000000000</double>
         </property>
         <property name="value">
-         <double>80.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="23" column="1">
-       <widget class="QLabel" name="extractResultsModelLengthLabel">
-        <property name="text">
-         <string>Model length:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="24" column="5">
-       <widget class="QPushButton" name="extractResultsButton">
-        <property name="text">
-         <string>Extraction</string>
+         <double>10.000000000000000</double>
         </property>
        </widget>
       </item>
