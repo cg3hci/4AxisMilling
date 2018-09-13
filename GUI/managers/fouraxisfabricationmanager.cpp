@@ -52,6 +52,9 @@ FourAxisFabricationManager::~FourAxisFabricationManager(){
  */
 void FourAxisFabricationManager::initialize() {
     loaderSaverObj.addSupportedExtension("obj");
+
+    mainWindow.canvas.setOrthographicCamera();
+
     clearData();
 
     updateUI();
@@ -495,7 +498,9 @@ void FourAxisFabricationManager::extractResults() {
 void FourAxisFabricationManager::addDrawableMeshes(const std::string& meshName) {
     //Add drawable meshes to the canvas
     drawableOriginalMesh = cg3::DrawableEigenMesh(originalMesh);
+    drawableOriginalMesh.setFlatShading();
     drawableSmoothedMesh = cg3::DrawableEigenMesh(smoothedMesh);
+    drawableSmoothedMesh.setFlatShading();
 
     mainWindow.pushDrawableObject(&drawableOriginalMesh, meshName);
     mainWindow.pushDrawableObject(&drawableSmoothedMesh, "Smoothed mesh");
@@ -511,6 +516,7 @@ void FourAxisFabricationManager::addDrawableRestoredMesh() {
 
     //Create drawable meshes
     drawableRestoredMesh = cg3::DrawableEigenMesh(data.restoredMesh);
+    drawableRestoredMesh.setFlatShading();
 
     //Push in the canvas
     mainWindow.pushDrawableObject(&drawableRestoredMesh, "Restored mesh");
@@ -526,14 +532,17 @@ void FourAxisFabricationManager::addDrawableCutComponents() {
 
     //Create drawable meshes and push in the canvas
     drawableFourAxisComponent = cg3::DrawableEigenMesh(data.fourAxisComponent);
+    drawableFourAxisComponent.setFlatShading();
     mainWindow.pushDrawableObject(&drawableFourAxisComponent, "4-axis component");
 
     if (data.minComponent.numberFaces() > 0) {
         drawableMinComponent = cg3::DrawableEigenMesh(data.minComponent);
+        drawableMinComponent.setFlatShading();
         mainWindow.pushDrawableObject(&drawableMinComponent, "Min component");
     }
     if (data.maxComponent.numberFaces() > 0) {
         drawableMaxComponent = cg3::DrawableEigenMesh(data.maxComponent);
+        drawableMaxComponent.setFlatShading();
         mainWindow.pushDrawableObject(&drawableMaxComponent, "Max component");
     }
 }
@@ -552,15 +561,18 @@ void FourAxisFabricationManager::addDrawableResults() {
     drawableSurfaces.resize(data.surfaces.size());
     for (size_t i = 0; i < data.surfaces.size(); i++) {
         drawableSurfaces[i] = cg3::DrawableEigenMesh(data.surfaces[i]);
+        drawableSurfaces[i].setFlatShading();
         drawableSurfacesContainer.pushBack(&drawableSurfaces[i], "Surface " + std::to_string(i), (i == 0 ? true : false));
     }
     mainWindow.pushDrawableObject(&drawableSurfacesContainer, "Surfaces", false);
     if (data.minSurface.numberFaces() > 0) {
         drawableMinSurface = cg3::DrawableEigenMesh(data.minSurface);
+        drawableMinSurface.setFlatShading();
         mainWindow.pushDrawableObject(&drawableMinSurface, "Min surface", false);
     }
     if (data.maxSurface.numberFaces() > 0) {
         drawableMaxSurface = cg3::DrawableEigenMesh(data.maxSurface);
+        drawableMaxSurface.setFlatShading();
         mainWindow.pushDrawableObject(&drawableMaxSurface, "Max surface", false);
     }
 
@@ -569,6 +581,7 @@ void FourAxisFabricationManager::addDrawableResults() {
     drawableStocks.resize(data.stocks.size());
     for (size_t i = 0; i < data.stocks.size(); i++) {
         drawableStocks[i] = cg3::DrawableEigenMesh(data.stocks[i]);
+        drawableStocks[i].setFlatShading();
         drawableStocksContainer.pushBack(&drawableStocks[i], "Stock " + std::to_string(i), (i == 0 ? true : false));
     }
     mainWindow.pushDrawableObject(&drawableStocksContainer, "Stocks", false);
@@ -578,22 +591,27 @@ void FourAxisFabricationManager::addDrawableResults() {
     drawableResults.resize(data.results.size());
     for (size_t i = 0; i < data.results.size(); i++) {
         drawableResults[i] = cg3::DrawableEigenMesh(data.results[i]);
+        drawableResults[i].setFlatShading();
         drawableResultsContainer.pushBack(&drawableResults[i], "Result " + std::to_string(i), (i == 0 ? true : false));
     }
     mainWindow.pushDrawableObject(&drawableResultsContainer, "Results", false);
     if (data.minResult.numberFaces() > 0) {
         drawableMinResult = cg3::DrawableEigenMesh(data.minResult);
+        drawableMinResult.setFlatShading();
         mainWindow.pushDrawableObject(&drawableMinResult, "Min result", false);
     }
     if (data.maxResult.numberFaces() > 0) {
         drawableMaxResult = cg3::DrawableEigenMesh(data.maxResult);
+        drawableMaxResult.setFlatShading();
         mainWindow.pushDrawableObject(&drawableMaxResult, "Max result", false);
     }
 
     //Draw supports
     drawableMinSupport = cg3::DrawableEigenMesh(data.minSupport);
+    drawableMinSupport.setFlatShading();
     mainWindow.pushDrawableObject(&drawableMinSupport, "Min support", false);
     drawableMaxSupport = cg3::DrawableEigenMesh(data.maxSupport);
+    drawableMaxSupport.setFlatShading();
     mainWindow.pushDrawableObject(&drawableMaxSupport, "Max support", false);
 }
 

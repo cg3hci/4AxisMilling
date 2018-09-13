@@ -583,10 +583,10 @@ void extractResults(
     if (rotateMeshes) {
         Eigen::Matrix3d rotationMatrix;
 
-        cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
+        cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
         minSupport.rotate(rotationMatrix);
 
-        cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
+        cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
         maxSupport.rotate(rotationMatrix);
     }
 
