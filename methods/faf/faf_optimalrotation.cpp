@@ -39,6 +39,11 @@ void rotateToOptimalOrientation(
         const unsigned int nOrientations,
         const bool deterministic)
 {
+    cg3::Pointd bbCenter = smoothedMesh.boundingBox().center();
+
+    mesh.translate(-bbCenter);
+    smoothedMesh.translate(-bbCenter);
+
     smoothedMesh.updateFaceNormals();
 
     //Get the optimal rotation matrix
@@ -51,7 +56,9 @@ void rotateToOptimalOrientation(
     mesh.rotate(rot);
     smoothedMesh.rotate(rot);
 
-    cg3::BoundingBox b = mesh.boundingBox();
+    smoothedMesh.updateBoundingBox();
+
+    cg3::BoundingBox b = smoothedMesh.boundingBox();
 
     //If Y length is the greatest one then rotate by 90° around zAxis
     if (b.lengthY() > b.lengthX() && b.lengthY() > b.lengthZ()){
@@ -70,13 +77,8 @@ void rotateToOptimalOrientation(
         smoothedMesh.rotate(cg3::rotationMatrix(yAxis, angle));
     }
 
-    //Translate meshes to the center
     mesh.updateBoundingBox();
     smoothedMesh.updateBoundingBox();
-
-    mesh.translate(-mesh.boundingBox().center());
-    smoothedMesh.translate(-smoothedMesh.boundingBox().center());
-
     mesh.updateFacesAndVerticesNormals();
     smoothedMesh.updateFacesAndVerticesNormals();
 }
@@ -101,47 +103,69 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
         defineRotation(dir, axis, angle);
         Eigen::Matrix3d mr = rotationMatrix(axis, angle);
 
-        //Get rotated vertices
+        //Get rotated vertices and bounding box
+        cg3::BoundingBox bb(
+            cg3::Pointd(
+                -std::numeric_limits<double>().max(),
+                -std::numeric_limits<double>().max(),
+                -std::numeric_limits<double>().max()
+                ),
+            cg3::Pointd(
+                std::numeric_limits<double>().max(),
+                std::numeric_limits<double>().max(),
+                std::numeric_limits<double>().max())
+            );
+
+        //Rotate vertices and set bounding box
         std::vector<cg3::Pointd> rotatedVertices(inputMesh.numberVertices());
         for(unsigned int vId = 0; vId < inputMesh.numberVertices(); vId++) {
             cg3::Pointd v = inputMesh.vertex(vId);
             v.rotate(mr);
             rotatedVertices[vId] = v;
+
+            bb.setMaxX(std::max(v.x(), bb.maxX()));
+            bb.setMaxY(std::max(v.y(), bb.maxY()));
+            bb.setMaxZ(std::max(v.z(), bb.maxZ()));
+
+            bb.setMinX(std::min(v.x(), bb.minX()));
+            bb.setMinY(std::min(v.y(), bb.minY()));
+            bb.setMinZ(std::min(v.z(), bb.minZ()));
         }
 
-        //Get barycenter
-        cg3::Pointd center(0,0,0);
-        for(unsigned int vId = 0; vId < inputMesh.numberVertices(); vId++) {
-            cg3::Pointd& v = rotatedVertices.at(vId);
-            center += v;
-        }
-        center /= static_cast<double>(inputMesh.numberVertices());
+        cg3::Pointd bbCenter = bb.center();
 
-        //Max distance from barycenter
-        double maxDistance = 0;
+        //Max distance from the bounding box center
+        cg3::Pointd maxDistance(0,0,0);
         for(unsigned int vId = 0; vId < inputMesh.numberVertices(); vId++) {
             cg3::Pointd& v = rotatedVertices.at(vId);
 
-            double distance = (v - center).length();
-            if (distance >= maxDistance) {
-                maxDistance = distance;
-            }
+            cg3::Vec3 distance = v - bbCenter;
+
+            maxDistance.setX(std::max(std::fabs(distance.x()), maxDistance.x()));
+            maxDistance.setY(std::max(std::fabs(distance.y()), maxDistance.y()));
+            maxDistance.setZ(std::max(std::fabs(distance.z()), maxDistance.z()));
         }
 
         double score = 0.0;
         for(unsigned int fId = 0; fId < inputMesh.numberFaces(); fId++) {
             cg3::Pointi f = inputMesh.face(fId);
+
             cg3::Pointd& v1 = rotatedVertices.at(f.x());
             cg3::Pointd& v2 = rotatedVertices.at(f.y());
             cg3::Pointd& v3 = rotatedVertices.at(f.z());
 
+            cg3::Pointd faceBarycenter = (v1+v2+v3)/3;
+
             cg3::Vec3 n = inputMesh.faceNormal(fId);
             n.rotate(mr);
 
-            cg3::Pointd faceBarycenter = (v1+v2+v3)/3;
-
-            double weight = (faceBarycenter - center).length() / maxDistance;
-            score += weight * (std::fabs(n.x()) + std::fabs(n.y()) + std::fabs(n.z()));
+            double a = inputMesh.faceArea(fId);
+            cg3::Pointd w(
+                        1-(std::fabs(faceBarycenter.x() - bbCenter.x()) / maxDistance.x()),
+                        1-(std::fabs(faceBarycenter.y() - bbCenter.y()) / maxDistance.y()),
+                        1-(std::fabs(faceBarycenter.z() - bbCenter.z()) / maxDistance.z())
+            );
+            score += a * (w.x() * std::fabs(n.x()) + w.y() * std::fabs(n.y()) + w.z() * std::fabs(n.z()));
         }
 
         if (score <= bestScore) {

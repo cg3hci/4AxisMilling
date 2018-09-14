@@ -38,156 +38,154 @@ struct XMinComparator {
  */
 void selectExtremesOnXAxis(
         const cg3::EigenMesh& mesh,
-        const bool selectExtremes,
         const double heightFieldAngle,
         Data& data)
 {
-    if (selectExtremes) {
-        //Referencing output data
-        std::vector<unsigned int>& minExtremes = data.minExtremes;
-        std::vector<unsigned int>& maxExtremes = data.maxExtremes;
+    //Referencing output data
+    std::vector<unsigned int>& minExtremes = data.minExtremes;
+    std::vector<unsigned int>& maxExtremes = data.maxExtremes;
 
-        //Clearing current data (if any)
-        minExtremes.clear();
-        maxExtremes.clear();
+    //Clearing current data (if any)
+    minExtremes.clear();
+    maxExtremes.clear();
 
-        //Faces adjacencies
-        const std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
+    //Faces adjacencies
+    const std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
 
-        //Cos of height-field angle
-        const double heightFieldAngleLimit = cos(heightFieldAngle);
+    //Cos of height-field angle
+    const double heightFieldAngleLimit = cos(heightFieldAngle);
 
-        //Remember that the milling direction is the opposite if we want to
-        //check the dot product. So (1,0,0) is the min, (-1,0,0) is the max.
-        const cg3::Vec3 minDirection(-1,0,0);
-        const cg3::Vec3 maxDirection(1,0,0);
+    //Remember that the milling direction is the opposite if we want to
+    //check the dot product. So (1,0,0) is the min, (-1,0,0) is the max.
+    const cg3::Vec3 minDirection(-1,0,0);
+    const cg3::Vec3 maxDirection(1,0,0);
 
-        //Height-field on the extremes
-        std::set<unsigned int> minHeightFieldSet;
-        std::set<unsigned int> maxHeightFieldSet;
+    //Height-field on the extremes
+    std::set<unsigned int> minHeightFieldSet;
+    std::set<unsigned int> maxHeightFieldSet;
 
-        //Initializing vector of face indices
-        std::vector<unsigned int> fIndices(mesh.numberFaces());
-        for (unsigned int i = 0; i < fIndices.size(); i++)
-            fIndices[i] = i;
+    //Initializing vector of face indices
+    std::vector<unsigned int> fIndices(mesh.numberFaces());
+    for (unsigned int i = 0; i < fIndices.size(); i++)
+        fIndices[i] = i;
 
-        //Order the vector by x-coordinate
-        std::sort(fIndices.begin(), fIndices.end(), internal::XMinComparator(mesh));
+    //Order the vector by x-coordinate
+    std::sort(fIndices.begin(), fIndices.end(), internal::XMinComparator(mesh));
 
 
-        /* ----- MIN EXTREMES ----- */
+    /* ----- MIN EXTREMES ----- */
 
-        //Get min height-field faces
-        size_t iMin = 0;
-        while(mesh.faceNormal(fIndices[iMin]).dot(minDirection) >= heightFieldAngleLimit){
-            minHeightFieldSet.insert(fIndices[iMin]);
-            iMin++;
-        }
+    //Get min height-field faces
+    size_t iMin = 0;
+    while(mesh.faceNormal(fIndices[iMin]).dot(minDirection) >= heightFieldAngleLimit){
+        minHeightFieldSet.insert(fIndices[iMin]);
+        iMin++;
+    }
 
-        //Get the min x coordinate of the non-heightfield faces (it will be the level set)
-        double levelSetMinX = mesh.vertex(mesh.face(fIndices[iMin]).x()).x();
-        while(iMin < fIndices.size()){
-            cg3::Pointi face = mesh.face(fIndices[iMin]);
+    //Get the min x coordinate of the non-heightfield faces (it will be the level set)
+    double levelSetMinX = mesh.vertex(mesh.face(fIndices[iMin]).x()).x();
+    while(iMin < fIndices.size()){
+        cg3::Pointi face = mesh.face(fIndices[iMin]);
 
-            levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.x()).x());
-            levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.y()).x());
-            levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.z()).x());
+        levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.x()).x());
+        levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.y()).x());
+        levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.z()).x());
 
-            iMin++;
-        }
+        iMin++;
+    }
 
-        std::vector<bool> minVisited(mesh.numberFaces(), false);
-        std::queue<unsigned int> minQueue;
+    std::vector<bool> minVisited(mesh.numberFaces(), false);
+    std::queue<unsigned int> minQueue;
 
-        minQueue.push(fIndices[0]);
+    minQueue.push(fIndices[0]);
 
-        while (!minQueue.empty()) {
-            unsigned int fId = minQueue.front();
-            minQueue.pop();
+    while (!minQueue.empty()) {
+        unsigned int fId = minQueue.front();
+        minQueue.pop();
 
-            if (!minVisited[fId]) {
-                cg3::Pointi face = mesh.face(fId);
+        if (!minVisited[fId]) {
+            cg3::Pointi face = mesh.face(fId);
 
-                minVisited[fId] = true;
+            minVisited[fId] = true;
 
-                if (minHeightFieldSet.find(fId) != minHeightFieldSet.end()) {
-                    //If every face coordinate is lower the level set
-                    if (mesh.vertex(face.x()).x() <= levelSetMinX &&
+            if (minHeightFieldSet.find(fId) != minHeightFieldSet.end()) {
+                //If every face coordinate is lower the level set
+                if (mesh.vertex(face.x()).x() <= levelSetMinX &&
                         mesh.vertex(face.y()).x() <= levelSetMinX &&
                         mesh.vertex(face.z()).x() <= levelSetMinX)
-                    {
-                        minExtremes.push_back(fId);
-                    }
-
-                    const std::vector<int>& fAdj = ffAdj.at(fId);
-
-                    for (const int& adjId : fAdj) {
-                        if (!minVisited[adjId]) {
-                            minQueue.push(adjId);
-                        }
-                    }
-
+                {
+                    minExtremes.push_back(fId);
                 }
-            }
-        }
 
+                const std::vector<int>& fAdj = ffAdj.at(fId);
 
-        /* ----- MAX EXTREMES ----- */
-
-        //Get max height-field faces
-        int iMax = fIndices.size()-1;
-        while(mesh.faceNormal(fIndices[iMax]).dot(maxDirection) >= -std::numeric_limits<double>::epsilon()){
-            maxHeightFieldSet.insert(fIndices[iMax]);
-            iMax--;
-        }
-
-        //Get the max x coordinate of the non-selected faces (level set)
-        double levelSetMaxX = mesh.vertex(mesh.face(fIndices[iMax]).x()).x();
-        while(iMax >= 0){
-            cg3::Pointi face = mesh.face(fIndices[iMax]);
-
-            levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.x()).x());
-            levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.y()).x());
-            levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.z()).x());
-
-            iMax--;
-        }
-
-        std::vector<bool> maxVisited(mesh.numberFaces(), false);
-        std::queue<unsigned int> maxQueue;
-
-        maxQueue.push(fIndices[fIndices.size()-1]);
-
-        while (!maxQueue.empty()) {
-            unsigned int fId = maxQueue.front();
-            maxQueue.pop();
-
-            if (!maxVisited[fId]) {
-                cg3::Pointi face = mesh.face(fId);
-
-                maxVisited[fId] = true;
-
-                if (maxHeightFieldSet.find(fId) != maxHeightFieldSet.end()) {
-                    //If every face coordinate is lower the level set
-                    if (mesh.vertex(face.x()).x() >= levelSetMaxX &&
-                        mesh.vertex(face.y()).x() >= levelSetMaxX &&
-                        mesh.vertex(face.z()).x() >= levelSetMaxX)
-                    {
-                        maxExtremes.push_back(fId);
+                for (const int& adjId : fAdj) {
+                    if (!minVisited[adjId]) {
+                        minQueue.push(adjId);
                     }
-
-                    const std::vector<int>& fAdj = ffAdj.at(fId);
-
-                    for (const int& adjId : fAdj) {
-                        if (!maxVisited[adjId]) {
-                            maxQueue.push(adjId);
-                        }
-                    }
-
                 }
+
             }
         }
     }
+
+
+    /* ----- MAX EXTREMES ----- */
+
+    //Get max height-field faces
+    int iMax = fIndices.size()-1;
+    while(mesh.faceNormal(fIndices[iMax]).dot(maxDirection) >= -std::numeric_limits<double>::epsilon()){
+        maxHeightFieldSet.insert(fIndices[iMax]);
+        iMax--;
+    }
+
+    //Get the max x coordinate of the non-selected faces (level set)
+    double levelSetMaxX = mesh.vertex(mesh.face(fIndices[iMax]).x()).x();
+    while(iMax >= 0){
+        cg3::Pointi face = mesh.face(fIndices[iMax]);
+
+        levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.x()).x());
+        levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.y()).x());
+        levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.z()).x());
+
+        iMax--;
+    }
+
+    std::vector<bool> maxVisited(mesh.numberFaces(), false);
+    std::queue<unsigned int> maxQueue;
+
+    maxQueue.push(fIndices[fIndices.size()-1]);
+
+    while (!maxQueue.empty()) {
+        unsigned int fId = maxQueue.front();
+        maxQueue.pop();
+
+        if (!maxVisited[fId]) {
+            cg3::Pointi face = mesh.face(fId);
+
+            maxVisited[fId] = true;
+
+            if (maxHeightFieldSet.find(fId) != maxHeightFieldSet.end()) {
+                //If every face coordinate is lower the level set
+                if (mesh.vertex(face.x()).x() >= levelSetMaxX &&
+                        mesh.vertex(face.y()).x() >= levelSetMaxX &&
+                        mesh.vertex(face.z()).x() >= levelSetMaxX)
+                {
+                    maxExtremes.push_back(fId);
+                }
+
+                const std::vector<int>& fAdj = ffAdj.at(fId);
+
+                for (const int& adjId : fAdj) {
+                    if (!maxVisited[adjId]) {
+                        maxQueue.push(adjId);
+                    }
+                }
+
+            }
+        }
+    }
+
 }
 
 

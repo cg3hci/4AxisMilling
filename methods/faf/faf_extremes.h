@@ -11,7 +11,6 @@ namespace FourAxisFabrication {
 
 void selectExtremesOnXAxis(
         const cg3::EigenMesh& mesh,
-        const bool selectExtremes,
         const double heightFieldAngle,
         Data& data);
 

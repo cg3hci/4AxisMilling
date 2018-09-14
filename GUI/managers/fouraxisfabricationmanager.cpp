@@ -82,7 +82,6 @@ void FourAxisFabricationManager::updateUI() {
 
     //Select extremes
     ui->selectExtremesButton->setEnabled(!areExtremesSelected);
-    ui->selectExtremesCheckbox->setEnabled(!areExtremesSelected);
     ui->selectExtremesHeightfieldAngleLabel->setEnabled(!areExtremesSelected);
     ui->selectExtremesHeightfieldAngleSpinBox->setEnabled(!areExtremesSelected);
 
@@ -223,13 +222,12 @@ void FourAxisFabricationManager::selectExtremes() {
         optimalOrientation();
 
         //Get UI data
-        bool selectExtremes = ui->selectExtremesCheckbox->isChecked();
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
 
         cg3::Timer t("Select extremes");
 
         //Get extremes on x-axis to be selected
-        FourAxisFabrication::selectExtremesOnXAxis(smoothedMesh, selectExtremes, heightfieldAngle, data);
+        FourAxisFabrication::selectExtremesOnXAxis(smoothedMesh, heightfieldAngle, data);
 
         t.stopAndPrint();
 
@@ -1312,6 +1310,14 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
                     }
                     if (data.maxResult.numberFaces() > 0) {
                         data.maxResult.saveOnObj(rawname + "_result_max.obj");
+                    }
+
+                    if (data.minSupport.numberFaces() > 0) {
+                        data.minSupport.saveOnObj(rawname + "_support_min.obj");
+                    }
+
+                    if (data.maxSupport.numberFaces() > 0) {
+                        data.maxSupport.saveOnObj(rawname + "_support_max.obj");
                     }
                 }
             }

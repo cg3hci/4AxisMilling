@@ -161,6 +161,9 @@ void optimization(
 
     const unsigned int nFaces = mesh.numberFaces();
 
+    int minLabel = targetDirections[targetDirections.size()-1];
+    int maxLabel = targetDirections[targetDirections.size()-2];
+
     //Get mesh adjacencies
     std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
 
@@ -177,34 +180,36 @@ void optimization(
             for (unsigned int holeChartId : surroundingChart.holeCharts) {
                 const Chart& holeChart = chartData.charts.at(holeChartId);
 
-                std::set<unsigned int> remainingHoleChartFaces(holeChart.faces.begin(), holeChart.faces.end());
+                if (holeChart.label != minLabel && holeChart.label != maxLabel) {
+                    std::set<unsigned int> remainingHoleChartFaces(holeChart.faces.begin(), holeChart.faces.end());
 
-                std::vector<unsigned int> facesToBeRelaxed;
-                do {
-                    facesToBeRelaxed.clear();
+                    std::vector<unsigned int> facesToBeRelaxed;
+                    do {
+                        facesToBeRelaxed.clear();
 
-                    for (const unsigned int fId : remainingHoleChartFaces) {
-                        bool isOnBorder = false;
-                        for (const int adjF : ffAdj[fId]) {
-                            if (association[adjF] == surroundingChartLabel) {
-                                isOnBorder = true;
+                        for (const unsigned int fId : remainingHoleChartFaces) {
+                            bool isOnBorder = false;
+                            for (const int adjF : ffAdj[fId]) {
+                                if (association[adjF] == surroundingChartLabel) {
+                                    isOnBorder = true;
+                                }
                             }
+
+                            if (isOnBorder && visibility(surroundingChartLabel, fId) > 0)
+                                facesToBeRelaxed.push_back(fId);
                         }
 
-                        if (isOnBorder && visibility(surroundingChartLabel, fId) > 0)
-                            facesToBeRelaxed.push_back(fId);
-                    }
+                        for (const unsigned int fId : facesToBeRelaxed) {
+                            association[fId] = surroundingChartLabel;
+                            facesAffected++;
 
-                    for (const unsigned int fId : facesToBeRelaxed) {
-                        association[fId] = surroundingChartLabel;
-                        facesAffected++;
-
-                        remainingHoleChartFaces.erase(fId);
+                            remainingHoleChartFaces.erase(fId);
+                        }
                     }
+                    while (!facesToBeRelaxed.empty());
+
+                    chartAffected++;
                 }
-                while (!facesToBeRelaxed.empty());
-
-                chartAffected++;
             }
         }
 
@@ -242,15 +247,17 @@ void optimization(
             for (size_t cId = 0; cId < chartData.charts.size(); cId++) {
                 const Chart& chart = chartData.charts.at(cId);
 
-                //Chart area
-                double chartArea = 0;
-                for (unsigned int fId : chart.faces)
-                    chartArea += mesh.faceArea(fId);
+                if (chart.label != minLabel && chart.label != maxLabel) {
+                    //Chart area
+                    double chartArea = 0;
+                    for (unsigned int fId : chart.faces)
+                        chartArea += mesh.faceArea(fId);
 
-                //Get the smallest chart which has area less than the limit area
-                if (chartArea <= limitArea && chartArea <= smallestArea) {
-                    smallestChartId = chart.id;
-                    smallestArea = chartArea;
+                    //Get the smallest chart which has area less than the limit area
+                    if (chartArea <= limitArea && chartArea <= smallestArea) {
+                        smallestChartId = chart.id;
+                        smallestArea = chartArea;
+                    }
                 }
             }
 
@@ -333,12 +340,15 @@ void optimization(
             for (unsigned int holeChartId : surroundingChart.holeCharts) {
                 const Chart& holeChart = chartData.charts.at(holeChartId);
 
-                for (const int fId : holeChart.faces) {
-                    association[fId] = surroundingChartLabel;
-                    facesAffected++;
 
-                    if (visibility(surroundingChartLabel, fId) == 0) {
-                        facesNoLongerVisible++;
+                if (holeChart.label != minLabel && holeChart.label != maxLabel) {
+                    for (const int fId : holeChart.faces) {
+                        association[fId] = surroundingChartLabel;
+                        facesAffected++;
+
+                        if (visibility(surroundingChartLabel, fId) == 0) {
+                            facesNoLongerVisible++;
+                        }
                     }
                 }
 

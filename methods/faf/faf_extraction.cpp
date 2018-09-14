@@ -443,8 +443,7 @@ void extractResults(
         result.addFace(boxVertices[7], boxVertices[3], boxVertices[2]);
         result.addFace(boxVertices[7], boxVertices[2], boxVertices[6]);
 
-        unsigned int resultNFaces = result.numberFaces();                
-
+        unsigned int resultNFaces = result.numberFaces();
 
         result = cg3::libigl::union_(fourAxisScaled, result);
 
@@ -472,17 +471,47 @@ void extractResults(
     //Create supports
     cg3::BoundingBox bbScaled = fourAxisScaled.boundingBox();
 
-    cg3::BoundingBox minBB = bbScaled;
-    minBB.setMaxX(bbScaled.minX() + supportHeight);
-    cg3::BoundingBox maxBB = bbScaled;
-    maxBB.setMinX(bbScaled.maxX() - supportHeight);
+    //TODO SCALARE UN POCHINO! 1.1?
 
-    cg3::EigenMesh minBBMesh = cg3::EigenMeshAlgorithms::makeBox(minBB);
-    cg3::EigenMesh maxBBMesh = cg3::EigenMeshAlgorithms::makeBox(maxBB);
+    if (data.minExtremes.size() > 0) {
+        //Get maximum x in the faces of the min extremes
+        double minLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(data.minExtremes[0]).x()).x();
+        for (int minFace : data.minExtremes) {
+            cg3::Pointi face = fourAxisScaled.face(minFace);
 
-    minSupport = cg3::libigl::difference(minBBMesh, fourAxisScaled);
-    maxSupport = cg3::libigl::difference(maxBBMesh, fourAxisScaled);
+            minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.x()).x());
+            minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.y()).x());
+            minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.z()).x());
+        }
+        //Set min extremes bounding box
+        cg3::BoundingBox minBB = bbScaled;
+        minBB.setMaxX(minLevelSetX);
 
+        //Min support
+        cg3::EigenMesh minBBMesh = cg3::EigenMeshAlgorithms::makeBox(minBB);
+        minSupport = cg3::libigl::difference(minBBMesh, fourAxisScaled);
+    }
+
+
+    if (data.maxExtremes.size() > 0) {
+        //Get minimum x in the faces of the max extremes
+        double maxLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(data.maxExtremes[0]).x()).x();
+        for (int maxFace : data.maxExtremes) {
+            cg3::Pointi face = fourAxisScaled.face(maxFace);
+
+            maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.x()).x());
+            maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.y()).x());
+            maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.z()).x());
+        }
+
+        //Set max extremes bounding box
+        cg3::BoundingBox maxBB = bbScaled;
+        maxBB.setMinX(maxLevelSetX);
+
+        //Max support
+        cg3::EigenMesh maxBBMesh = cg3::EigenMeshAlgorithms::makeBox(maxBB);
+        maxSupport = cg3::libigl::difference(maxBBMesh, fourAxisScaled);
+    }
 
 
 

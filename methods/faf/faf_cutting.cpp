@@ -41,6 +41,22 @@ void cutComponents(
 
 
     if (cutComponents && !data.maxExtremes.empty() && !data.minExtremes.empty()) {
+        //Get maximum x in the faces of the min extremes
+        double minLevelSetX = restoredMesh.vertex(restoredMesh.face(data.minExtremes[0]).x()).x();
+        for (int minFace : data.minExtremes) {
+            if (data.restoredMeshAssociation[minFace] == minLabel) {
+                cg3::Pointi face = restoredMesh.face(minFace);
+
+                minLevelSetX = std::max(minLevelSetX, restoredMesh.vertex(face.x()).x());
+                minLevelSetX = std::max(minLevelSetX, restoredMesh.vertex(face.y()).x());
+                minLevelSetX = std::max(minLevelSetX, restoredMesh.vertex(face.z()).x());
+            }
+        }
+        //Set min extremes bounding box
+        cg3::BoundingBox minBB = bb;
+        minBB.setMaxX(minLevelSetX);
+
+
         //Get minimum x in the faces of the max extremes
         double maxLevelSetX = restoredMesh.vertex(restoredMesh.face(data.maxExtremes[0]).x()).x();
         for (int maxFace : data.maxExtremes) {
@@ -57,20 +73,6 @@ void cutComponents(
         maxBB.setMinX(maxLevelSetX);
 
 
-        //Get maximum x in the faces of the min extremes
-        double minLevelSetX = restoredMesh.vertex(restoredMesh.face(data.minExtremes[0]).x()).x();
-        for (int minFace : data.minExtremes) {
-            if (data.restoredMeshAssociation[minFace] == minLabel) {
-                cg3::Pointi face = restoredMesh.face(minFace);
-
-                minLevelSetX = std::max(minLevelSetX, restoredMesh.vertex(face.x()).x());
-                minLevelSetX = std::max(minLevelSetX, restoredMesh.vertex(face.y()).x());
-                minLevelSetX = std::max(minLevelSetX, restoredMesh.vertex(face.z()).x());
-            }
-        }
-        //Set min extremes bounding box
-        cg3::BoundingBox minBB = bb;
-        minBB.setMaxX(minLevelSetX);
 
 
         //Get CSGTrees

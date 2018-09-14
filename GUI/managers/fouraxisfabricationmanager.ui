@@ -371,23 +371,6 @@
       <string>Four Axis Fabrication</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="3" column="1" colspan="2">
-       <widget class="QCheckBox" name="selectExtremesCheckbox">
-        <property name="text">
-         <string>Compute extremes</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="3">
-       <widget class="QLabel" name="selectExtremesHeightfieldAngleLabel">
-        <property name="text">
-         <string>HF angle:</string>
-        </property>
-       </widget>
-      </item>
       <item row="11" column="3">
        <widget class="QLabel" name="getAssociationCompactnessLabel">
         <property name="text">
@@ -585,19 +568,6 @@
        <widget class="QPushButton" name="optimalOrientationButton">
         <property name="text">
          <string>Orientation</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="4">
-       <widget class="QDoubleSpinBox" name="selectExtremesHeightfieldAngleSpinBox">
-        <property name="minimum">
-         <double>0.010000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>90.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>90.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -829,6 +799,26 @@
         </property>
         <property name="value">
          <double>10.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QDoubleSpinBox" name="selectExtremesHeightfieldAngleSpinBox">
+        <property name="minimum">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>90.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>90.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="selectExtremesHeightfieldAngleLabel">
+        <property name="text">
+         <string>HF angle:</string>
         </property>
        </widget>
       </item>
