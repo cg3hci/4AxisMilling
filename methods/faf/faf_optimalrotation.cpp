@@ -93,6 +93,8 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
     //Get the direction pool (sphere coverage, fibonacci sampling)l
     std::vector<cg3::Vec3> dirPool = cg3::sphereCoverage(nDirs, deterministic);
 
+    cg3::Pointd bbCenter = inputMesh.boundingBox().center();
+
     double bestScore = std::numeric_limits<double>::max();
     cg3::Vec3 bestOrientation;
     for (cg3::Vec3& dir : dirPool) {
@@ -103,18 +105,6 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
         defineRotation(dir, axis, angle);
         Eigen::Matrix3d mr = rotationMatrix(axis, angle);
 
-        //Get rotated vertices and bounding box
-        cg3::BoundingBox bb(
-            cg3::Pointd(
-                -std::numeric_limits<double>().max(),
-                -std::numeric_limits<double>().max(),
-                -std::numeric_limits<double>().max()
-                ),
-            cg3::Pointd(
-                std::numeric_limits<double>().max(),
-                std::numeric_limits<double>().max(),
-                std::numeric_limits<double>().max())
-            );
 
         //Rotate vertices and set bounding box
         std::vector<cg3::Pointd> rotatedVertices(inputMesh.numberVertices());
@@ -122,17 +112,8 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
             cg3::Pointd v = inputMesh.vertex(vId);
             v.rotate(mr);
             rotatedVertices[vId] = v;
-
-            bb.setMaxX(std::max(v.x(), bb.maxX()));
-            bb.setMaxY(std::max(v.y(), bb.maxY()));
-            bb.setMaxZ(std::max(v.z(), bb.maxZ()));
-
-            bb.setMinX(std::min(v.x(), bb.minX()));
-            bb.setMinY(std::min(v.y(), bb.minY()));
-            bb.setMinZ(std::min(v.z(), bb.minZ()));
         }
 
-        cg3::Pointd bbCenter = bb.center();
 
         //Max distance from the bounding box center
         cg3::Pointd maxDistance(0,0,0);
@@ -183,6 +164,81 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
     return cg3::rotationMatrix(cg3::Vec3(axis), angle);
 }
 
+//Eigen::Matrix3d optimalOrientationRotationMatrix(
+//        const cg3::SimpleEigenMesh& inputMesh,
+//        unsigned int nDirs,
+//        bool deterministic)
+//{
+//    //Get the direction pool (sphere coverage, fibonacci sampling)l
+//    std::vector<cg3::Vec3> dirPool = cg3::sphereCoverage(nDirs, deterministic);
+
+//    double bestScore = std::numeric_limits<double>::max();
+//    cg3::Vec3 bestOrientation;
+//    for (cg3::Vec3& dir : dirPool) {
+//        cg3::Vec3 axis;
+//        double angle;
+//        dir.normalize();
+
+//        defineRotation(dir, axis, angle);
+//        Eigen::Matrix3d mr = rotationMatrix(axis, angle);
+
+//        //Get rotated vertices
+//        std::vector<cg3::Pointd> rotatedVertices(inputMesh.numberVertices());
+//        for(unsigned int vId = 0; vId < inputMesh.numberVertices(); vId++) {
+//            cg3::Pointd v = inputMesh.vertex(vId);
+//            v.rotate(mr);
+//            rotatedVertices[vId] = v;
+//        }
+
+//        //Get barycenter
+//        cg3::Pointd center(0,0,0);
+//        for(unsigned int vId = 0; vId < inputMesh.numberVertices(); vId++) {
+//            cg3::Pointd& v = rotatedVertices.at(vId);
+//            center += v;
+//        }
+//        center /= static_cast<double>(inputMesh.numberVertices());
+
+//        //Max distance from barycenter
+//        double maxDistance = 0;
+//        for(unsigned int vId = 0; vId < inputMesh.numberVertices(); vId++) {
+//            cg3::Pointd& v = rotatedVertices.at(vId);
+
+//            double distance = (v - center).length();
+//            if (distance >= maxDistance) {
+//                maxDistance = distance;
+//            }
+//        }
+
+//        double score = 0.0;
+//        for(unsigned int fId = 0; fId < inputMesh.numberFaces(); fId++) {
+//            cg3::Pointi f = inputMesh.face(fId);
+//            cg3::Pointd& v1 = rotatedVertices.at(f.x());
+//            cg3::Pointd& v2 = rotatedVertices.at(f.y());
+//            cg3::Pointd& v3 = rotatedVertices.at(f.z());
+
+//            cg3::Vec3 n = inputMesh.faceNormal(fId);
+//            n.rotate(mr);
+
+//            cg3::Pointd faceBarycenter = (v1+v2+v3)/3;
+
+//            double weight = 1 - ((faceBarycenter - center).length() / maxDistance);
+//            score += weight * (std::fabs(n.x()) + std::fabs(n.y()) + std::fabs(n.z()));
+//        }
+
+//        if (score <= bestScore) {
+//            bestOrientation = dir;
+//            bestScore = score;
+//        }
+//    }
+
+//    cg3::Vec3 axis;
+//    double angle;
+//    bestOrientation.normalize();
+
+//    defineRotation(bestOrientation, axis, angle);
+
+//    return cg3::rotationMatrix(cg3::Vec3(axis), angle);
+//}
 
 void defineRotation(const cg3::Vec3& zAxis,
                     cg3::Vec3& rotationAxis,
