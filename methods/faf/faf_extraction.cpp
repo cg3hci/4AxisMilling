@@ -149,15 +149,17 @@ void extractResults(
                     fourAxisVFAdj,
                     targetLabel);
 
-        //Get connected components
-        std::vector<cg3::SimpleEigenMesh> connectedComponents = cg3::libigl::connectedComponents(surface);
+        if (surface.numberFaces() > 0) {
+            //Get connected components
+            std::vector<cg3::SimpleEigenMesh> connectedComponents = cg3::libigl::connectedComponents(surface);
 
-        //Add each components to the results
-        for (cg3::SimpleEigenMesh& simpleComponent : connectedComponents) {
-            cg3::EigenMesh component(simpleComponent);
+            //Add each components to the results
+            for (cg3::SimpleEigenMesh& simpleComponent : connectedComponents) {
+                cg3::EigenMesh component(simpleComponent);
 
-            surfaces.push_back(component);
-            surfacesAssociation.push_back(targetLabel);
+                surfaces.push_back(component);
+                surfacesAssociation.push_back(targetLabel);
+            }
         }
     }
 
@@ -475,7 +477,7 @@ void extractResults(
     bbScaled.setMin(bbScaled.min()*1.1);
     bbScaled.setMax(bbScaled.max()*1.1);
 
-    if (data.minExtremes.size() > 0) {
+    if (data.minComponent.numberFaces() == 0 && data.minExtremes.size() > 0) {
         //Get maximum x in the faces of the min extremes
         double minLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(data.minExtremes[0]).x()).x();
         for (int minFace : data.minExtremes) {
@@ -495,7 +497,7 @@ void extractResults(
     }
 
 
-    if (data.maxExtremes.size() > 0) {
+    if (data.maxComponent.numberFaces() == 0 && data.maxExtremes.size() > 0) {
         //Get minimum x in the faces of the max extremes
         double maxLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(data.maxExtremes[0]).x()).x();
         for (int maxFace : data.maxExtremes) {
