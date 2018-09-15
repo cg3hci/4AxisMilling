@@ -212,7 +212,14 @@ ChartData getChartData(
 
                     while (chartData.faceChartMap.at(he->twin()->face()->id()) != currentHoleChartId) {
                         vecPos++;
+                        if (vecPos >= vHeMap.at(vCurrent).size())
+                            break;
+
                         he = vHeMap.at(vCurrent).at(vecPos);
+                    }
+                    if (vecPos >= vHeMap.at(vCurrent).size()) {
+                        std::cout << "Error in detecting charts." << std::endl;
+                        break;
                     }
 
                     unsigned int fId = he->face()->id();
@@ -231,8 +238,10 @@ ChartData getChartData(
                 }
                 while (vCurrent != vStart);
 
-                chart.holeVertices.push_back(currentHoleVertices);
-                chart.holeFaces.push_back(currentHoleFaces);
+                if (vCurrent == vStart) {
+                    chart.holeVertices.push_back(currentHoleVertices);
+                    chart.holeFaces.push_back(currentHoleFaces);
+                }
             }
         }
     }

@@ -196,7 +196,7 @@ void extractResults(
     const double boxHeight = stockDiameter*2;
 
     //Offset to get the millable angle
-    double offset = tan(millableAngle) * stockDiameter; //TODO QUESTO NON E' GIUSTO!!!
+    double offset = tan(millableAngle) * stockDiameter;
 
 
     //Triangulation data-structures
@@ -471,7 +471,9 @@ void extractResults(
     //Create supports
     cg3::BoundingBox bbScaled = fourAxisScaled.boundingBox();
 
-    //TODO SCALARE UN POCHINO! 1.1?
+    //Scale of a 1.1 factor
+    bbScaled.setMin(bbScaled.min()*1.1);
+    bbScaled.setMax(bbScaled.max()*1.1);
 
     if (data.minExtremes.size() > 0) {
         //Get maximum x in the faces of the min extremes
