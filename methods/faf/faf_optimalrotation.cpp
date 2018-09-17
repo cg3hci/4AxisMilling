@@ -85,6 +85,14 @@ void rotateToOptimalOrientation(
 
 namespace internal {
 
+/**
+ * @brief Get optimal orientation on x-axis for four axis
+ * fabrication.
+ * @param[out] input Input mesh. The bounding box center of the mesh must be on the origin.
+ * @param[in] nDirections Number of directions to check
+ * @param[in] deterministic Deterministic approach (if false it is randomized)
+ * @return Rotation matrix
+ */
 Eigen::Matrix3d optimalOrientationRotationMatrix(
         const cg3::SimpleEigenMesh& inputMesh,
         unsigned int nDirs,
