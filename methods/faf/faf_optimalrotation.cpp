@@ -122,6 +122,7 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
     //Compute face barycenter and normals
     std::vector<cg3::Pointd> faceBarycenters(inputMesh.numberFaces());
     std::vector<cg3::Pointd> faceNormals(inputMesh.numberFaces());
+    std::vector<double> faceAreas(inputMesh.numberFaces());
     for(unsigned int fId = 0; fId < inputMesh.numberFaces(); fId++) {
         cg3::Pointi f = inputMesh.face(fId);
         const cg3::Pointd& v1 = vertices.at(f.x());
@@ -135,6 +136,10 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
         //Face normal
         const cg3::Vec3 n = inputMesh.faceNormal(fId);
         faceNormals[fId] = n;
+
+        //Face normal
+        const double a = inputMesh.faceArea(fId);
+        faceAreas[fId] = a;
     }
 
     //Compute the best orientation
@@ -160,11 +165,14 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
             cg3::Pointd b = faceBarycenters[fId];
             b.rotate(mr);
 
+            //Get face area
+            double a = faceAreas[fId];
+
             //Compute weight
             double weight = ((b - bbCenter).length() / maxDistance);
 
             //Add to score
-            score += weight * (std::fabs(n.x()) + std::fabs(n.y()) + std::fabs(n.z()));
+            score += a * weight * (std::fabs(n.x()) + std::fabs(n.y()) + std::fabs(n.z()));
         }
 
         //Select the best orientation
