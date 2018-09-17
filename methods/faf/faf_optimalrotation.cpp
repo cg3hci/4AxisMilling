@@ -158,15 +158,15 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
         double score = 0.0;
         for(unsigned int fId = 0; fId < inputMesh.numberFaces(); fId++) {
             //Get normal and rotate it
-            cg3::Vec3 n = inputMesh.faceNormal(fId);
+            cg3::Vec3 n = faceNormals.at(fId);
             n.rotate(mr);
 
             //Get barycenter and rotate it
-            cg3::Pointd b = faceBarycenters[fId];
+            cg3::Pointd b = faceBarycenters.at(fId);
             b.rotate(mr);
 
             //Get face area
-            double a = faceAreas[fId];
+            double a = faceAreas.at(fId);
 
             //Compute weight
             double weight = ((b - bbCenter).length() / maxDistance);
