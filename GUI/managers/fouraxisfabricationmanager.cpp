@@ -89,7 +89,6 @@ void FourAxisFabricationManager::updateUI() {
     ui->checkVisibilityButton->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityDirectionsLabel->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityDirectionsSpinBox->setEnabled(!isVisibilityChecked);
-    ui->checkVisibilityMethodFrame->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityXDirectionsCheckBox->setEnabled(!isVisibilityChecked);
 
     //Get the target directions
@@ -247,13 +246,6 @@ void FourAxisFabricationManager::checkVisibility() {
         unsigned int nDirections = (unsigned int) ui->checkVisibilityDirectionsSpinBox->value();
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
         bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
-        FourAxisFabrication::CheckMode checkMode = (ui->checkVisibilityRayRadio->isChecked() ?
-                FourAxisFabrication::RAYSHOOTING :
-                FourAxisFabrication::PROJECTION);
-
-        if (nDirections % 2 == 1)
-            nDirections++;
-        nDirections /= 2;
 
         cg3::Timer t("Visibility check");
 
@@ -263,9 +255,7 @@ void FourAxisFabricationManager::checkVisibility() {
                     nDirections,
                     data,
                     heightfieldAngle,
-                    includeXDirections,
-                    checkMode);
-
+                    includeXDirections);
 
         t.stopAndPrint();
 
@@ -407,9 +397,6 @@ void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
         restoreFrequencies();
 
         //Get UI data
-        FourAxisFabrication::CheckMode checkMode = (ui->checkVisibilityRayRadio->isChecked() ?
-                FourAxisFabrication::RAYSHOOTING :
-                FourAxisFabrication::PROJECTION);
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
         bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
         bool reassign = ui->recheckVisibilityReassignNonVisibleCheckBox->isChecked();
@@ -418,7 +405,7 @@ void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
         cg3::Timer tCheck("Recheck visibility after frequencies have been restored");
 
         //Check if it is a valid association
-        FourAxisFabrication::recheckVisibilityAfterRestore(data, heightfieldAngle, reassign, includeXDirections, checkMode);
+        FourAxisFabrication::recheckVisibilityAfterRestore(data, heightfieldAngle, reassign, includeXDirections);
 
         tCheck.stopAndPrint();
 

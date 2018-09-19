@@ -67,6 +67,11 @@ void getAssociation(
     std::vector<int>& association = data.association;
     std::vector<unsigned int>& associationNonVisibleFaces = data.associationNonVisibleFaces;
 
+    //Initialize to -1 direction association for each face
+    association.clear();
+    association.resize(mesh.numberFaces());
+    std::fill(association.begin(), association.end(), -1);
+
     const unsigned int nFaces = mesh.numberFaces();
     const unsigned int nLabels = targetDirections.size();
 

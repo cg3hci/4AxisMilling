@@ -20,8 +20,7 @@ void getVisibility(
         const unsigned int nDirections,
         Data& data,
         const double heightFieldAngle,
-        const bool includeXDirections,
-        CheckMode checkMode);
+        const bool includeXDirections);
 
 }
 

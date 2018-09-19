@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>visible.frag</file>
+        <file>visible.vert</file>
+        <file>occluded.vert</file>
+        <file>occluded.frag</file>
+    </qresource>
+</RCC>

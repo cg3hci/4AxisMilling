@@ -141,11 +141,10 @@ void recheckVisibilityAfterRestore(
         Data& data,
         const double heightfieldAngle,
         const bool reassign,
-        const bool includeXDirections,
-        CheckMode checkMode)
+        const bool includeXDirections)
 {
     cg3::EigenMesh& targetMesh = data.restoredMesh;
-    const int nDirections = (data.directions.size()-2)/2;
+    const unsigned int nDirections = static_cast<unsigned int>(data.directions.size()-2);
 
     //Initialize new data
     Data newData;
@@ -153,19 +152,11 @@ void recheckVisibilityAfterRestore(
     newData.maxExtremes = data.maxExtremes;
 
     //Get new visibility
-    getVisibility(targetMesh, nDirections, newData, heightfieldAngle, includeXDirections, checkMode);
+    getVisibility(targetMesh, nDirections, newData, heightfieldAngle, includeXDirections);
     data.restoredMeshVisibility = newData.visibility;
-
-    data.restoredMeshNonVisibleFaces.clear();
-    for (size_t faceId = 0; faceId < data.restoredMeshAssociation.size(); faceId++) {
-        if (data.restoredMeshVisibility(data.restoredMeshAssociation[faceId], faceId) == 0) {
-            data.restoredMeshNonVisibleFaces.push_back(faceId);
-        }
-    }
+    data.restoredMeshNonVisibleFaces = newData.nonVisibleFaces;
 
     std::cout << "Non-visible triangles after frequencies restore: " << data.restoredMeshNonVisibleFaces.size() << std::endl;
-
-
 
     if (reassign) {
         unsigned int facesReassigned = 0;

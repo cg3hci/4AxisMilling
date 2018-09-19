@@ -71,6 +71,7 @@ HEADERS += \
     methods/faf/faf_extraction.h \
     methods/faf/faf_charts.h \
     methods/faf/faf_association.h \
+    methods/faf/includes/view_renderer.h \
     GUI/managers/fouraxisfabricationmanager.h
 
 SOURCES += \
@@ -85,6 +86,7 @@ SOURCES += \
     methods/faf/faf_extraction.cpp \
     methods/faf/faf_charts.cpp \
     methods/faf/faf_association.cpp \
+    methods/faf/includes/view_renderer.cpp \
     GUI/managers/fouraxisfabricationmanager.cpp
 
 
@@ -93,3 +95,6 @@ FORMS += \
 
 DISTFILES += \
     README.txt
+
+RESOURCES += \
+    resources/resources.qrc
