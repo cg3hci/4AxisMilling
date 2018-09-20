@@ -89,6 +89,8 @@ void FourAxisFabricationManager::updateUI() {
     ui->checkVisibilityButton->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityDirectionsLabel->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityDirectionsSpinBox->setEnabled(!isVisibilityChecked);
+    ui->checkVisibilityResolutionLabel->setEnabled(!isVisibilityChecked);
+    ui->checkVisibilityResolutionSpinBox->setEnabled(!isVisibilityChecked);
     ui->checkVisibilityXDirectionsCheckBox->setEnabled(!isVisibilityChecked);
 
     //Get the target directions
@@ -243,8 +245,9 @@ void FourAxisFabricationManager::checkVisibility() {
         selectExtremes();
 
         //Get UI data
-        unsigned int nDirections = (unsigned int) ui->checkVisibilityDirectionsSpinBox->value();
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        unsigned int nDirections = (unsigned int) ui->checkVisibilityDirectionsSpinBox->value();
+        unsigned int resolution = (unsigned int) ui->checkVisibilityResolutionSpinBox->value();
         bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
 
         cg3::Timer t("Visibility check");
@@ -253,9 +256,10 @@ void FourAxisFabricationManager::checkVisibility() {
         FourAxisFabrication::getVisibility(
                     smoothedMesh,
                     nDirections,
-                    data,
+                    resolution,
                     heightfieldAngle,
-                    includeXDirections);
+                    includeXDirections,
+                    data);
 
         t.stopAndPrint();
 
@@ -360,8 +364,8 @@ void FourAxisFabricationManager::restoreFrequencies() {
         optimizeAssociation();
 
         //Get UI data
-        unsigned int nIterations = (unsigned int) ui->restoreFrequenciesIterationsSpinBox->value();
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        unsigned int nIterations = (unsigned int) ui->restoreFrequenciesIterationsSpinBox->value();
 
         double haussDistance = cg3::libigl::hausdorffDistance(originalMesh, smoothedMesh);
         cg3::BoundingBox originalMeshBB = originalMesh.boundingBox();
@@ -398,6 +402,7 @@ void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
 
         //Get UI data
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        unsigned int resolution = (unsigned int) ui->checkVisibilityResolutionSpinBox->value();
         bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
         bool reassign = ui->recheckVisibilityReassignNonVisibleCheckBox->isChecked();
 
@@ -405,7 +410,7 @@ void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
         cg3::Timer tCheck("Recheck visibility after frequencies have been restored");
 
         //Check if it is a valid association
-        FourAxisFabrication::recheckVisibilityAfterRestore(data, heightfieldAngle, reassign, includeXDirections);
+        FourAxisFabrication::recheckVisibilityAfterRestore(resolution, heightfieldAngle, includeXDirections, reassign, data);
 
         tCheck.stopAndPrint();
 

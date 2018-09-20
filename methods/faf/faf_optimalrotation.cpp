@@ -57,7 +57,6 @@ void rotateToOptimalOrientation(
     smoothedMesh.rotate(rot);
 
     smoothedMesh.updateBoundingBox();
-
     cg3::BoundingBox b = smoothedMesh.boundingBox();
 
     //If Y length is the greatest one then rotate by 90° around zAxis

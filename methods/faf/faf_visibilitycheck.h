@@ -18,9 +18,10 @@ namespace FourAxisFabrication {
 void getVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        Data& data,
-        const double heightFieldAngle,
-        const bool includeXDirections);
+        const unsigned int resolution,
+        const double heightfieldAngle,
+        const bool includeXDirections,
+        Data& data);
 
 }
 

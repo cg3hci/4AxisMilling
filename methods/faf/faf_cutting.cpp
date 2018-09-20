@@ -17,7 +17,7 @@ void resetAssociationData(
         const cg3::libigl::CSGTree& csgResult,
         const std::vector<int>& association,
         std::vector<int>& resultAssociation,
-        const int fixedAssociation = -1);
+        const int fixedMeshAssociation = -1);
 
 /**
  * @brief Cut components (min and max extremes)
@@ -101,10 +101,8 @@ void cutComponents(
 
 
         //Restore association of cut components
-        resetAssociationData(csgMesh, csgMinResult, data.restoredMeshAssociation, data.minComponentAssociation,
-                             minLabel); //Set everything to min index
-        resetAssociationData(csgMesh, csgMaxResult, data.restoredMeshAssociation, data.maxComponentAssociation,
-                             maxLabel); //Set eveyrthing to max index
+        resetAssociationData(csgMesh, csgMinResult, data.restoredMeshAssociation, data.minComponentAssociation, minLabel); //Set everything to min index
+        resetAssociationData(csgMesh, csgMaxResult, data.restoredMeshAssociation, data.maxComponentAssociation, maxLabel); //Set eveyrthing to max index
         resetAssociationData(csgMesh, csgFourAxisResult, data.restoredMeshAssociation, data.fourAxisComponentAssociation);
 
 
@@ -129,34 +127,35 @@ void cutComponents(
 
 /**
  * @brief Reassociate association data after a boolean operation
- * @param csgMesh First mesh (the main mesh)
- * @param csgResult Resulting mesh
- * @param association Association of the full mesh
- * @param resultAssociation Resulting association
+ * @param[in] csgMesh Initial mesh
+ * @param[in] csgResult Resulting mesh
+ * @param[in] meshAssociation Association of the initial mesh
+ * @param[in] resultAssociation Resulting association
+ * @param[in] fixedResultAssociation Label to be associated to every face whose birth face is in the initial mesh
  */
 void resetAssociationData(
         const cg3::libigl::CSGTree& csgMesh,
         const cg3::libigl::CSGTree& csgResult,
-        const std::vector<int>& association,
+        const std::vector<int>& meshAssociation,
         std::vector<int>& resultAssociation,
-        const int fixedAssociation)
+        const int fixedMeshAssociation)
 {
     typedef cg3::libigl::CSGTree CSGTree;
 
     CSGTree::VectorJ birthFaces = csgResult.J();
 
-    unsigned int nFaces = csgResult.F().rows();
-    unsigned int nA = csgMesh.F().rows();
+    unsigned int nResultFaces = csgResult.F().rows();
+    unsigned int nMeshFaces = csgMesh.F().rows();
 
-    resultAssociation.resize(nFaces);
+    resultAssociation.resize(nResultFaces);
 
-    for (unsigned int i = 0; i < nFaces; i++) {
+    for (unsigned int i = 0; i < nResultFaces; i++) {
         unsigned int birthFace = birthFaces[i];
 
         //If the birth face is in the first mesh
-        if (birthFace < nA) {            
+        if (birthFace < nMeshFaces) {
             resultAssociation[i] =
-                    (fixedAssociation >= 0 ? fixedAssociation : association[birthFace]);
+                    (fixedMeshAssociation >= 0 ? fixedMeshAssociation : meshAssociation[birthFace]);
         }
         //If the birth face is in the second mesh
         else {

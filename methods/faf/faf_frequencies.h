@@ -24,10 +24,11 @@ void restoreFrequencies(
 
 
 void recheckVisibilityAfterRestore(
-        Data& data,
+        const unsigned int resolution,
         const double heightFieldAngle,
+        const bool includeXDirections,
         const bool reassign,
-        const bool includeXDirections);
+        Data& data);
 
 }
 

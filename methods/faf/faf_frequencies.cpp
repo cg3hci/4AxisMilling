@@ -132,16 +132,18 @@ void restoreFrequencies(
  * If assign is true, it tries to solve the visibility problem, assigning triangles
  * to adjacent directions from which it is visible
  * @param[out] data Four axis fabrication data
+ * @param[in] resolution Resolution for the rendering
  * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
+ * @param[in] includeXDirections Compute visibility for +x and -x directions
  * @param[in] reassign Reassign the non-visible triangles to an adjacent chart
- * @param[in] checkMode Visibility check mode. Default is projection mode.
  * @returns The number of no longer visible triangles
  */
-void recheckVisibilityAfterRestore(
-        Data& data,
+void recheckVisibilityAfterRestore(        
+        const unsigned int resolution,
         const double heightfieldAngle,
+        const bool includeXDirections,
         const bool reassign,
-        const bool includeXDirections)
+        Data& data)
 {
     cg3::EigenMesh& targetMesh = data.restoredMesh;
     const unsigned int nDirections = static_cast<unsigned int>(data.directions.size()-2);
@@ -152,7 +154,7 @@ void recheckVisibilityAfterRestore(
     newData.maxExtremes = data.maxExtremes;
 
     //Get new visibility
-    getVisibility(targetMesh, nDirections, newData, heightfieldAngle, includeXDirections);
+    getVisibility(targetMesh, nDirections, resolution, heightfieldAngle, includeXDirections, newData);
     data.restoredMeshVisibility = newData.visibility;
     data.restoredMeshNonVisibleFaces = newData.nonVisibleFaces;
 

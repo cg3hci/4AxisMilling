@@ -22,13 +22,14 @@ namespace internal {
 void computeVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        std::vector<cg3::Vec3>& directions,
-        std::vector<double>& directionsAngle,
-        cg3::Array2D<int>& visibility,
+        const unsigned int resolution,
+        const double heightfieldAngle,
+        const bool includeXDirections,
         const std::vector<unsigned int>& minExtremes,
         const std::vector<unsigned int>& maxExtremes,
-        const bool includeXDirections,
-        const double heightfieldAngle);
+        std::vector<cg3::Vec3>& directions,
+        std::vector<double>& directionsAngle,
+        cg3::Array2D<int>& visibility);
 
 void computeVisibility(
         ViewRenderer& vr,
@@ -56,19 +57,21 @@ void detectNonVisibleFaces(
  * It is implemented by a ray casting algorithm or checking the intersections
  * in a 2D projection from a given direction.
  * @param[in] mesh Input mesh
- * @param[in] numberDirections Number of directions to be checked
- * @param[out] data Four axis fabrication data
+ * @param[in] nDirections Number of directions to be checked
+ * @param[in] resolution Resolution for the rendering
  * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
- * @param[in] checkMode Visibility check mode. Default is projection mode.
+ * @param[in] includeXDirections Compute visibility for +x and -x directions
+ * @param[out] data Four axis fabrication data
  */
 void getVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        Data& data,
+        const unsigned int resolution,
         const double heightfieldAngle,
-        const bool includeXDirections)
+        const bool includeXDirections,
+        Data& data)
 {
-    internal::computeVisibility(mesh, nDirections, data.directions, data.angles, data.visibility, data.minExtremes, data.maxExtremes, includeXDirections, heightfieldAngle);
+    internal::computeVisibility(mesh, nDirections, resolution, heightfieldAngle, includeXDirections, data.minExtremes, data.maxExtremes, data.directions, data.angles, data.visibility);
     internal::detectNonVisibleFaces(data.visibility, data.nonVisibleFaces);
 }
 
@@ -89,22 +92,26 @@ namespace internal {
  * in a 2D projection from a given direction.
  * @param[in] mesh Input mesh
  * @param[in] numberDirections Number of directions to be checked
+ * @param[in] resolution Resolution for the rendering
+ * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
+ * @param[in] includeXDirections Compute visibility for +x and -x directions
+ * @param[in] minExtremes Min extremes
+ * @param[in] maxExtremes Max extremes
  * @param[out] directions Vector of directions
  * @param[out] angles Vector of angle (respect to z-axis)
  * @param[out] visibility Output visibility
- * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
- * @param[in] checkMode Visibility check mode. Default is projection mode.
  */
 void computeVisibility(
         const cg3::EigenMesh& mesh,
         const unsigned int nDirections,
-        std::vector<cg3::Vec3>& directions,
-        std::vector<double>& angles,
-        cg3::Array2D<int>& visibility,
+        const unsigned int resolution,
+        const double heightfieldAngle,
+        const bool includeXDirections,
         const std::vector<unsigned int>& minExtremes,
         const std::vector<unsigned int>& maxExtremes,
-        const bool includeXDirections,
-        const double heightfieldAngle)
+        std::vector<cg3::Vec3>& directions,
+        std::vector<double>& angles,
+        cg3::Array2D<int>& visibility)
 {
     //Initialize visibility (number of directions, two for extremes)
     visibility.clear();
@@ -123,7 +130,7 @@ void computeVisibility(
     const double heightFieldLimit = cos(heightfieldAngle);
 
     //View renderer
-    ViewRenderer vr(mesh, mesh.boundingBox(), 8096);
+    ViewRenderer vr(mesh, mesh.boundingBox(), resolution);
 
     //Set target faces to be checked
     std::vector<unsigned int> targetFaces;
