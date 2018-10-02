@@ -28,7 +28,8 @@ void recheckVisibilityAfterRestore(
         const double heightFieldAngle,
         const bool includeXDirections,
         const bool reassign,
-        Data& data);
+        Data& data,
+        const CheckMode checkMode);
 
 }
 

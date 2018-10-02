@@ -136,6 +136,7 @@ void restoreFrequencies(
  * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  * @param[in] includeXDirections Compute visibility for +x and -x directions
  * @param[in] reassign Reassign the non-visible triangles to an adjacent chart
+ * @param[in] checkMode Visibility check mode
  * @returns The number of no longer visible triangles
  */
 void recheckVisibilityAfterRestore(        
@@ -143,7 +144,8 @@ void recheckVisibilityAfterRestore(
         const double heightfieldAngle,
         const bool includeXDirections,
         const bool reassign,
-        Data& data)
+        Data& data,
+        const CheckMode checkMode)
 {
     cg3::EigenMesh& targetMesh = data.restoredMesh;
     const unsigned int nDirections = static_cast<unsigned int>(data.directions.size()-2);
@@ -154,7 +156,7 @@ void recheckVisibilityAfterRestore(
     newData.maxExtremes = data.maxExtremes;
 
     //Get new visibility
-    getVisibility(targetMesh, nDirections, resolution, heightfieldAngle, includeXDirections, newData);
+    getVisibility(targetMesh, nDirections, resolution, heightfieldAngle, includeXDirections, newData, checkMode);
     data.restoredMeshVisibility = newData.visibility;
     data.restoredMeshNonVisibleFaces = newData.nonVisibleFaces;
 

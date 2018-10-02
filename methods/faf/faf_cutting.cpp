@@ -10,14 +10,18 @@
 
 namespace FourAxisFabrication {
 
+
 /* Useful function declaration */
+
+namespace internal {
 
 void resetAssociationData(
         const cg3::libigl::CSGTree& csgMesh,
         const cg3::libigl::CSGTree& csgResult,
-        const std::vector<int>& association,
-        std::vector<int>& resultAssociation,
-        const int fixedMeshAssociation = -1);
+        const std::vector<int>& meshAssociation,
+        const int secondMeshLabel,
+        std::vector<int>& resultAssociation);
+}
 
 /**
  * @brief Cut components (min and max extremes)
@@ -29,22 +33,35 @@ void cutComponents(
 {    
     typedef cg3::libigl::CSGTree CSGTree;
 
+    const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
+    const std::vector<unsigned int>& minExtremes = data.minExtremes;
+
     const cg3::EigenMesh& restoredMesh = data.restoredMesh;
+    const std::vector<int>& restoredMeshAssociation = data.restoredMeshAssociation;
 
+    const std::vector<unsigned int>& targetDirections = data.targetDirections;
 
-    int minLabel = data.targetDirections[data.targetDirections.size()-2];
-    int maxLabel = data.targetDirections[data.targetDirections.size()-1];
+    std::vector<int>& minComponentAssociation = data.minComponentAssociation;
+    std::vector<int>& maxComponentAssociation = data.maxComponentAssociation;
+    std::vector<int>& fourAxisComponentAssociation = data.fourAxisComponentAssociation;
+
+    cg3::EigenMesh& minComponent = data.minComponent;
+    cg3::EigenMesh& maxComponent = data.maxComponent;
+    cg3::EigenMesh& fourAxisComponent= data.fourAxisComponent;
+
+    int minLabel = targetDirections[targetDirections.size()-2];
+    int maxLabel = targetDirections[targetDirections.size()-1];
 
     //Referencing bounding box of the mesh
     cg3::BoundingBox bb = restoredMesh.boundingBox();
 
 
 
-    if (cutComponents && !data.maxExtremes.empty() && !data.minExtremes.empty()) {
+    if (cutComponents && !maxExtremes.empty() && !minExtremes.empty()) {
         //Get maximum x in the faces of the min extremes
-        double minLevelSetX = restoredMesh.vertex(restoredMesh.face(data.minExtremes[0]).x()).x();
-        for (int minFace : data.minExtremes) {
-            if (data.restoredMeshAssociation[minFace] == minLabel) {
+        double minLevelSetX = restoredMesh.vertex(restoredMesh.face(minExtremes[0]).x()).x();
+        for (int minFace : minExtremes) {
+            if (restoredMeshAssociation[minFace] == minLabel) {
                 cg3::Pointi face = restoredMesh.face(minFace);
 
                 minLevelSetX = std::max(minLevelSetX, restoredMesh.vertex(face.x()).x());
@@ -58,9 +75,9 @@ void cutComponents(
 
 
         //Get minimum x in the faces of the max extremes
-        double maxLevelSetX = restoredMesh.vertex(restoredMesh.face(data.maxExtremes[0]).x()).x();
-        for (int maxFace : data.maxExtremes) {
-            if (data.restoredMeshAssociation[maxFace] == maxLabel) {
+        double maxLevelSetX = restoredMesh.vertex(restoredMesh.face(maxExtremes[0]).x()).x();
+        for (int maxFace : maxExtremes) {
+            if (restoredMeshAssociation[maxFace] == maxLabel) {
                 cg3::Pointi face = restoredMesh.face(maxFace);
 
                 maxLevelSetX = std::min(maxLevelSetX, restoredMesh.vertex(face.x()).x());
@@ -77,33 +94,46 @@ void cutComponents(
 
         //Get CSGTrees
         CSGTree csgMesh = cg3::libigl::eigenMeshToCSGTree(restoredMesh);
-        CSGTree csgMaxBB = cg3::libigl::eigenMeshToCSGTree(
-                    cg3::EigenMeshAlgorithms::makeBox(maxBB));
-        CSGTree csgMinBB = cg3::libigl::eigenMeshToCSGTree(
-                    cg3::EigenMeshAlgorithms::makeBox(minBB));
+        CSGTree csgMaxBB = cg3::libigl::eigenMeshToCSGTree(cg3::EigenMeshAlgorithms::makeBox(maxBB));
+        CSGTree csgMinBB = cg3::libigl::eigenMeshToCSGTree(cg3::EigenMeshAlgorithms::makeBox(minBB));
 
 
         //Cut min extreme
-        CSGTree csgMinResult = cg3::libigl::intersection(csgMesh, csgMinBB);
-        cg3::EigenMesh minComponent =
-                cg3::libigl::CSGTreeToEigenMesh(csgMinResult);
+        CSGTree csgMinResult = cg3::libigl::intersection(csgMesh, csgMinBB);        
+        internal::resetAssociationData(csgMesh, csgMinResult, restoredMeshAssociation, -1, minComponentAssociation); //Restore association of cut component
+        for (size_t i = 0; i < minComponentAssociation.size(); i++) {
+            if (minComponentAssociation[i] >= 0)
+                minComponentAssociation[i] = minLabel;
+        }
 
         //Cut max extreme
         CSGTree csgMaxResult = cg3::libigl::intersection(csgMesh, csgMaxBB);
-        cg3::EigenMesh maxComponent =
-                cg3::libigl::CSGTreeToEigenMesh(csgMaxResult);
+        internal::resetAssociationData(csgMesh, csgMaxResult, restoredMeshAssociation, -1, maxComponentAssociation); //Restore association of cut component
+        for (size_t i = 0; i < maxComponentAssociation.size(); i++) {
+            if (maxComponentAssociation[i] >= 0)
+                maxComponentAssociation[i] = maxLabel;
+        }
 
 
         //Cut four axis resulting mesh
-        CSGTree csgUnion = cg3::libigl::union_(csgMaxBB, csgMinBB);
-        CSGTree csgFourAxisResult = cg3::libigl::difference(csgMesh, csgUnion);
-        cg3::EigenMesh fourAxisComponent = cg3::libigl::CSGTreeToEigenMesh(csgFourAxisResult);
+        CSGTree csgFourAxisResult;
+        std::vector<int> currentAssociation = restoredMeshAssociation;
+
+        csgFourAxisResult = cg3::libigl::difference(csgMesh, csgMinBB);
+        internal::resetAssociationData(csgMesh, csgFourAxisResult, currentAssociation, minLabel, fourAxisComponentAssociation);
+
+        csgMesh = cg3::libigl::eigenMeshToCSGTree(cg3::libigl::CSGTreeToEigenMesh(csgFourAxisResult));
+        currentAssociation = fourAxisComponentAssociation;
+
+        csgFourAxisResult = cg3::libigl::difference(csgMesh, csgMaxBB);
+        internal::resetAssociationData(csgMesh, csgFourAxisResult, currentAssociation, maxLabel, fourAxisComponentAssociation);
 
 
-        //Restore association of cut components
-        resetAssociationData(csgMesh, csgMinResult, data.restoredMeshAssociation, data.minComponentAssociation, minLabel); //Set everything to min index
-        resetAssociationData(csgMesh, csgMaxResult, data.restoredMeshAssociation, data.maxComponentAssociation, maxLabel); //Set eveyrthing to max index
-        resetAssociationData(csgMesh, csgFourAxisResult, data.restoredMeshAssociation, data.fourAxisComponentAssociation);
+
+        //Get meshes
+        minComponent = cg3::libigl::CSGTreeToEigenMesh(csgMinResult);
+        maxComponent = cg3::libigl::CSGTreeToEigenMesh(csgMaxResult);
+        fourAxisComponent = cg3::libigl::CSGTreeToEigenMesh(csgFourAxisResult);
 
 
         //Update mesh data
@@ -113,55 +143,54 @@ void cutComponents(
         maxComponent.updateBoundingBox();
         fourAxisComponent.updateFacesAndVerticesNormals();
         fourAxisComponent.updateBoundingBox();
-
-        //Add to components
-        data.minComponent = minComponent;
-        data.maxComponent = maxComponent;
-        data.fourAxisComponent = fourAxisComponent;
     }
     else {
-        data.fourAxisComponent = restoredMesh;
-        data.fourAxisComponentAssociation = data.association;
+        fourAxisComponent = restoredMesh;
+        fourAxisComponentAssociation = restoredMeshAssociation;
     }
 }
 
+namespace internal {
+
 /**
- * @brief Reassociate association data after a boolean operation
+ * @brief Reassociate association data of the first mesh after a boolean operation on cutting the extremes
  * @param[in] csgMesh Initial mesh
  * @param[in] csgResult Resulting mesh
  * @param[in] meshAssociation Association of the initial mesh
- * @param[in] resultAssociation Resulting association
- * @param[in] fixedResultAssociation Label to be associated to every face whose birth face is in the initial mesh
+ * @param[in] secondMeshLabel Label to be assigned if the birth face is in the second mesh
+ * @param[out] resultAssociation Resulting association
  */
 void resetAssociationData(
         const cg3::libigl::CSGTree& csgMesh,
         const cg3::libigl::CSGTree& csgResult,
         const std::vector<int>& meshAssociation,
-        std::vector<int>& resultAssociation,
-        const int fixedMeshAssociation)
+        const int secondMeshLabel,
+        std::vector<int>& resultAssociation)
 {
     typedef cg3::libigl::CSGTree CSGTree;
 
     CSGTree::VectorJ birthFaces = csgResult.J();
 
     unsigned int nResultFaces = csgResult.F().rows();
-    unsigned int nMeshFaces = csgMesh.F().rows();
+    unsigned int nFirstMeshFaces = csgMesh.F().rows();
 
+    resultAssociation.clear();
     resultAssociation.resize(nResultFaces);
 
     for (unsigned int i = 0; i < nResultFaces; i++) {
         unsigned int birthFace = birthFaces[i];
 
         //If the birth face is in the first mesh
-        if (birthFace < nMeshFaces) {
-            resultAssociation[i] =
-                    (fixedMeshAssociation >= 0 ? fixedMeshAssociation : meshAssociation[birthFace]);
+        if (birthFace < nFirstMeshFaces) {
+            resultAssociation[i] = meshAssociation[birthFace];
         }
         //If the birth face is in the second mesh
         else {
-            resultAssociation[i] = -1;
+            resultAssociation[i] = secondMeshLabel;
         }
     }
+}
+
 }
 
 }

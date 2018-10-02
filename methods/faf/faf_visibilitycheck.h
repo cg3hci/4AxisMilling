@@ -21,7 +21,8 @@ void getVisibility(
         const unsigned int resolution,
         const double heightfieldAngle,
         const bool includeXDirections,
-        Data& data);
+        Data& data,
+        const CheckMode checkMode);
 
 }
 

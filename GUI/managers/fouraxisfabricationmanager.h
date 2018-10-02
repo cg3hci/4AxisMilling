@@ -43,9 +43,6 @@ private:
 
     /* Data fields */
 
-    cg3::EigenMesh originalMesh;
-    cg3::EigenMesh smoothedMesh;
-
     FourAxisFabrication::Data data;
 
 
@@ -86,18 +83,6 @@ private:
 
     std::string loadedMeshFile;
     std::string loadedSmoothedMeshFile;
-
-    bool isMeshLoaded;
-    bool isMeshOriented;
-    bool areExtremesSelected;
-    bool isVisibilityChecked;
-    bool areTargetDirectionsFound;
-    bool isAssociationComputed;
-    bool isAssociationOptimized;
-    bool areFrequenciesRestored;
-    bool isVisibilityRecheckedAfterRestore;
-    bool areComponentsCut;
-    bool areResultsExtracted;
 
 
     /* UI methods */

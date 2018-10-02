@@ -162,7 +162,7 @@ void optimization(
     std::vector<unsigned int>& targetDirections = data.targetDirections;
     std::vector<int>& association = data.association;
     std::vector<unsigned int>& associationNonVisibleFaces = data.associationNonVisibleFaces;
-    ChartData& chartData = data.chartData;
+
 
     const unsigned int nFaces = mesh.numberFaces();
 
@@ -173,7 +173,7 @@ void optimization(
     std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
 
     //Get chart data
-    chartData = getChartData(mesh, association);
+    ChartData chartData = getChartData(mesh, association);
 
     //Relaxing data cost for holes
     if (relaxHoles) {

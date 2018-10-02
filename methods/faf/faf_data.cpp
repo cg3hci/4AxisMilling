@@ -8,7 +8,26 @@ namespace FourAxisFabrication {
 
 /* ----- METHODS OF DATA FOR FOUR AXIS FABRICATION ----- */
 
+Data::Data() {
+    this->clear();
+}
+
 void Data::clear() {
+    isMeshLoaded = false;
+    isMeshOriented = false;
+    areExtremesSelected = false;
+    isVisibilityChecked = false;
+    areTargetDirectionsFound = false;
+    isAssociationComputed = false;
+    isAssociationOptimized = false;
+    areFrequenciesRestored = false;
+    isVisibilityRecheckedAfterRestore = false;
+    areComponentsCut = false;
+    areResultsExtracted = false;
+
+    originalMesh.clear();
+    smoothedMesh.clear();
+
     minExtremes.clear();
     maxExtremes.clear();
 
@@ -42,11 +61,6 @@ void Data::clear() {
     maxComponentNonVisibleFaces.clear();
     fourAxisComponentNonVisibleFaces.clear();
 
-    surfaces.clear();
-    surfacesAssociation.clear();
-    minSurface.clear();
-    maxSurface.clear();
-
     stocks.clear();
 
     results.clear();
@@ -56,6 +70,106 @@ void Data::clear() {
 
     minSupport.clear();
     maxSupport.clear();
+}
+
+void Data::serialize(std::ofstream &binaryFile) const
+{
+    cg3::serializeObjectAttributes(
+                "faf_data",
+                binaryFile,
+                isMeshLoaded,
+                isMeshOriented,
+                areExtremesSelected,
+                isVisibilityChecked,
+                areTargetDirectionsFound,
+                isAssociationComputed,
+                isAssociationOptimized,
+                areFrequenciesRestored,
+                isVisibilityRecheckedAfterRestore,
+                areComponentsCut,
+                areResultsExtracted,
+                originalMesh,
+                smoothedMesh,
+                minExtremes,
+                maxExtremes,
+                directions,
+                angles,
+                visibility,
+                nonVisibleFaces,
+                targetDirections,
+                association,
+                associationNonVisibleFaces,
+                restoredMesh,
+                restoredMeshVisibility,
+                restoredMeshAssociation,
+                restoredMeshNonVisibleFaces,
+                minComponent,
+                maxComponent,
+                fourAxisComponent,
+
+                minComponentAssociation,
+                maxComponentAssociation,
+                fourAxisComponentAssociation,
+
+                minComponentNonVisibleFaces,
+                maxComponentNonVisibleFaces,
+                fourAxisComponentNonVisibleFaces,
+                minResult,
+                maxResult,
+                stocks,
+                results,
+                resultsAssociation,
+                minSupport,
+                maxSupport);
+}
+
+void Data::deserialize(std::ifstream &binaryFile)
+{
+    cg3::deserializeObjectAttributes(
+                "faf_data",
+                binaryFile,
+                isMeshLoaded,
+                isMeshOriented,
+                areExtremesSelected,
+                isVisibilityChecked,
+                areTargetDirectionsFound,
+                isAssociationComputed,
+                isAssociationOptimized,
+                areFrequenciesRestored,
+                isVisibilityRecheckedAfterRestore,
+                areComponentsCut,
+                areResultsExtracted,
+                originalMesh,
+                smoothedMesh,
+                minExtremes,
+                maxExtremes,
+                directions,
+                angles,
+                visibility,
+                nonVisibleFaces,
+                targetDirections,
+                association,
+                associationNonVisibleFaces,
+                restoredMesh,
+                restoredMeshVisibility,
+                restoredMeshAssociation,
+                restoredMeshNonVisibleFaces,
+                minComponent,
+                maxComponent,
+                fourAxisComponent,
+                minComponentAssociation,
+                maxComponentAssociation,
+                fourAxisComponentAssociation,
+                minComponentNonVisibleFaces,
+                maxComponentNonVisibleFaces,
+                fourAxisComponentNonVisibleFaces,
+                minResult,
+                maxResult,
+                stocks,
+                results,
+                resultsAssociation,
+                minSupport,
+                maxSupport);
 }
 
 }

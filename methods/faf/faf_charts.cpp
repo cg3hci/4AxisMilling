@@ -67,42 +67,44 @@ ChartData getChartData(
                 int currentFaceId = stack.top();
                 stack.pop();
 
-                visited[currentFaceId] = true;
+                if (!visited[currentFaceId]) {
+                    visited[currentFaceId] = true;
 
-                Face* currentFace = dcel.face(currentFaceId);
+                    Face* currentFace = dcel.face(currentFaceId);
 
-                //Add face index to the chart
-                chart.faces.push_back(currentFaceId);
+                    //Add face index to the chart
+                    chart.faces.push_back(currentFaceId);
 
-                //Add vertices
-                for (const Vertex* vertex : currentFace->incidentVertexIterator()) {
-                    chart.vertices.insert(vertex->id());
-                }
+                    //Add vertices
+                    for (const Vertex* vertex : currentFace->incidentVertexIterator()) {
+                        chart.vertices.insert(vertex->id());
+                    }
 
-                //Add adjacent faces
-                for (const HalfEdge* he : currentFace->incidentHalfEdgeIterator()) {
-                    const Face* adjFace = he->twin()->face();
+                    //Add adjacent faces
+                    for (const HalfEdge* he : currentFace->incidentHalfEdgeIterator()) {
+                        const Face* adjFace = he->twin()->face();
 
-                    unsigned int adjId = adjFace->id();
-                    int adjLabel = association[adjId];
+                        unsigned int adjId = adjFace->id();
+                        int adjLabel = association[adjId];
 
-                    //If the adjacent face has the same label
-                    if (adjLabel == label) {
-                        if (!visited[adjId]) {
-                            stack.push(adjId);
+                        //If the adjacent face has the same label
+                        if (adjLabel == label) {
+                            if (!visited[adjId]) {
+                                stack.push(adjId);
+                            }
+                        }
+                        //If the adjacent face has a different label
+                        //i.e. it is a face of the contour
+                        else {
+                            chartBorderHalfEdges.push_back(he);
+
+                            chart.adjacentFaces.insert(adjId);
+                            chart.adjacentLabels.insert(adjLabel);
                         }
                     }
-                    //If the adjacent face has a different label
-                    //i.e. it is a face of the contour
-                    else {
-                        chartBorderHalfEdges.push_back(he);
 
-                        chart.adjacentFaces.insert(adjId);
-                        chart.adjacentLabels.insert(adjLabel);
-                    }
+                    chartData.faceChartMap[currentFaceId] = chart.id;
                 }
-
-                chartData.faceChartMap[currentFaceId] = chart.id;
             }
 
             //Add chart data

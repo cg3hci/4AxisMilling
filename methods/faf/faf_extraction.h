@@ -18,8 +18,10 @@ void extractResults(
         const double modelLength,
         const double stockLength,
         const double stockDiameter,
-        const double millableAngle,
         const double supportHeight,
+        const double firstLayerAngle,
+        const double secondLayerAngle,
+        const double millableHeight,
         const bool rotateMeshes);
 
 }

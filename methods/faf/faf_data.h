@@ -17,10 +17,36 @@
 
 namespace FourAxisFabrication {
 
+/* Check mode of the visibility */
+
+enum CheckMode { PROJECTION, RAYSHOOTING, OPENGL };
+
+
 
 /* Data for four axis fabrication */
 
-struct Data {
+class Data : cg3::SerializableObject {
+
+public:
+
+    Data();
+
+    /* Flags */
+    bool isMeshLoaded;
+    bool isMeshOriented;
+    bool areExtremesSelected;
+    bool isVisibilityChecked;
+    bool areTargetDirectionsFound;
+    bool isAssociationComputed;
+    bool isAssociationOptimized;
+    bool areFrequenciesRestored;
+    bool isVisibilityRecheckedAfterRestore;
+    bool areComponentsCut;
+    bool areResultsExtracted;
+
+    /* Input meshes */
+    cg3::EigenMesh originalMesh;
+    cg3::EigenMesh smoothedMesh;
 
     /* Min/max extremes */
 
@@ -47,10 +73,6 @@ struct Data {
     std::vector<unsigned int> associationNonVisibleFaces;
 
 
-    /* Chart data */
-    ChartData chartData;
-
-
     /* Frequencies restored data */
 
     cg3::EigenMesh restoredMesh;    
@@ -72,13 +94,6 @@ struct Data {
     std::vector<unsigned int> maxComponentNonVisibleFaces;
     std::vector<unsigned int> fourAxisComponentNonVisibleFaces;
 
-    /* Surface results */
-
-    cg3::EigenMesh minSurface;
-    cg3::EigenMesh maxSurface;
-    std::vector<cg3::EigenMesh> surfaces;
-    std::vector<unsigned int> surfacesAssociation;
-
 
     /* Results */
 
@@ -98,12 +113,12 @@ struct Data {
     /* Methods */
 
     void clear();
+
+
+    // SerializableObject interface
+    void serialize(std::ofstream &binaryFile) const;
+    void deserialize(std::ifstream &binaryFile);
 };
-
-
-/* Check mode of the algorithm */
-
-enum CheckMode { PROJECTION, RAYSHOOTING };
 
 }
 
