@@ -26,6 +26,9 @@ void Data::clear() {
     areResultsExtracted = false;
 
     originalMesh.clear();
+    originalSmoothedMesh.clear();
+
+    mesh.clear();
     smoothedMesh.clear();
 
     minExtremes.clear();
@@ -89,6 +92,8 @@ void Data::serialize(std::ofstream &binaryFile) const
                 areComponentsCut,
                 areResultsExtracted,
                 originalMesh,
+                originalSmoothedMesh,
+                mesh,
                 smoothedMesh,
                 minExtremes,
                 maxExtremes,
@@ -106,11 +111,9 @@ void Data::serialize(std::ofstream &binaryFile) const
                 minComponent,
                 maxComponent,
                 fourAxisComponent,
-
                 minComponentAssociation,
                 maxComponentAssociation,
                 fourAxisComponentAssociation,
-
                 minComponentNonVisibleFaces,
                 maxComponentNonVisibleFaces,
                 fourAxisComponentNonVisibleFaces,
@@ -140,6 +143,8 @@ void Data::deserialize(std::ifstream &binaryFile)
                 areComponentsCut,
                 areResultsExtracted,
                 originalMesh,
+                originalSmoothedMesh,
+                mesh,
                 smoothedMesh,
                 minExtremes,
                 maxExtremes,

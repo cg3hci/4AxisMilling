@@ -28,14 +28,7 @@ namespace FourAxisFabrication {
 
 namespace internal {
 
-cg3::EigenMesh extractSurfaceWithLabel(
-        const cg3::EigenMesh& mesh,
-        const std::vector<int>& association,
-        const std::vector<std::vector<int>>& vfAdj,
-        const unsigned int targetLabel);
-
 std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m);
-
 std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, const double offset);
 
 } //namespace internal
@@ -66,6 +59,11 @@ void extractResults(
     typedef cg3::libigl::CSGTree CSGTree;
 
     //Referencing input data
+    const std::vector<unsigned int>& minExtremes = data.minExtremes;
+    const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
+
+    const std::vector<double>& angles = data.angles;
+
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
 
     const cg3::EigenMesh& minComponent = data.minComponent;
@@ -130,7 +128,7 @@ void extractResults(
     //Get chart data
     ChartData fourAxisChartData = getChartData(fourAxisComponent, fourAxisComponentAssociation);
     std::vector<int> chartToResult;
-
+    std::vector<size_t> resultToChart;
 
 
     /* ----- ADD SURFACE OF THE CHARTS TO THE RESULTS ----- */
@@ -163,6 +161,7 @@ void extractResults(
             resultsAssociation.push_back(static_cast<unsigned int>(chart.label));
 
             chartToResult.push_back(rId);
+            resultToChart.push_back(chart.id);
 
             rId++;
         }
@@ -170,6 +169,7 @@ void extractResults(
             chartToResult.push_back(-1);
         }
     }
+    size_t nResults = results.size();
 
 
 
@@ -193,7 +193,7 @@ void extractResults(
     std::vector<std::array<cg3::Point2Dd, 3>> triangulation;
     std::vector<std::vector<cg3::Point2Dd>> holes;
 
-    for (size_t rId = 0; rId < results.size(); rId++) {
+    for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
         cg3::EigenMesh& result = results[rId];
         unsigned int targetLabel = resultsAssociation[rId];
@@ -210,7 +210,7 @@ void extractResults(
             cg3::rotationMatrix(yAxis, M_PI/2, inverseProjectionMatrix);
         }
         else {
-            double directionAngle = data.angles[targetLabel];
+            double directionAngle = angles[targetLabel];
             cg3::rotationMatrix(xAxis, -directionAngle, projectionMatrix);
             cg3::rotationMatrix(xAxis, directionAngle, inverseProjectionMatrix);
         }
@@ -252,17 +252,16 @@ void extractResults(
         std::vector<cg3::Point2Dd> firstLayerPoints2D = projectedPoints2D;
         std::map<cg3::Point2Dd, unsigned int> firstLayerPoints2DMap = projectedPoints2DMap;
 
-        //Get mean length of the edges
+        //Get min length of the edges
         size_t nFirstLayerVertices = firstLayerPoints2D.size();
-        double meanLength = 0;
+        double minLength = std::numeric_limits<double>::max();
         for (size_t i = 0; i < nFirstLayerVertices; i++) {
             cg3::Vec2 edgeVec = firstLayerPoints2D[(i+1) % nFirstLayerVertices] - firstLayerPoints2D[i];
-            meanLength += edgeVec.length();
+            minLength = std::min(edgeVec.length(), minLength);
         }
-        meanLength /= nFirstLayerVertices;
 
         //Get step
-        double currentStepOffset = meanLength/2;
+        double currentStepOffset = minLength/2;
 
         double totalOffset = 0;
         while (totalOffset < firstLayerOffset) {
@@ -570,7 +569,7 @@ void extractResults(
 
     std::cout << std::endl <<  "----- HOLE FILLING ----- " << std::endl << std::endl;
 
-    for (size_t rId = 0; rId < results.size(); rId++) {
+    for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
         cg3::EigenMesh& result = results[rId];
 
@@ -589,7 +588,9 @@ void extractResults(
     //Csg tree
     CSGTree csgFourAxisScaled = cg3::libigl::eigenMeshToCSGTree(fourAxisScaled);
 
-    for (size_t rId = 0; rId < results.size(); rId++) {
+    cg3::Array2D<double> costMatrix(nResults, nResults, 0);
+
+    for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
         cg3::EigenMesh& result = results[rId];
 
@@ -605,20 +606,20 @@ void extractResults(
         unsigned int nFirstFaces = csgFourAxisScaled.F().rows();
         unsigned int nSecondFaces = csgTmpResult.F().rows();
 
-        int counter = 0;
+        int totalCost = 0;
 
         for (unsigned int i = 0; i < birthFaces.rows(); i++) {
             unsigned int birthFace = birthFaces[i];
 
             //If the birth face is in the first mesh
             if (birthFace < nFirstFaces) {
-                unsigned int chartId = fourAxisChartData.faceChartMap.at(birthFace);
+                unsigned int birthChartId = fourAxisChartData.faceChartMap.at(birthFace);
 
-                //TODO TABELLA
+                costMatrix(rId, chartToResult[birthChartId])++;
 
-                counter++;
+                totalCost++;
             }
-        }
+        }                
 
         //Saving the mesh from the result
         result = cg3::EigenMesh(cg3::libigl::CSGTreeToEigenMesh(csgResult));
@@ -627,8 +628,10 @@ void extractResults(
         //Difference with the number of faces
         int diffFaces = static_cast<int>(result.numberFaces()) - static_cast<int>(resultNFaces);
 
-        std::cout << "Result " << rId << " > " << "CSG: " << counter << " - Diff:" << diffFaces << std::endl;
+        std::cout << "Result " << rId << " > " << "CSG: " << totalCost << " - Diff: " << diffFaces << std::endl;
     }
+
+    std::cout << "Cost matrix: " << std::endl << costMatrix << std::endl;
 
 
     /* ----- INITIAL STOCK GENERATION ----- */
@@ -647,8 +650,8 @@ void extractResults(
 
     std::cout << std::endl <<  "----- INTERSECTION WITH THE STOCK ----- " << std::endl << std::endl;
 
-    stocks.resize(results.size());
-    for (size_t rId = 0; rId < results.size(); rId++) {
+    stocks.resize(nResults);
+    for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
         cg3::EigenMesh& result = results[rId];
 
@@ -660,6 +663,8 @@ void extractResults(
 
         //New stock for next iteration
         currentStock = result;
+
+        std::cout << "Result " << rId << " done." << std::endl;
     }
 
 
@@ -679,10 +684,10 @@ void extractResults(
     bbScaled.setMin(bbScaled.min()*1.1);
     bbScaled.setMax(bbScaled.max()*1.1);
 
-    if (data.minComponent.numberFaces() == 0 && data.minExtremes.size() > 0) {
+    if (minComponent.numberFaces() == 0 && minExtremes.size() > 0) {
         //Get maximum x in the faces of the min extremes
-        double minLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(data.minExtremes[0]).x()).x();
-        for (int minFace : data.minExtremes) {
+        double minLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(minExtremes[0]).x()).x();
+        for (int minFace : minExtremes) {
             cg3::Pointi face = fourAxisScaled.face(minFace);
 
             minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.x()).x());
@@ -699,10 +704,10 @@ void extractResults(
     }
 
 
-    if (data.maxComponent.numberFaces() == 0 && data.maxExtremes.size() > 0) {
+    if (maxComponent.numberFaces() == 0 && maxExtremes.size() > 0) {
         //Get minimum x in the faces of the max extremes
-        double maxLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(data.maxExtremes[0]).x()).x();
-        for (int maxFace : data.maxExtremes) {
+        double maxLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(maxExtremes[0]).x()).x();
+        for (int maxFace : maxExtremes) {
             cg3::Pointi face = fourAxisScaled.face(maxFace);
 
             maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.x()).x());
@@ -722,11 +727,11 @@ void extractResults(
 
     /* ----- UPDATING MESHES DATA ----- */
 
-    for (size_t i = 0; i < data.stocks.size(); i++) {
-        cg3::EigenMesh& stock = data.stocks[i];
+    for (size_t i = 0; i < stocks.size(); i++) {
+        cg3::EigenMesh& stock = stocks[i];
 
         if (rotateMeshes) {
-            unsigned int& targetLabel = data.resultsAssociation[i];
+            unsigned int& targetLabel = resultsAssociation[i];
 
             Eigen::Matrix3d resultRotationMatrix;
             if (targetLabel == minLabel) {
@@ -736,7 +741,7 @@ void extractResults(
                 cg3::rotationMatrix(yAxis, -M_PI/2, resultRotationMatrix);
             }
             else {
-                double directionAngle = data.angles[targetLabel];
+                double directionAngle = angles[targetLabel];
                 cg3::rotationMatrix(xAxis, -directionAngle, resultRotationMatrix);
             }
 
@@ -747,11 +752,11 @@ void extractResults(
         stock.updateFacesAndVerticesNormals();
     }
 
-    for (size_t i = 0; i < data.results.size(); i++) {
-        cg3::EigenMesh& result = data.results[i];
+    for (size_t i = 0; i < nResults; i++) {
+        cg3::EigenMesh& result = results[i];
 
         if (rotateMeshes) {
-            unsigned int& targetLabel = data.resultsAssociation[i];
+            unsigned int& targetLabel = resultsAssociation[i];
 
             Eigen::Matrix3d resultRotationMatrix;
             if (targetLabel == minLabel) {
@@ -761,7 +766,7 @@ void extractResults(
                 cg3::rotationMatrix(yAxis, -M_PI/2, resultRotationMatrix);
             }
             else {
-                double directionAngle = data.angles[targetLabel];
+                double directionAngle = angles[targetLabel];
                 cg3::rotationMatrix(xAxis, -directionAngle, resultRotationMatrix);
             }
 
@@ -814,7 +819,7 @@ namespace internal {
  * @return Vector of id vertex of the borders
  */
 std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m)
-{    
+{
     typedef cg3::Dcel Dcel;
     typedef cg3::Dcel::HalfEdge HalfEdge;
     typedef cg3::Dcel::Vertex Vertex;

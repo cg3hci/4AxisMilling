@@ -416,9 +416,9 @@ void computeVisibilityProjectionRay(
 
     //Get rotation matrix
     Eigen::Matrix3d rotationMatrix;
-    Eigen::Matrix3d rotationMatrixDirection;
+    Eigen::Matrix3d inverseRotationMatrix;
     cg3::rotationMatrix(xAxis, stepAngle, rotationMatrix);
-    cg3::rotationMatrix(xAxis, -stepAngle, rotationMatrixDirection);
+    cg3::rotationMatrix(xAxis, -stepAngle, inverseRotationMatrix);
 
     //Vector that is opposite to the milling direction
     cg3::Vec3 dir(0,0,1);
@@ -447,10 +447,8 @@ void computeVisibilityProjectionRay(
         directions[halfNDirections + dirIndex] = -dir;
 
         //Rotate the direction and the mesh
-        rotatingMesh.rotate(rotationMatrix);
-
-        //Rotate the current
-        dir.rotate(rotationMatrixDirection);
+        rotatingMesh.rotate(inverseRotationMatrix);
+        dir.rotate(rotationMatrix);
     }
 
     //Index for min, max extremes

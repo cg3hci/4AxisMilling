@@ -80,9 +80,7 @@ private:
     cg3::viewer::MainWindow& mainWindow;
 
     cg3::viewer::LoaderSaver loaderSaverObj;
-
-    std::string loadedMeshFile;
-    std::string loadedSmoothedMeshFile;
+    cg3::viewer::LoaderSaver loaderSaverData;
 
 
     /* UI methods */
@@ -107,7 +105,7 @@ private:
 
     /* Visualization methods */
 
-    void addDrawableMeshes(const std::string& meshName);
+    void addDrawableMeshes();
     void addDrawableRestoredMesh();
     void addDrawableCutComponents();
     void addDrawableResults();
@@ -145,6 +143,11 @@ private slots:
     void on_clearMeshButton_clicked();
     void on_reloadMeshButton_clicked();
     void on_saveResultsButton_clicked();
+
+    /* UI slots for saving/loading data */
+
+    void on_loadDataButton_clicked();
+    void on_saveDataButton_clicked();
 
 
     /* UI slots Four Axis Fabrication */

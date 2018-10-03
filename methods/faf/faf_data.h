@@ -46,6 +46,10 @@ public:
 
     /* Input meshes */
     cg3::EigenMesh originalMesh;
+    cg3::EigenMesh originalSmoothedMesh;
+
+    /* Mesh and smoothed mesh to be processed */
+    cg3::EigenMesh mesh;
     cg3::EigenMesh smoothedMesh;
 
     /* Min/max extremes */
