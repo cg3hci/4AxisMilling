@@ -625,13 +625,6 @@
         </property>
        </widget>
       </item>
-      <item row="26" column="5">
-       <widget class="QPushButton" name="extractResultsButton">
-        <property name="text">
-         <string>Extraction</string>
-        </property>
-       </widget>
-      </item>
       <item row="15" column="3">
        <widget class="QLabel" name="optimizationMinChartAreaLabel">
         <property name="text">
@@ -962,16 +955,6 @@
         </property>
        </widget>
       </item>
-      <item row="27" column="3">
-       <widget class="QCheckBox" name="extractResultsRotateCheckBox">
-        <property name="text">
-         <string>Rotate</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item row="26" column="1">
        <widget class="QLabel" name="extractResultsFirstLayerAngleLabel">
         <property name="text">
@@ -1083,6 +1066,59 @@
           <widget class="QRadioButton" name="checkVisibilityProjectionRadio">
            <property name="text">
             <string>Pro</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="28" column="5">
+       <widget class="QPushButton" name="extractResultsButton">
+        <property name="text">
+         <string>Extraction</string>
+        </property>
+       </widget>
+      </item>
+      <item row="28" column="1">
+       <widget class="QLabel" name="extractResultsXDirectionsOrderLabel">
+        <property name="text">
+         <string>X directions:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="28" column="4">
+       <widget class="QCheckBox" name="extractResultsRotateCheckBox">
+        <property name="text">
+         <string>Rotate</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="28" column="2" colspan="2">
+       <widget class="QFrame" name="extractResultsXDirectionsOrderFrame">
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QRadioButton" name="extractResultsXDirectionsAfterRadio">
+           <property name="text">
+            <string>After</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="extractResultsXDirectionsBeforeRadio">
+           <property name="text">
+            <string>Before</string>
            </property>
           </widget>
          </item>

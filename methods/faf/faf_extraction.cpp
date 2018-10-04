@@ -30,6 +30,17 @@ namespace internal {
 
 std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m);
 std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, const double offset);
+void getFabricationOrder(
+        const std::vector<unsigned int>& association,
+        const cg3::Array2D<int>& costMatrix,
+        const size_t minLabel,
+        const size_t maxLabel,
+        const bool extremeResults,
+        std::vector<int>& cost,
+        std::vector<int>& gain,
+        size_t& currentPosition,
+        double& totalCost,
+        std::vector<size_t>& resultPosition);
 
 } //namespace internal
 
@@ -43,6 +54,7 @@ std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, co
  * @param[in] firstLayerAngle Angle needed to allow the fabrication of the surface near the mesh
  * @param[in] secondLayerAngle Angle needed to allow the fabrication of the surface
  * @param[in] firstLayerHeight Height of the first layer
+ * @param[in] xDirectionsAfter xDirections are fabricated at the end. If false they are fabricated before.
  * @param[in] rotateMeshes Rotate resulting meshes on the given direction
  */
 void extractResults(
@@ -54,7 +66,8 @@ void extractResults(
         const double firstLayerAngle,
         const double secondLayerAngle,
         const double firstLayerHeight,
-        const bool rotateMeshes)
+        const bool xDirectionsAfter,
+        const bool rotateResults)
 {    
     typedef cg3::libigl::CSGTree CSGTree;
 
@@ -133,6 +146,9 @@ void extractResults(
 
     /* ----- ADD SURFACE OF THE CHARTS TO THE RESULTS ----- */
 
+    std::vector<cg3::EigenMesh> tmpResults;
+    std::vector<unsigned int> tmpResultsAssociation;
+
     //Initialize results with the chart data
     int rId = 0;
     for (const Chart& chart : fourAxisChartData.charts) {
@@ -157,8 +173,8 @@ void extractResults(
             chartResult.updateFacesAndVerticesNormals();
             chartResult.updateBoundingBox();
 
-            results.push_back(chartResult);
-            resultsAssociation.push_back(static_cast<unsigned int>(chart.label));
+            tmpResults.push_back(chartResult);
+            tmpResultsAssociation.push_back(static_cast<unsigned int>(chart.label));
 
             chartToResult.push_back(rId);
             resultToChart.push_back(chart.id);
@@ -169,7 +185,7 @@ void extractResults(
             chartToResult.push_back(-1);
         }
     }
-    size_t nResults = results.size();
+    size_t nResults = tmpResults.size();
 
 
 
@@ -195,8 +211,8 @@ void extractResults(
 
     for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
-        cg3::EigenMesh& result = results[rId];
-        unsigned int targetLabel = resultsAssociation[rId];
+        cg3::EigenMesh& result = tmpResults[rId];
+        unsigned int targetLabel = tmpResultsAssociation[rId];
 
         //Get projection matrix and its inverse for 2D projection
         Eigen::Matrix3d projectionMatrix;
@@ -261,7 +277,7 @@ void extractResults(
         }
 
         //Get step
-        double currentStepOffset = minLength/2;
+        double currentStepOffset = minLength;
 
         double totalOffset = 0;
         while (totalOffset < firstLayerOffset) {
@@ -571,7 +587,7 @@ void extractResults(
 
     for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
-        cg3::EigenMesh& result = results[rId];
+        cg3::EigenMesh& result = tmpResults[rId];
 
         std::cout << "Result " << rId << ":" << std::endl;
 
@@ -588,11 +604,11 @@ void extractResults(
     //Csg tree
     CSGTree csgFourAxisScaled = cg3::libigl::eigenMeshToCSGTree(fourAxisScaled);
 
-    cg3::Array2D<double> costMatrix(nResults, nResults, 0);
+    cg3::Array2D<int> costMatrix(nResults, nResults, 0);
 
     for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
-        cg3::EigenMesh& result = results[rId];
+        cg3::EigenMesh& result = tmpResults[rId];
 
         unsigned int resultNFaces = result.numberFaces();
 
@@ -631,7 +647,65 @@ void extractResults(
         std::cout << "Result " << rId << " > " << "CSG: " << totalCost << " - Diff: " << diffFaces << std::endl;
     }
 
-    std::cout << "Cost matrix: " << std::endl << costMatrix << std::endl;
+    std::cout << std::endl << "Cost matrix: " << std::endl << costMatrix << std::endl;
+
+
+
+    /* ----- RESULTS FABRICATION ORDER AND RESULTS VECTOR FILLING ----- */
+
+    //Total cost of the fabrication in term of faces
+    double totalCost = 0;
+
+    //Position of the results
+    std::vector<size_t> resultPosition(nResults, std::numeric_limits<int>::max());
+    size_t currentPosition = 0;
+
+    //Generate cost and gain data
+    std::vector<int> cost(nResults, 0);
+    std::vector<int> gain(nResults, 0);
+    for (size_t i = 0; i < nResults; i++) {
+        for (size_t j = 0; j < nResults; j++) {
+            cost[i] += costMatrix(i,j);
+            gain[j] += costMatrix(i,j);
+        }
+    }
+    std::cout << "Result\tCost\tGain" << std::endl;
+    for (size_t i = 0; i < nResults; i++) {
+        std::cout << i << "\t" << cost[i] << "\t" << gain[i] << std::endl;
+    }
+    std::cout << std::endl;
+
+
+    std::cout << std::endl << "Result\tCost" << std::endl;
+
+    //X directions before
+    if (!xDirectionsAfter) {
+        internal::getFabricationOrder(tmpResultsAssociation, costMatrix, minLabel, maxLabel, true, cost, gain, currentPosition, totalCost, resultPosition);
+    }
+
+    //Four axis result
+    internal::getFabricationOrder(tmpResultsAssociation, costMatrix, minLabel, maxLabel, false, cost, gain, currentPosition, totalCost, resultPosition);
+
+    //X directions after
+    if (xDirectionsAfter) {
+        internal::getFabricationOrder(tmpResultsAssociation, costMatrix, minLabel, maxLabel, true, cost, gain, currentPosition, totalCost, resultPosition);
+    }
+
+    //Filling results
+    results.resize(nResults);
+    resultsAssociation.resize(nResults);
+
+    for (size_t i = 0; i < nResults; i++) {
+        size_t newPosition = resultPosition[i];
+
+        results[newPosition] = std::move(tmpResults[i]);
+        resultsAssociation[newPosition] = std::move(tmpResultsAssociation[i]);
+    }
+
+    tmpResults.clear();
+    tmpResultsAssociation.clear();
+
+    std::cout << std::endl << "Faces fabricated from other directions: " << totalCost << std::endl;
 
 
     /* ----- INITIAL STOCK GENERATION ----- */
@@ -730,7 +804,7 @@ void extractResults(
     for (size_t i = 0; i < stocks.size(); i++) {
         cg3::EigenMesh& stock = stocks[i];
 
-        if (rotateMeshes) {
+        if (rotateResults) {
             unsigned int& targetLabel = resultsAssociation[i];
 
             Eigen::Matrix3d resultRotationMatrix;
@@ -755,7 +829,7 @@ void extractResults(
     for (size_t i = 0; i < nResults; i++) {
         cg3::EigenMesh& result = results[i];
 
-        if (rotateMeshes) {
+        if (rotateResults) {
             unsigned int& targetLabel = resultsAssociation[i];
 
             Eigen::Matrix3d resultRotationMatrix;
@@ -777,7 +851,7 @@ void extractResults(
         result.updateFacesAndVerticesNormals();
     }
 
-    if (rotateMeshes) {
+    if (rotateResults) {
         Eigen::Matrix3d rotationMatrix;
 
         cg3::rotationMatrix(yAxis, -M_PI/2, rotationMatrix);
@@ -792,7 +866,7 @@ void extractResults(
     maxSupport.updateBoundingBox();
     maxSupport.updateFacesAndVerticesNormals();
 
-    if (rotateMeshes) {
+    if (rotateResults) {
         Eigen::Matrix3d rotationMatrix;
 
         cg3::rotationMatrix(yAxis, M_PI/2, rotationMatrix);
@@ -932,6 +1006,73 @@ std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, co
         result.push_back(cg3::Point2Dd(ip.X / INT_DOUBLE_TRANSLATION, ip.Y / INT_DOUBLE_TRANSLATION));
     }
     return result;
+}
+
+
+/**
+ * @brief Get best order of fabrication
+ * @param association
+ * @param costMatrix
+ * @param minLabel
+ * @param maxLabel
+ * @param extremes
+ * @param cost
+ * @param gain
+ * @param currentPosition
+ * @param totalCost
+ * @param resultPosition
+ */
+void getFabricationOrder(
+        const std::vector<unsigned int>& association,
+        const cg3::Array2D<int>& costMatrix,
+        const size_t minLabel,
+        const size_t maxLabel,
+        const bool extremeResults,
+        std::vector<int>& cost,
+        std::vector<int>& gain,
+        size_t& currentPosition,
+        double& totalCost,
+        std::vector<size_t>& resultPosition)
+{
+    size_t nResults = association.size();
+
+    //Useful variables
+    size_t minCostIndex;
+    int minCost;
+
+    do {
+        minCostIndex = 0;
+        minCost = std::numeric_limits<int>::max();
+        for (size_t i = 0; i < nResults; i++) {
+            if (resultPosition[i] == std::numeric_limits<int>::max()) {
+                bool isExtremes = association[i] == minLabel || association[i] == maxLabel;
+
+                if (extremeResults == isExtremes) {
+                    if (cost[i] < minCost || (cost[i] == minCost && gain[i] > gain[minCostIndex])) {
+                        minCostIndex = i;
+                        minCost = cost[i];
+                    }
+                }
+            }
+        }
+
+        if (minCost < std::numeric_limits<int>::max()) {
+            std::cout << minCostIndex << "\t" << cost[minCostIndex] << std::endl;
+
+            resultPosition[minCostIndex] = currentPosition;
+            currentPosition++;
+
+            totalCost += cost[minCostIndex];
+
+            for (size_t i = 0; i < nResults; i++) {
+                cost[i] -= costMatrix(i, minCostIndex);
+                gain[i] -= costMatrix(minCostIndex, i);
+            }
+        }
+    }
+    while (minCost < std::numeric_limits<int>::max());
+
+
 }
 
 

@@ -13,6 +13,7 @@
 
 namespace FourAxisFabrication {
 
+
 void extractResults(
         Data& data,
         const double modelLength,
@@ -22,7 +23,8 @@ void extractResults(
         const double firstLayerAngle,
         const double secondLayerAngle,
         const double millableHeight,
-        const bool rotateMeshes);
+        const bool rotateResults,
+        const bool xDirectionsAfter);
 
 }
 

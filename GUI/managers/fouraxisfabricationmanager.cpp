@@ -149,7 +149,10 @@ void FourAxisFabricationManager::updateUI() {
     ui->extractResultsSecondLayerAngleSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsFirstLayerHeightLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsFirstLayerHeightSpinBox->setEnabled(!data.areResultsExtracted);
+    ui->extractResultsXDirectionsOrderLabel->setEnabled(!data.areResultsExtracted);
+    ui->extractResultsXDirectionsOrderFrame->setEnabled(!data.areResultsExtracted);
     ui->extractResultsRotateCheckBox->setEnabled(!data.areResultsExtracted);
+
 
 
 
@@ -470,12 +473,13 @@ void FourAxisFabricationManager::extractResults() {
         double firstLayerAngle = ui->extractResultsFirstLayerAngleSpinBox->value() / 180.0 * M_PI;
         double secondLayerAngle = ui->extractResultsSecondLayerAngleSpinBox->value() / 180.0 * M_PI;
         double firstLayerHeight = ui->extractResultsFirstLayerHeightSpinBox->value();
-        bool rotateSurfaces = ui->extractResultsRotateCheckBox->isChecked();
+        bool rotateResults = ui->extractResultsRotateCheckBox->isChecked();
+        bool xDirectionsAfter = ui->extractResultsXDirectionsAfterRadio->isChecked();
 
         cg3::Timer t("Extract results");
 
         //Extract results
-        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, supportHeight, firstLayerAngle, secondLayerAngle, firstLayerHeight, rotateSurfaces);
+        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, supportHeight, firstLayerAngle, secondLayerAngle, firstLayerHeight, xDirectionsAfter, rotateResults);
 
         t.stopAndPrint();
 
@@ -1340,6 +1344,9 @@ void FourAxisFabricationManager::on_loadDataButton_clicked()
     initializeVisualizationSlider();
 
     updateUI();
+
+    mainWindow.canvas.update();
+    mainWindow.canvas.fitScene();
 }
 
 void FourAxisFabricationManager::on_saveDataButton_clicked()
