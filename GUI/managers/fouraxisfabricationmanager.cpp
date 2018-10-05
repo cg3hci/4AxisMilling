@@ -106,9 +106,7 @@ void FourAxisFabricationManager::updateUI() {
     ui->getAssociationDataSigmaSpinBox->setEnabled(!data.isAssociationComputed);
     ui->getAssociationDataSigmaLabel->setEnabled(!data.isAssociationComputed);
     ui->getAssociationFreeCostAngleSpinBox->setEnabled(!data.isAssociationComputed);
-    ui->getAssociationFreeCostAngleLabel->setEnabled(!data.isAssociationComputed);
-    ui->getAssociationMaxLabelAngleSpinBox->setEnabled(!data.isAssociationComputed);
-    ui->getAssociationMaxLabelAngleLabel->setEnabled(!data.isAssociationComputed);
+    ui->getAssociationFreeCostAngleLabel->setEnabled(!data.isAssociationComputed);    
     ui->getAssociationCompactnessLabel->setEnabled(!data.isAssociationComputed);
     ui->getAssociationCompactnessSpinBox->setEnabled(!data.isAssociationComputed);
     ui->getAssociationFixExtremesCheckBox->setEnabled(!data.isAssociationComputed);
@@ -305,7 +303,6 @@ void FourAxisFabricationManager::getAssociation() {
         //Get UI data
         double freeCostAngle = ui->getAssociationFreeCostAngleSpinBox->value() / 180.0 * M_PI;
         double dataSigma = ui->getAssociationDataSigmaSpinBox->value();
-        double maxLabelAngle = ui->getAssociationMaxLabelAngleSpinBox->value() / 180.0 * M_PI;
         double compactness = ui->getAssociationCompactnessSpinBox->value();
         bool fixExtremes = ui->getAssociationFixExtremesCheckBox->isChecked();
 
@@ -316,7 +313,6 @@ void FourAxisFabricationManager::getAssociation() {
                     data.smoothedMesh,
                     freeCostAngle,
                     dataSigma,
-                    maxLabelAngle,
                     compactness,
                     fixExtremes,
                     data);

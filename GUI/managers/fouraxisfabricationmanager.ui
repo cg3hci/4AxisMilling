@@ -604,13 +604,6 @@
         </property>
        </widget>
       </item>
-      <item row="12" column="3">
-       <widget class="QLabel" name="getAssociationCompactnessLabel">
-        <property name="text">
-         <string>Compactness:</string>
-        </property>
-       </widget>
-      </item>
       <item row="10" column="3">
        <widget class="QLabel" name="getAssociationDataSigmaLabel">
         <property name="text">
@@ -656,13 +649,6 @@
        <widget class="QPushButton" name="cutComponentsButton">
         <property name="text">
          <string>Cutting</string>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="1">
-       <widget class="QLabel" name="getAssociationMaxLabelAngleLabel">
-        <property name="text">
-         <string>Max label angle:</string>
         </property>
        </widget>
       </item>
@@ -726,16 +712,6 @@
        <widget class="QPushButton" name="recheckVisibilityButton">
         <property name="text">
          <string>Recheck</string>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="4">
-       <widget class="QDoubleSpinBox" name="getAssociationCompactnessSpinBox">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>4.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -909,19 +885,6 @@
        <widget class="QPushButton" name="restoreFrequenciesButton">
         <property name="text">
          <string>Frequencies</string>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="2">
-       <widget class="QDoubleSpinBox" name="getAssociationMaxLabelAngleSpinBox">
-        <property name="maximum">
-         <double>180.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>10.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>120.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -1123,6 +1086,23 @@
           </widget>
          </item>
         </layout>
+       </widget>
+      </item>
+      <item row="12" column="1">
+       <widget class="QLabel" name="getAssociationCompactnessLabel">
+        <property name="text">
+         <string>Compactness:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="2">
+       <widget class="QDoubleSpinBox" name="getAssociationCompactnessSpinBox">
+        <property name="maximum">
+         <double>1000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>4.000000000000000</double>
+        </property>
        </widget>
       </item>
      </layout>

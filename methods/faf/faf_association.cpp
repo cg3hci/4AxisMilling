@@ -31,7 +31,6 @@ void setupDataCost(
         std::vector<float>& dataCost);
 
 void setupSmoothCost(
-        const double maxLabelAngle,
         const double compactness,
         const Data& data,
         std::vector<float>& smoothCost);
@@ -46,7 +45,6 @@ void setupSmoothCost(
  * @param[in] Input mesh
  * @param[in] freeCostAngle Angles lower than the values, are not considered in data term
  * @param[in] dataSigma Sigma of the gaussian function for calculating data term
- * @param[in] maxLabelAngle Maximum angles between adjacent labels
  * @param[in] compactness Compactness
  * @param[in] fixExtremes Fix extremes on the given directions
  * @param[out] data Four axis fabrication data
@@ -55,7 +53,6 @@ void getAssociation(
         const cg3::EigenMesh& mesh,
         const double freeCostAngle,
         const double dataSigma,
-        const double maxLabelAngle,
         const double compactness,
         const bool fixExtremes,
         Data& data)
@@ -84,7 +81,7 @@ void getAssociation(
 
     //Get the costs
     internal::setupDataCost(mesh, freeCostAngle, dataSigma, fixExtremes, data, dataCost);
-    internal::setupSmoothCost(maxLabelAngle, compactness, data, smoothCost);
+    internal::setupSmoothCost(compactness, data, smoothCost);
 
     try {
         GCoptimizationGeneralGraph* gc = new GCoptimizationGeneralGraph(nFaces, nLabels);
@@ -477,13 +474,11 @@ void setupDataCost(
 /**
  * @brief Setup data cost
  * @param[in] Input mesh
- * @param[in] maxLabelAngle Maximum angles between adjacent labels
  * @param[in] compactness Compactness
  * @param[in] data Four axis fabrication data
  * @param[out] smoothCost Smooth cost output
  */
 void setupSmoothCost(
-        const double maxLabelAngle,
         const double compactness,
         const Data& data,
         std::vector<float>& smoothCost)
@@ -506,17 +501,7 @@ void setupSmoothCost(
                 cost = 0.f;
             }
             else {
-                const int& l2DirIndex = targetDirections[l2];
-                const cg3::Vec3& l2Normal = directions[l2DirIndex];
-
-                double dot = l1Normal.dot(l2Normal);
-
-                if (acos(dot) > maxLabelAngle) {
-                    cost = MAXCOST;
-                }
-                else {
-                    cost = compactness;
-                }
+                cost = compactness;
             }
 
             smoothCost[l1 * nLabels + l2] = cost;

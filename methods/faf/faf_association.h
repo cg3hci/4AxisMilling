@@ -17,7 +17,6 @@ void getAssociation(
         const cg3::EigenMesh& mesh,
         const double freeCostAngle,
         const double dataSigma,
-        const double maxLabelAngle,
         const double compactness,
         const bool fixExtremes,
         Data& data);

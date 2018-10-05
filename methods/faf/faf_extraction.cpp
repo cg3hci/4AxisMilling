@@ -635,7 +635,7 @@ void extractResults(
 
                 totalCost++;
             }
-        }                
+        }
 
         //Saving the mesh from the result
         result = cg3::EigenMesh(cg3::libigl::CSGTreeToEigenMesh(csgResult));
@@ -740,7 +740,6 @@ void extractResults(
 
         std::cout << "Result " << rId << " done." << std::endl;
     }
-
 
 
 
