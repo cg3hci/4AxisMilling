@@ -79,6 +79,8 @@ void extractResults(
 
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
 
+    const cg3::Array2D<int> visibility = data.visibility;
+
     const cg3::EigenMesh& minComponent = data.minComponent;
     const cg3::EigenMesh& maxComponent = data.maxComponent;
     const cg3::EigenMesh& fourAxisComponent = data.fourAxisComponent;
@@ -136,13 +138,13 @@ void extractResults(
 
 
 
+
     /* ----- GET CHARTS DATA ----- */
 
     //Get chart data
     ChartData fourAxisChartData = getChartData(fourAxisComponent, fourAxisComponentAssociation);
     std::vector<int> chartToResult;
     std::vector<size_t> resultToChart;
-
 
     /* ----- ADD SURFACE OF THE CHARTS TO THE RESULTS ----- */
 
@@ -151,23 +153,25 @@ void extractResults(
 
     //Initialize results with the chart data
     int rId = 0;
+    std::vector<std::unordered_map<size_t, size_t>> resultFacesToMeshFaces; //Map to the mesh face
     for (const Chart& chart : fourAxisChartData.charts) {
         if (chart.label >= 0) {
             cg3::EigenMesh chartResult;
+
+            std::unordered_map<size_t, size_t> resultFaceToMeshFacesMap;
 
             std::unordered_map<int, unsigned int> vertexMap;
 
             for (unsigned int vId : chart.vertices) {
                 unsigned int newID = chartResult.addVertex(fourAxisScaled.vertex(vId));
                 vertexMap.insert(
-                            std::make_pair(
-                                static_cast<int>(vId),
-                                newID));
+                            std::make_pair(vId, newID));
             }
 
             for (unsigned int fId : chart.faces) {
                 cg3::Pointi f = fourAxisScaled.face(fId);
-                chartResult.addFace(vertexMap.at(f.x()), vertexMap.at(f.y()), vertexMap.at(f.z()));
+                unsigned int newFaceId = chartResult.addFace(vertexMap.at(f.x()), vertexMap.at(f.y()), vertexMap.at(f.z()));
+                resultFaceToMeshFacesMap.insert(std::make_pair(newFaceId, fId));
             }
 
             chartResult.updateFacesAndVerticesNormals();
@@ -178,6 +182,8 @@ void extractResults(
 
             chartToResult.push_back(rId);
             resultToChart.push_back(chart.id);
+
+            resultFacesToMeshFaces.push_back(resultFaceToMeshFacesMap);
 
             rId++;
         }
@@ -214,6 +220,7 @@ void extractResults(
         cg3::EigenMesh& result = tmpResults[rId];
         unsigned int targetLabel = tmpResultsAssociation[rId];
 
+
         //Get projection matrix and its inverse for 2D projection
         Eigen::Matrix3d projectionMatrix;
         Eigen::Matrix3d inverseProjectionMatrix;
@@ -241,6 +248,10 @@ void extractResults(
         std::vector<cg3::Point2Dd> projectedPoints2D(nBorderVertices);
         std::map<cg3::Point2Dd, unsigned int> projectedPoints2DMap;
 
+
+
+        std::unordered_map<size_t, size_t>& resultFaceToMeshFacesMap = resultFacesToMeshFaces.at(rId);
+
         //Compute minZ and save projected points
         double minZ = std::numeric_limits<double>::max();
         for (size_t i = 0; i < nBorderVertices; i++) {
@@ -262,11 +273,35 @@ void extractResults(
             minZ = std::min(minZ, p.z());
         }
 
+        // VF adjacencies
+        std::vector<std::vector<int>> vfAdj = cg3::libigl::vertexToFaceIncidences(result);
+        std::unordered_set<unsigned int> borderVerticesWithNonVisibleFaces; //Risky vertices
+
+
+        //Select vertices with non visible faces
+        for (size_t i = 0; i < nBorderVertices; i++) {
+            //Get vertex
+            const cg3::Point2Dd& p2D = projectedPoints2D[i];
+            unsigned int vId = projectedPoints2DMap.at(p2D);
+
+            bool hasNonVisibleIncidentFaces = false;
+            for (int fId : vfAdj.at(vId)) {
+                if (visibility(targetLabel, resultFaceToMeshFacesMap.at(fId)) == 0) {
+                    hasNonVisibleIncidentFaces = true;
+                }
+            }
+            if (hasNonVisibleIncidentFaces) {
+                borderVerticesWithNonVisibleFaces.insert(vId);
+            }
+        }
+
+
 
         /* ------- FIRST LAYER OFFSET POLYGONS ------- */
 
         std::vector<cg3::Point2Dd> firstLayerPoints2D = projectedPoints2D;
         std::map<cg3::Point2Dd, unsigned int> firstLayerPoints2DMap = projectedPoints2DMap;
+        size_t discardedFaces = 0;
 
         //Get min length of the edges
         size_t nFirstLayerVertices = firstLayerPoints2D.size();
@@ -293,8 +328,6 @@ void extractResults(
 
             const double currentStepHeight = totalOffset / tan(firstLayerAngle);
 
-
-
             //Get new layer projected points
             std::vector<cg3::Point2Dd> newLayerPoints2D =
                     internal::offsetPolygon(firstLayerPoints2D, currentStepOffset);
@@ -315,21 +348,27 @@ void extractResults(
             holes[0] = firstLayerPoints2D;
             triangulation = cg3::cgal::triangulate(newLayerPoints2D, holes);
 
-
             //Add triangulation to result
             for (std::array<cg3::Point2Dd, 3>& triangle : triangulation) {
                 bool isThereNewVertex = false; //Flag to check if a new point has been created
                 bool isThereHoleVertex = false; //Flag to check if at least a surface vertex has been found
+                bool isThereNonVisibleFaces = false; //Flag to check if the vertex is incident in non visible face
 
                 double minHoleHeight = std::numeric_limits<double>::max(); //Height for the current triangle
 
                 unsigned int v[3];
 
                 //Set existing hole points, calculate min height in the hole and check if there is new vertex
-                for (unsigned int i = 0; i < 3 && !isThereNewVertex; i++) {
+                for (unsigned int i = 0; i < 3 && !isThereNewVertex && !isThereNonVisibleFaces; i++) {
                     //Hole vertices
                     if (firstLayerPoints2DMap.find(triangle[i]) != firstLayerPoints2DMap.end()) {
                         v[i] = firstLayerPoints2DMap.at(triangle[i]);
+
+                        //If the vertex has a incident non visible face
+                        if (borderVerticesWithNonVisibleFaces.find(v[i]) != borderVerticesWithNonVisibleFaces.end()) {
+                            isThereNonVisibleFaces = true;
+                            discardedFaces++;
+                        }
 
                         //Project on 3D
                         cg3::Pointd p3D = result.vertex(v[i]);
@@ -347,7 +386,7 @@ void extractResults(
                 }
 
                 //If there is a hole vertex and no new vertices
-                if (isThereHoleVertex && !isThereNewVertex) {
+                if (isThereHoleVertex && !isThereNewVertex && !isThereNonVisibleFaces) {
                     for (unsigned int i = 0; i < 3; i++) {
                         //First layer vertices in the triangle
                         if (newLayerPoints2DSet.find(triangle[i]) != newLayerPoints2DSet.end()) {
@@ -366,7 +405,6 @@ void extractResults(
 
                                 //Create new result point
                                 const unsigned int newPointId = result.addVertex(newPoint);
-
                                 newLayerPoints2DMap.insert(std::make_pair(p2D, newPointId));
 
                                 v[i] = newPointId;
@@ -390,7 +428,10 @@ void extractResults(
             //Setting data for next iteration
             firstLayerPoints2D = usedNewLayerPoints;
             firstLayerPoints2DMap = newLayerPoints2DMap;
+
+
         }
+
 
         /* ------- SECOND LAYER POLYGON ------- */
 
@@ -576,8 +617,7 @@ void extractResults(
         result.addFace(boxVertices[7], boxVertices[3], boxVertices[2]);
         result.addFace(boxVertices[7], boxVertices[2], boxVertices[6]);
 
-        std::cout << "Result " << rId << " done." << std::endl;
-
+        std::cout << "Result " << rId << ": " << discardedFaces << " discarded faces." << std::endl;
     }
 
     /* ----- HOLE FILLING ----- */
