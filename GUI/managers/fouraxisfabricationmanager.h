@@ -57,18 +57,11 @@ private:
     cg3::DrawableEigenMesh drawableMaxComponent;
     cg3::DrawableEigenMesh drawableFourAxisComponent;
 
-    std::vector<cg3::DrawableEigenMesh> drawableSurfaces;
-    cg3::DrawableContainer drawableSurfacesContainer;
-    cg3::DrawableEigenMesh drawableMinSurface;
-    cg3::DrawableEigenMesh drawableMaxSurface;
-
-    std::vector<cg3::DrawableEigenMesh> drawableStocks;
-    cg3::DrawableContainer drawableStocksContainer;
-
-    std::vector<cg3::DrawableEigenMesh> drawableResults;
-    cg3::DrawableContainer drawableResultsContainer;
     cg3::DrawableEigenMesh drawableMinResult;
     cg3::DrawableEigenMesh drawableMaxResult;
+
+    std::vector<cg3::DrawableEigenMesh> drawableStocks;
+    std::vector<cg3::DrawableEigenMesh> drawableResults;
 
     cg3::DrawableEigenMesh drawableMinSupport;
     cg3::DrawableEigenMesh drawableMaxSupport;
@@ -94,7 +87,6 @@ private:
     void optimalOrientation();
     void selectExtremes();
     void checkVisibility();
-    void getTargetDirections();
     void getAssociation();
     void optimizeAssociation();
     void restoreFrequencies();
@@ -118,20 +110,20 @@ private:
     void setCameraDirection(const cg3::Vec3& dir);
 
     void initializeVisualizationSlider();
-    void updateVisualizationColors();
+    void updateVisualization();
 
 
 
     void colorizeMesh();
     void colorizeExtremes();
     void colorizeVisibility();
-    void colorizeTargetDirections();
     void colorizeAssociation();
     void colorizeAssociation(
             cg3::DrawableEigenMesh& drawableMesh,
             const std::vector<int>& association,
             const std::vector<unsigned int>& targetDirections,
             const std::vector<unsigned int>& nonVisibleFaces);
+    void showResults();
     void showCurrentStatusDescription();
 
 
@@ -155,7 +147,6 @@ private slots:
     void on_optimalOrientationButton_clicked();
     void on_selectExtremesButton_clicked();
     void on_checkVisibilityButton_clicked();
-    void on_targetDirectionsButton_clicked();
     void on_getAssociationButton_clicked();
     void on_optimizationButton_clicked();
     void on_restoreFrequenciesButton_clicked();
@@ -187,7 +178,6 @@ private slots:
     void on_meshRadio_clicked();
     void on_extremesRadio_clicked();
     void on_visibilityRadio_clicked();
-    void on_targetDirectionsRadio_clicked();
     void on_associationRadio_clicked();
 
     void on_showNonVisibleCheck_clicked();

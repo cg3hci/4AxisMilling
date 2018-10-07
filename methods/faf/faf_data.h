@@ -36,7 +36,6 @@ public:
     bool isMeshOriented;
     bool areExtremesSelected;
     bool isVisibilityChecked;
-    bool areTargetDirectionsFound;
     bool isAssociationComputed;
     bool isAssociationOptimized;
     bool areFrequenciesRestored;
@@ -90,13 +89,9 @@ public:
     cg3::EigenMesh maxComponent;
     cg3::EigenMesh fourAxisComponent;
 
-    std::vector<int> minComponentAssociation;
-    std::vector<int> maxComponentAssociation;
-    std::vector<int> fourAxisComponentAssociation;
-
-    std::vector<unsigned int> minComponentNonVisibleFaces;
-    std::vector<unsigned int> maxComponentNonVisibleFaces;
-    std::vector<unsigned int> fourAxisComponentNonVisibleFaces;
+    std::vector<int> fourAxisAssociation;
+    cg3::Array2D<int> fourAxisVisibility;
+    std::vector<unsigned int> fourAxisNonVisibleFaces;
 
 
     /* Results */

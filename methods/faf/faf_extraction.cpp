@@ -79,13 +79,13 @@ void extractResults(
 
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
 
-    const cg3::Array2D<int> visibility = data.visibility;
+    const cg3::Array2D<int>& fourAxisVisibility = data.fourAxisVisibility;
 
     const cg3::EigenMesh& minComponent = data.minComponent;
     const cg3::EigenMesh& maxComponent = data.maxComponent;
     const cg3::EigenMesh& fourAxisComponent = data.fourAxisComponent;
 
-    const std::vector<int>& fourAxisComponentAssociation = data.fourAxisComponentAssociation;
+    const std::vector<int>& fourAxisComponentAssociation = data.fourAxisAssociation;
 
 
     //Referencing output data    
@@ -286,7 +286,7 @@ void extractResults(
 
             bool hasNonVisibleIncidentFaces = false;
             for (int fId : vfAdj.at(vId)) {
-                if (visibility(targetLabel, resultFaceToMeshFacesMap.at(fId)) == 0) {
+                if (fourAxisVisibility(targetLabel, resultFaceToMeshFacesMap.at(fId)) == 0) {
                     hasNonVisibleIncidentFaces = true;
                 }
             }

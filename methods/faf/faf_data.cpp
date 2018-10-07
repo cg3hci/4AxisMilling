@@ -17,7 +17,6 @@ void Data::clear() {
     isMeshOriented = false;
     areExtremesSelected = false;
     isVisibilityChecked = false;
-    areTargetDirectionsFound = false;
     isAssociationComputed = false;
     isAssociationOptimized = false;
     areFrequenciesRestored = false;
@@ -56,13 +55,9 @@ void Data::clear() {
     maxComponent.clear();
     fourAxisComponent.clear();
 
-    minComponentAssociation.clear();
-    maxComponentAssociation.clear();
-    fourAxisComponentAssociation.clear();
-
-    minComponentNonVisibleFaces.clear();
-    maxComponentNonVisibleFaces.clear();
-    fourAxisComponentNonVisibleFaces.clear();
+    fourAxisAssociation.clear();
+    fourAxisVisibility.clear();
+    fourAxisNonVisibleFaces.clear();
 
     stocks.clear();
 
@@ -84,7 +79,6 @@ void Data::serialize(std::ofstream &binaryFile) const
                 isMeshOriented,
                 areExtremesSelected,
                 isVisibilityChecked,
-                areTargetDirectionsFound,
                 isAssociationComputed,
                 isAssociationOptimized,
                 areFrequenciesRestored,
@@ -111,12 +105,9 @@ void Data::serialize(std::ofstream &binaryFile) const
                 minComponent,
                 maxComponent,
                 fourAxisComponent,
-                minComponentAssociation,
-                maxComponentAssociation,
-                fourAxisComponentAssociation,
-                minComponentNonVisibleFaces,
-                maxComponentNonVisibleFaces,
-                fourAxisComponentNonVisibleFaces,
+                fourAxisAssociation,
+                fourAxisVisibility,
+                fourAxisNonVisibleFaces,
                 minResult,
                 maxResult,
                 stocks,
@@ -135,7 +126,6 @@ void Data::deserialize(std::ifstream &binaryFile)
                 isMeshOriented,
                 areExtremesSelected,
                 isVisibilityChecked,
-                areTargetDirectionsFound,
                 isAssociationComputed,
                 isAssociationOptimized,
                 areFrequenciesRestored,
@@ -162,12 +152,9 @@ void Data::deserialize(std::ifstream &binaryFile)
                 minComponent,
                 maxComponent,
                 fourAxisComponent,
-                minComponentAssociation,
-                maxComponentAssociation,
-                fourAxisComponentAssociation,
-                minComponentNonVisibleFaces,
-                maxComponentNonVisibleFaces,
-                fourAxisComponentNonVisibleFaces,
+                fourAxisAssociation,
+                fourAxisVisibility,
+                fourAxisNonVisibleFaces,
                 minResult,
                 maxResult,
                 stocks,

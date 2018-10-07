@@ -65,7 +65,6 @@ HEADERS += \
     methods/faf/faf_optimalrotation.h \
     methods/faf/faf_extremes.h \
     methods/faf/faf_visibilitycheck.h \
-    methods/faf/faf_minimization.h \
     methods/faf/faf_frequencies.h \
     methods/faf/faf_cutting.h \
     methods/faf/faf_extraction.h \
@@ -80,7 +79,6 @@ SOURCES += \
     methods/faf/faf_optimalrotation.cpp \
     methods/faf/faf_extremes.cpp \
     methods/faf/faf_visibilitycheck.cpp \
-    methods/faf/faf_minimization.cpp \
     methods/faf/faf_frequencies.cpp \
     methods/faf/faf_cutting.cpp \
     methods/faf/faf_extraction.cpp \

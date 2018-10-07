@@ -15,12 +15,14 @@ namespace FourAxisFabrication {
 
 namespace internal {
 
-void resetAssociationData(
+void resetFourAxisFabricationData(
         const cg3::libigl::CSGTree& csgMesh,
         const cg3::libigl::CSGTree& csgResult,
         const std::vector<int>& meshAssociation,
-        const int secondMeshLabel,
-        std::vector<int>& resultAssociation);
+        std::vector<int>& resultAssociation,
+        const cg3::Array2D<int>& meshVisibility,
+        cg3::Array2D<int>& resultVisibility,
+        const int secondMeshLabel);
 }
 
 /**
@@ -38,16 +40,19 @@ void cutComponents(
 
     const cg3::EigenMesh& restoredMesh = data.restoredMesh;
     const std::vector<int>& restoredMeshAssociation = data.restoredMeshAssociation;
+    const cg3::Array2D<int>& restoredMeshVisibility = data.restoredMeshVisibility;
+    const std::vector<unsigned int>& restoredMeshNonVisibleFaces = data.restoredMeshNonVisibleFaces;
 
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
 
-    std::vector<int>& minComponentAssociation = data.minComponentAssociation;
-    std::vector<int>& maxComponentAssociation = data.maxComponentAssociation;
-    std::vector<int>& fourAxisComponentAssociation = data.fourAxisComponentAssociation;
-
     cg3::EigenMesh& minComponent = data.minComponent;
     cg3::EigenMesh& maxComponent = data.maxComponent;
-    cg3::EigenMesh& fourAxisComponent= data.fourAxisComponent;
+    cg3::EigenMesh& fourAxisComponent = data.fourAxisComponent;
+
+    std::vector<int>& fourAxisAssociation = data.fourAxisAssociation;
+    cg3::Array2D<int>& fourAxisVisibility = data.fourAxisVisibility;
+    std::vector<unsigned int>& fourAxisNonVisibleFaces = data.fourAxisNonVisibleFaces;
+
 
     int minLabel = targetDirections[targetDirections.size()-2];
     int maxLabel = targetDirections[targetDirections.size()-1];
@@ -99,34 +104,26 @@ void cutComponents(
 
 
         //Cut min extreme
-        CSGTree csgMinResult = cg3::libigl::intersection(csgMesh, csgMinBB);        
-        internal::resetAssociationData(csgMesh, csgMinResult, restoredMeshAssociation, -1, minComponentAssociation); //Restore association of cut component
-        for (size_t i = 0; i < minComponentAssociation.size(); i++) {
-            if (minComponentAssociation[i] >= 0)
-                minComponentAssociation[i] = minLabel;
-        }
+        CSGTree csgMinResult = cg3::libigl::intersection(csgMesh, csgMinBB);
 
         //Cut max extreme
         CSGTree csgMaxResult = cg3::libigl::intersection(csgMesh, csgMaxBB);
-        internal::resetAssociationData(csgMesh, csgMaxResult, restoredMeshAssociation, -1, maxComponentAssociation); //Restore association of cut component
-        for (size_t i = 0; i < maxComponentAssociation.size(); i++) {
-            if (maxComponentAssociation[i] >= 0)
-                maxComponentAssociation[i] = maxLabel;
-        }
 
 
         //Cut four axis resulting mesh
         CSGTree csgFourAxisResult;
         std::vector<int> currentAssociation = restoredMeshAssociation;
 
+        //Min difference
         csgFourAxisResult = cg3::libigl::difference(csgMesh, csgMinBB);
-        internal::resetAssociationData(csgMesh, csgFourAxisResult, currentAssociation, minLabel, fourAxisComponentAssociation);
+        internal::resetFourAxisFabricationData(csgMesh, csgFourAxisResult, currentAssociation, fourAxisAssociation, restoredMeshVisibility, fourAxisVisibility, minLabel);
 
+        //Max difference
         csgMesh = cg3::libigl::eigenMeshToCSGTree(cg3::libigl::CSGTreeToEigenMesh(csgFourAxisResult));
-        currentAssociation = fourAxisComponentAssociation;
+        currentAssociation = fourAxisAssociation;
 
         csgFourAxisResult = cg3::libigl::difference(csgMesh, csgMaxBB);
-        internal::resetAssociationData(csgMesh, csgFourAxisResult, currentAssociation, maxLabel, fourAxisComponentAssociation);
+        internal::resetFourAxisFabricationData(csgMesh, csgFourAxisResult, currentAssociation, fourAxisAssociation, restoredMeshVisibility, fourAxisVisibility, maxLabel);
 
 
 
@@ -143,10 +140,29 @@ void cutComponents(
         maxComponent.updateBoundingBox();
         fourAxisComponent.updateFacesAndVerticesNormals();
         fourAxisComponent.updateBoundingBox();
+
+        //Detect non-visible faces
+        fourAxisNonVisibleFaces.clear();
+        for (unsigned int faceId = 0; faceId < fourAxisVisibility.sizeY(); faceId++){
+            //Check if at least a direction has been found for each face
+            bool found = false;
+
+            for (unsigned int i = 0; i < fourAxisVisibility.sizeX() && !found; i++){
+                if (fourAxisVisibility(i, faceId) == 1) {
+                    found = true;
+                }
+            }
+
+            //Add to the non-visible face
+            if (!found)
+                fourAxisNonVisibleFaces.push_back(faceId);
+        }
     }
     else {
         fourAxisComponent = restoredMesh;
-        fourAxisComponentAssociation = restoredMeshAssociation;
+        fourAxisAssociation = restoredMeshAssociation;
+        fourAxisVisibility = restoredMeshVisibility;
+        fourAxisNonVisibleFaces = restoredMeshNonVisibleFaces;
     }
 }
 
@@ -157,15 +173,19 @@ namespace internal {
  * @param[in] csgMesh Initial mesh
  * @param[in] csgResult Resulting mesh
  * @param[in] meshAssociation Association of the initial mesh
- * @param[in] secondMeshLabel Label to be assigned if the birth face is in the second mesh
  * @param[out] resultAssociation Resulting association
+ * @param[in] meshVisibility Visibility of the initial mesh
+ * @param[out] resultVisibility Resulting visibility
+ * @param[in] secondMeshLabel Label to be assigned if the birth face is in the second mesh
  */
-void resetAssociationData(
+void assign(
         const cg3::libigl::CSGTree& csgMesh,
         const cg3::libigl::CSGTree& csgResult,
         const std::vector<int>& meshAssociation,
-        const int secondMeshLabel,
-        std::vector<int>& resultAssociation)
+        std::vector<int>& resultAssociation,
+        const cg3::Array2D<int>& meshVisibility,
+        cg3::Array2D<int>& resultVisibility,
+        const int secondMeshLabel)
 {
     typedef cg3::libigl::CSGTree CSGTree;
 
@@ -183,10 +203,65 @@ void resetAssociationData(
         //If the birth face is in the first mesh
         if (birthFace < nFirstMeshFaces) {
             resultAssociation[i] = meshAssociation[birthFace];
+            for (int l = 0; l < meshVisibility.sizeX(); l++) {
+                resultVisibility(l, i) = meshVisibility(l, birthFace);
+            }
         }
         //If the birth face is in the second mesh
         else {
             resultAssociation[i] = secondMeshLabel;
+            resultVisibility(secondMeshLabel, i) = 1;
+        }
+    }
+}
+
+/**
+ * @brief Reassociate association data of the first mesh after a boolean operation on cutting the extremes
+ * @param[in] csgMesh Initial mesh
+ * @param[in] csgResult Resulting mesh
+ * @param[in] meshAssociation Association of the initial mesh
+ * @param[out] resultAssociation Resulting association
+ * @param[in] meshVisibility Visibility of the initial mesh
+ * @param[out] resultVisibility Resulting visibility
+ * @param[in] secondMeshLabel Label to be assigned if the birth face is in the second mesh
+ */
+void resetFourAxisFabricationData(
+        const cg3::libigl::CSGTree& csgMesh,
+        const cg3::libigl::CSGTree& csgResult,
+        const std::vector<int>& meshAssociation,
+        std::vector<int>& resultAssociation,
+        const cg3::Array2D<int>& meshVisibility,
+        cg3::Array2D<int>& resultVisibility,
+        const int secondMeshLabel)
+{
+    typedef cg3::libigl::CSGTree CSGTree;
+
+    CSGTree::VectorJ birthFaces = csgResult.J();
+
+    unsigned int nResultFaces = csgResult.F().rows();
+    unsigned int nFirstMeshFaces = csgMesh.F().rows();
+
+    resultAssociation.clear();
+    resultAssociation.resize(nResultFaces);
+
+    resultVisibility.clear();
+    resultVisibility.resize(meshVisibility.sizeX(), nResultFaces);
+    resultVisibility.fill(0);
+
+    for (unsigned int i = 0; i < nResultFaces; i++) {
+        unsigned int birthFace = birthFaces[i];
+
+        //If the birth face is in the first mesh
+        if (birthFace < nFirstMeshFaces) {
+            resultAssociation[i] = meshAssociation[birthFace];
+            for (int l = 0; l < meshVisibility.sizeX(); l++) {
+                resultVisibility(l, i) = meshVisibility(l, birthFace);
+            }
+        }
+        //If the birth face is in the second mesh
+        else {
+            resultAssociation[i] = secondMeshLabel;
+            resultVisibility(secondMeshLabel, i) = 1;
         }
     }
 }

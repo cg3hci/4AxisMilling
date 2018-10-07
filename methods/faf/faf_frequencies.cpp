@@ -20,7 +20,6 @@
 #include <cg3/geometry/transformations.h>
 
 #include "faf_visibilitycheck.h"
-#include "faf_minimization.h"
 #include "faf_association.h"
 
 #define BINARY_SEARCH_ITERATIONS 10

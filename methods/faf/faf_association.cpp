@@ -24,6 +24,7 @@ namespace internal {
 
 void setupDataCost(
         const cg3::EigenMesh& mesh,
+        const std::vector<unsigned int> targetLabels,
         const double freeCostAngle,
         const double dataSigma,
         const bool fixExtremes,
@@ -31,8 +32,8 @@ void setupDataCost(
         std::vector<float>& dataCost);
 
 void setupSmoothCost(
+        const std::vector<unsigned int> targetLabels,
         const double compactness,
-        const Data& data,
         std::vector<float>& smoothCost);
 
 }
@@ -64,13 +65,18 @@ void getAssociation(
     std::vector<int>& association = data.association;
     std::vector<unsigned int>& associationNonVisibleFaces = data.associationNonVisibleFaces;
 
+    //Setting target directions
+    std::vector<unsigned int> targetLabels(directions.size());
+    for (size_t i = 0; i < targetLabels.size(); i++)
+        targetLabels[i] = i;
+
     //Initialize to -1 direction association for each face
     association.clear();
     association.resize(mesh.numberFaces());
     std::fill(association.begin(), association.end(), -1);
 
     const unsigned int nFaces = mesh.numberFaces();
-    const unsigned int nLabels = targetDirections.size();
+    const unsigned int nLabels = targetLabels.size();
 
     //Get mesh adjacencies
     std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
@@ -80,8 +86,8 @@ void getAssociation(
     std::vector<float> smoothCost(nLabels * nLabels);
 
     //Get the costs
-    internal::setupDataCost(mesh, freeCostAngle, dataSigma, fixExtremes, data, dataCost);
-    internal::setupSmoothCost(compactness, data, smoothCost);
+    internal::setupDataCost(mesh, targetLabels, freeCostAngle, dataSigma, fixExtremes, data, dataCost);
+    internal::setupSmoothCost(targetLabels, compactness, smoothCost);
 
     try {
         GCoptimizationGeneralGraph* gc = new GCoptimizationGeneralGraph(nFaces, nLabels);
@@ -107,7 +113,7 @@ void getAssociation(
         for (unsigned int fId = 0; fId < nFaces; fId++){
             int associatedDirectionIndex = gc->whatLabel(fId);
 
-            association[fId] = targetDirections[associatedDirectionIndex];
+            association[fId] = targetLabels[associatedDirectionIndex];
         }
 
         //Delete data
@@ -118,18 +124,15 @@ void getAssociation(
 
         //The remaining directions are the new target directions
         std::vector<bool> usedDirections(directions.size(), false);
-        std::vector<unsigned int> newTargetDirections;
         for (unsigned int fId = 0; fId < nFaces; fId++){
             usedDirections[association[fId]] = true;
         }
         //Set target directions
         for (unsigned int lId = 0; lId < directions.size(); ++lId) {
             if (usedDirections[lId]) {
-                newTargetDirections.push_back(lId);
+                targetDirections.push_back(lId);
             }
         }
-
-        targetDirections = newTargetDirections;
     }
     catch (GCException e) {
         std::cerr << "\n\n!!!GRAPH-CUT EXCEPTION!!!\nCheck logfile\n\n" << std::endl;
@@ -396,6 +399,7 @@ namespace internal {
 /**
  * @brief Setup data cost
  * @param[in] Input mesh
+ * @param[in] targetLabel Target labels
  * @param[in] freeCostAngle Angles lower than the values, are not considered in data term
  * @param[in] dataSigma Sigma of the gaussian function for calculating data term
  * @param[in] fixExtremes Fix extremes on the given directions
@@ -404,6 +408,7 @@ namespace internal {
  */
 void setupDataCost(
         const cg3::EigenMesh& mesh,
+        const std::vector<unsigned int> targetLabels,
         const double freeCostAngle,
         const double dataSigma,
         const bool fixExtremes,
@@ -411,18 +416,17 @@ void setupDataCost(
         std::vector<float>& dataCost)
 {
     const std::vector<cg3::Vec3>& directions = data.directions;
-    const std::vector<unsigned int>& targetDirections = data.targetDirections;
     const cg3::Array2D<int>& visibility = data.visibility;
     const std::vector<unsigned int>& minExtremes = data.minExtremes;
     const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
 
     const unsigned int nFaces = mesh.numberFaces();
-    const unsigned int nLabels = targetDirections.size();
+    const unsigned int nLabels = targetLabels.size();
 
     #pragma omp parallel for
     for (unsigned int faceId = 0; faceId < nFaces; faceId++){
         for (unsigned int label = 0; label < nLabels; ++label) {
-            const int& directionIndex = targetDirections[label];
+            const unsigned int& directionIndex = targetLabels[label];
             const cg3::Vec3& labelNormal = directions[directionIndex];
 
             double cost;
@@ -473,25 +477,19 @@ void setupDataCost(
 
 /**
  * @brief Setup data cost
- * @param[in] Input mesh
+ * @param[in] targetLabel Target labels
  * @param[in] compactness Compactness
- * @param[in] data Four axis fabrication data
  * @param[out] smoothCost Smooth cost output
  */
 void setupSmoothCost(
+        const std::vector<unsigned int> targetLabels,
         const double compactness,
-        const Data& data,
         std::vector<float>& smoothCost)
 {
-    const std::vector<cg3::Vec3>& directions = data.directions;
-    const std::vector<unsigned int>& targetDirections = data.targetDirections;
-
-    const unsigned int nLabels = targetDirections.size();
+    const unsigned int nLabels = targetLabels.size();
 
     #pragma omp parallel for
     for (unsigned int l1 = 0; l1 < nLabels; ++l1) {
-        const int& l1DirIndex = targetDirections[l1];
-        const cg3::Vec3& l1Normal = directions[l1DirIndex];
 
         #pragma omp parallel for
         for (unsigned int l2 = 0; l2 < nLabels; ++l2) {
