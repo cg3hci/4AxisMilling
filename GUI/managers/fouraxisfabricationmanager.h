@@ -60,6 +60,7 @@ private:
     cg3::DrawableEigenMesh drawableMinResult;
     cg3::DrawableEigenMesh drawableMaxResult;
 
+    std::vector<cg3::DrawableEigenMesh> drawableBoxes;
     std::vector<cg3::DrawableEigenMesh> drawableStocks;
     std::vector<cg3::DrawableEigenMesh> drawableResults;
 
@@ -179,6 +180,7 @@ private slots:
     void on_extremesRadio_clicked();
     void on_visibilityRadio_clicked();
     void on_associationRadio_clicked();
+    void on_resultsRadio_clicked();
 
     void on_showNonVisibleCheck_clicked();
     void on_resetCameraButton_clicked();

@@ -59,12 +59,12 @@ void Data::clear() {
     fourAxisVisibility.clear();
     fourAxisNonVisibleFaces.clear();
 
-    stocks.clear();
-
-    results.clear();
-    resultsAssociation.clear();
     minResult.clear();
     maxResult.clear();
+    boxes.clear();
+    stocks.clear();
+    results.clear();
+    resultsAssociation.clear();
 
     minSupport.clear();
     maxSupport.clear();
@@ -110,6 +110,7 @@ void Data::serialize(std::ofstream &binaryFile) const
                 fourAxisNonVisibleFaces,
                 minResult,
                 maxResult,
+                boxes,
                 stocks,
                 results,
                 resultsAssociation,
@@ -157,6 +158,7 @@ void Data::deserialize(std::ifstream &binaryFile)
                 fourAxisNonVisibleFaces,
                 minResult,
                 maxResult,
+                boxes,
                 stocks,
                 results,
                 resultsAssociation,

@@ -98,6 +98,7 @@ public:
 
     cg3::EigenMesh minResult;
     cg3::EigenMesh maxResult;
+    std::vector<cg3::EigenMesh> boxes;
     std::vector<cg3::EigenMesh> stocks;
     std::vector<cg3::EigenMesh> results;
     std::vector<unsigned int> resultsAssociation;

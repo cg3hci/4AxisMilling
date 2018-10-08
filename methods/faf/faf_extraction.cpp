@@ -76,7 +76,6 @@ void extractResults(
     const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
 
     const std::vector<double>& angles = data.angles;
-
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
 
     const cg3::Array2D<int>& fourAxisVisibility = data.fourAxisVisibility;
@@ -85,12 +84,12 @@ void extractResults(
     const cg3::EigenMesh& maxComponent = data.maxComponent;
     const cg3::EigenMesh& fourAxisComponent = data.fourAxisComponent;
 
-    const std::vector<int>& fourAxisComponentAssociation = data.fourAxisAssociation;
+    const std::vector<int>& fourAxisAssociation = data.fourAxisAssociation;
 
 
     //Referencing output data    
+    std::vector<cg3::EigenMesh>& boxes = data.boxes;
     std::vector<cg3::EigenMesh>& stocks = data.stocks;
-
     cg3::EigenMesh& minResult = data.minResult;
     cg3::EigenMesh& maxResult = data.maxResult;
     std::vector<cg3::EigenMesh>& results = data.results;
@@ -136,13 +135,28 @@ void extractResults(
     maxScaled.translate(translateVec);
 
 
+    /* ----- COLORS ----- */
 
+    std::vector<cg3::Color> colorMap(data.directions.size(), cg3::Color(128,128,128));
+    int subd = 255 / (targetDirections.size()-1);
+    for (size_t i = 0; i < targetDirections.size(); i++) {
+        unsigned int label = targetDirections[i];
 
+        //Color mesh
+        int positionInTargetDirections = std::distance(
+            targetDirections.begin(),
+            std::find(targetDirections.begin(), targetDirections.end(), label));
+
+        cg3::Color color;
+        color.setHsv(subd * positionInTargetDirections, 255, 255);
+
+        colorMap[label] = color;
+    }
 
     /* ----- GET CHARTS DATA ----- */
 
     //Get chart data
-    ChartData fourAxisChartData = getChartData(fourAxisComponent, fourAxisComponentAssociation);
+    ChartData fourAxisChartData = getChartData(fourAxisComponent, fourAxisAssociation);
     std::vector<int> chartToResult;
     std::vector<size_t> resultToChart;
 
@@ -164,8 +178,7 @@ void extractResults(
 
             for (unsigned int vId : chart.vertices) {
                 unsigned int newID = chartResult.addVertex(fourAxisScaled.vertex(vId));
-                vertexMap.insert(
-                            std::make_pair(vId, newID));
+                vertexMap.insert(std::make_pair(vId, newID));
             }
 
             for (unsigned int fId : chart.faces) {
@@ -179,6 +192,9 @@ void extractResults(
 
             tmpResults.push_back(chartResult);
             tmpResultsAssociation.push_back(static_cast<unsigned int>(chart.label));
+
+
+            chartResult.setFaceColor(colorMap[chart.label]);
 
             chartToResult.push_back(rId);
             resultToChart.push_back(chart.id);
@@ -642,9 +658,11 @@ void extractResults(
 
     cg3::Array2D<int> costMatrix(nResults, nResults, 0);
 
+    boxes.resize(nResults);
     for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
         cg3::EigenMesh& result = tmpResults[rId];
+        cg3::EigenMesh& box = boxes[rId];
 
         unsigned int resultNFaces = result.numberFaces();
 
@@ -654,6 +672,11 @@ void extractResults(
 
         //Counting birth faces
         CSGTree::VectorJ birthFaces = csgResult.J();
+
+        //Saving the mesh from the result
+        result = cg3::EigenMesh(cg3::libigl::CSGTreeToEigenMesh(csgResult));
+
+        box = result;
 
         unsigned int nFirstFaces = csgFourAxisScaled.F().rows();
         unsigned int nSecondFaces = csgTmpResult.F().rows();
@@ -670,12 +693,29 @@ void extractResults(
                 costMatrix(rId, chartToResult[birthChartId])++;
 
                 totalCost++;
+
+                //Color other chart face of the mesh
+                box.setFaceColor(colorMap[fourAxisAssociation[birthFace]], i);
             }
         }
 
-        //Saving the mesh from the result
-        result = cg3::EigenMesh(cg3::libigl::CSGTreeToEigenMesh(csgResult));
+        if (rotateResults) {
+            unsigned int& targetLabel = tmpResultsAssociation[rId];
 
+            Eigen::Matrix3d resultRotationMatrix;
+            if (targetLabel == minLabel) {
+                cg3::rotationMatrix(yAxis, M_PI/2, resultRotationMatrix);
+            }
+            else if (targetLabel == maxLabel) {
+                cg3::rotationMatrix(yAxis, -M_PI/2, resultRotationMatrix);
+            }
+            else {
+                double directionAngle = angles[targetLabel];
+                cg3::rotationMatrix(xAxis, -directionAngle, resultRotationMatrix);
+            }
+
+            box.rotate(resultRotationMatrix);
+        }
 
         //Difference with the number of faces
         int diffFaces = static_cast<int>(result.numberFaces()) - static_cast<int>(resultNFaces);
@@ -777,8 +817,6 @@ void extractResults(
         std::cout << "Result " << rId << " done." << std::endl;
     }
 
-
-
     /* ----- MIN AND MAX RESULTS ----- */
 
     minResult = minScaled;
@@ -835,6 +873,13 @@ void extractResults(
 
 
     /* ----- UPDATING MESHES DATA ----- */
+
+    for (size_t i = 0; i < boxes.size(); i++) {
+        cg3::EigenMesh& box = boxes[i];
+
+        box.updateBoundingBox();
+        box.updateFacesAndVerticesNormals();
+    }
 
     for (size_t i = 0; i < stocks.size(); i++) {
         cg3::EigenMesh& stock = stocks[i];

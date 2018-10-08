@@ -529,6 +529,15 @@ void FourAxisFabricationManager::addDrawableResults() {
     mainWindow.setDrawableObjectVisibility(&drawableMaxComponent, false);
     mainWindow.setDrawableObjectVisibility(&drawableFourAxisComponent, false);
 
+    //Add boxes (hidden by default)
+    drawableBoxes.clear();
+    drawableBoxes.resize(data.boxes.size());
+    for (size_t i = 0; i < data.boxes.size(); i++) {
+        drawableBoxes[i] = cg3::DrawableEigenMesh(data.boxes[i]);
+        drawableBoxes[i].setFlatShading();
+
+        mainWindow.pushDrawableObject(&drawableBoxes[i], "Box " + std::to_string(i), false);
+    }
 
     //Add stock (hidden by default)
     drawableStocks.clear();
@@ -635,8 +644,13 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
 
                 //Delete results
                 if (data.areResultsExtracted) {
-                    //Delete stocks
+                    //Delete boxes
+                    for (cg3::DrawableEigenMesh& box : drawableBoxes) {
+                        mainWindow.deleteDrawableObject(&box);
+                    }
+                    drawableBoxes.clear();
 
+                    //Delete stocks
                     for (cg3::DrawableEigenMesh& st : drawableStocks) {
                         mainWindow.deleteDrawableObject(&st);
                     }
@@ -1598,6 +1612,10 @@ void FourAxisFabricationManager::on_visibilityRadio_clicked() {
 }
 
 void FourAxisFabricationManager::on_associationRadio_clicked() {
+    initializeVisualizationSlider();
+}
+
+void FourAxisFabricationManager::on_resultsRadio_clicked() {
     initializeVisualizationSlider();
 }
 
