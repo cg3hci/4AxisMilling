@@ -118,8 +118,6 @@ void restoreFrequencies(
     restoredMesh.updateBoundingBox();
 
     data.restoredMeshAssociation = data.association;
-    data.restoredMeshNonVisibleFaces = data.associationNonVisibleFaces;
-    data.restoredMeshVisibility = data.visibility;
 }
 
 
@@ -146,38 +144,55 @@ void recheckVisibilityAfterRestore(
         Data& data,
         const CheckMode checkMode)
 {
-    cg3::EigenMesh& targetMesh = data.restoredMesh;
-    const unsigned int nDirections = static_cast<unsigned int>(data.directions.size()-2);
+    const cg3::EigenMesh& restoredMesh = data.restoredMesh;
+
+    const std::vector<cg3::Vec3>& directions = data.directions;
+
+    const std::vector<unsigned int>& minExtremes = data.minExtremes;
+    const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
+
+    std::vector<int>& restoredMeshAssociation = data.restoredMeshAssociation;
+    std::vector<unsigned int>& restoredMeshNonVisibleFaces = data.restoredMeshNonVisibleFaces;
+    cg3::Array2D<int>& restoredMeshVisibility = data.restoredMeshVisibility;
+
+    const unsigned int nDirections = static_cast<unsigned int>(directions.size()-2);
 
     //Initialize new data
     Data newData;
-    newData.minExtremes = data.minExtremes;
-    newData.maxExtremes = data.maxExtremes;
+    newData.minExtremes = minExtremes;
+    newData.maxExtremes = maxExtremes;
 
     //Get new visibility
-    getVisibility(targetMesh, nDirections, resolution, heightfieldAngle, includeXDirections, newData, checkMode);
-    data.restoredMeshVisibility = newData.visibility;
-    data.restoredMeshNonVisibleFaces = newData.nonVisibleFaces;
+    getVisibility(restoredMesh, nDirections, resolution, heightfieldAngle, includeXDirections, newData, checkMode);
+    restoredMeshVisibility = newData.visibility;
 
-    std::cout << "Non-visible triangles after frequencies restore: " << data.restoredMeshNonVisibleFaces.size() << std::endl;
+    //Update association non-visible faces
+    restoredMeshNonVisibleFaces.clear();
+    for (unsigned int fId = 0; fId < restoredMesh.numberFaces(); fId++){
+        if (restoredMeshVisibility(restoredMeshAssociation[fId], fId) == 0) {
+            restoredMeshNonVisibleFaces.push_back(fId);
+        }
+    }
+
+    std::cout << "Non-visible triangles after frequencies restore: " << restoredMeshNonVisibleFaces.size() << std::endl;
 
     if (reassign) {
         unsigned int facesReassigned = 0;
 
         //Get face-face adjacencies
         const std::vector<std::vector<int>> ffAdj =
-                cg3::libigl::faceToFaceAdjacencies(data.restoredMesh);
+                cg3::libigl::faceToFaceAdjacencies(restoredMesh);
 
 
         bool done;
 
         do {
-            done = true;
-
             std::vector<unsigned int> newNonVisibleFaces;
 
-            for (unsigned int fId : data.restoredMeshNonVisibleFaces) {
-                cg3::Vec3 normal = data.restoredMesh.faceNormal(fId);
+            done = true;
+
+            for (unsigned int fId : restoredMeshNonVisibleFaces) {
+                cg3::Vec3 normal = restoredMesh.faceNormal(fId);
                 const std::vector<int>& adjacentFaces = ffAdj.at(fId);
 
                 //The best label for the face is one among the adjacent
@@ -186,11 +201,11 @@ void recheckVisibilityAfterRestore(
                 int bestLabel = -1;
 
                 for (const unsigned int adjId : adjacentFaces) {
-                    int adjLabel = data.restoredMeshAssociation[adjId];
+                    int adjLabel = restoredMeshAssociation[adjId];
 
                     //If it is visible
-                    if (data.restoredMeshVisibility(adjLabel, fId) > 0) {
-                        double dot = normal.dot(data.directions[adjLabel]);
+                    if (restoredMeshVisibility(adjLabel, fId) == 1) {
+                        double dot = normal.dot(directions[adjLabel]);
 
                         if (dot >= maxDot) {
                             maxDot = dot;
@@ -200,7 +215,7 @@ void recheckVisibilityAfterRestore(
                 }
 
                 if (bestLabel >= 0) {
-                    data.restoredMeshAssociation[fId] = bestLabel;
+                    restoredMeshAssociation[fId] = bestLabel;
                     facesReassigned++;
 
                     done = false;
@@ -210,7 +225,7 @@ void recheckVisibilityAfterRestore(
                 }
             }
 
-            data.restoredMeshNonVisibleFaces = newNonVisibleFaces;
+            restoredMeshNonVisibleFaces = newNonVisibleFaces;
 
         } while (!done);
 

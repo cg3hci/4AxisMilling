@@ -315,7 +315,11 @@ void optimization(
                         }
                     }
 
-                    association[fId] = bestLabel;
+                    association[fId] = bestLabel;                    
+
+                    if (visibility(bestLabel, fId) == 0) {
+                        facesNoLongerVisible++;
+                    }
 
                     facesAffected++;
                 }

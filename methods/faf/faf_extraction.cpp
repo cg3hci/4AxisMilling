@@ -318,19 +318,17 @@ void extractResults(
         while (totalOffset < firstLayerOffset) {
             //Calculate offset and height
             totalOffset += currentStepOffset;
-
             if (totalOffset > firstLayerOffset) {
                 currentStepOffset -= totalOffset - firstLayerOffset;
                 totalOffset = firstLayerOffset;
             }
+            const double currentStepHeight = currentStepOffset / tan(firstLayerAngle);
 
             currentStepOffset *= 2; //Double it for next iteration
 
-            const double currentStepHeight = totalOffset / tan(firstLayerAngle);
-
             //Get new layer projected points
             std::vector<cg3::Point2Dd> newLayerPoints2D =
-                    internal::offsetPolygon(firstLayerPoints2D, currentStepOffset);
+                    internal::offsetPolygon(projectedPoints2D, totalOffset);
             size_t nNewLayerVertices = newLayerPoints2D.size();
 
             //New layer vertices data
@@ -428,8 +426,6 @@ void extractResults(
             //Setting data for next iteration
             firstLayerPoints2D = usedNewLayerPoints;
             firstLayerPoints2DMap = newLayerPoints2DMap;
-
-
         }
 
 
