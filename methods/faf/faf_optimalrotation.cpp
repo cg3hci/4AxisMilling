@@ -10,9 +10,10 @@ namespace FourAxisFabrication {
 namespace internal {
 
 Eigen::Matrix3d optimalOrientationRotationMatrix(
-        const cg3::SimpleEigenMesh& inputMesh,
-        unsigned int nDirs,
-        bool deterministic);
+        const cg3::SimpleEigenMesh& inputMesh,        
+        const unsigned int nDirs,
+        const double weightPower,
+        const bool deterministic);
 
 void defineRotation(
         const cg3::Vec3& zAxis,
@@ -36,7 +37,8 @@ void defineRotation(
 void rotateToOptimalOrientation(
         cg3::EigenMesh& mesh,
         cg3::EigenMesh& smoothedMesh,
-        const unsigned int nOrientations,
+        const unsigned int nDirs,
+        const double weightPower,
         const bool deterministic)
 {
     cg3::Pointd bbCenter = smoothedMesh.boundingBox().center();
@@ -47,7 +49,7 @@ void rotateToOptimalOrientation(
     smoothedMesh.updateFaceNormals();
 
     //Get the optimal rotation matrix
-    Eigen::Matrix3d rot = internal::optimalOrientationRotationMatrix(smoothedMesh, nOrientations, deterministic);
+    Eigen::Matrix3d rot = internal::optimalOrientationRotationMatrix(smoothedMesh, nDirs, weightPower, deterministic);
 
 //OLD METHOD!
 //    Eigen::Matrix3d rot = cg3::globalOptimalRotationMatrix(smoothedMesh, nOrientations, deterministic);
@@ -94,8 +96,9 @@ namespace internal {
  */
 Eigen::Matrix3d optimalOrientationRotationMatrix(
         const cg3::SimpleEigenMesh& inputMesh,
-        unsigned int nDirs,
-        bool deterministic)
+        const unsigned int nDirs,
+        const double weightPower,
+        const bool deterministic)
 {
     //Get the direction pool (sphere coverage, fibonacci sampling)l
     std::vector<cg3::Vec3> dirPool = cg3::sphereCoverage(nDirs, deterministic);
@@ -168,7 +171,7 @@ Eigen::Matrix3d optimalOrientationRotationMatrix(
             double a = faceAreas.at(fId);
 
             //Compute weight
-            double weight = ((b - bbCenter).length() / maxDistance);
+            double weight = pow((b - bbCenter).length() / maxDistance, weightPower);
 
             //Add to score
             score += a * weight * (std::fabs(n.x()) + std::fabs(n.y()) + std::fabs(n.z()));

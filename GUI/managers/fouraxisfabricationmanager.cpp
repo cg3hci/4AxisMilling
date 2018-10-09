@@ -82,6 +82,8 @@ void FourAxisFabricationManager::updateUI() {
     ui->optimalOrientationOrientationsLabel->setEnabled(!data.isMeshOriented);
     ui->optimalOrientationOrientationsSpinBox->setEnabled(!data.isMeshOriented);
     ui->optimalOrientationDeterministicCheckBox->setEnabled(!data.isMeshOriented);
+    ui->optimalOrientationWeightPowerLabel->setEnabled(!data.isMeshOriented);
+    ui->optimalOrientationWeightPowerSpinBox->setEnabled(!data.isMeshOriented);
 
     //Select extremes
     ui->selectExtremesButton->setEnabled(!data.areExtremesSelected);
@@ -186,6 +188,7 @@ void FourAxisFabricationManager::optimalOrientation() {
 
         //Get UI data
         unsigned int nOrientations = (unsigned int) ui->optimalOrientationOrientationsSpinBox->value();
+        double weightPower = (unsigned int) ui->optimalOrientationWeightPowerSpinBox->value();
         bool deterministic = ui->optimalOrientationDeterministicCheckBox->isChecked();
 
         cg3::Timer t("Optimal orientation");
@@ -195,6 +198,7 @@ void FourAxisFabricationManager::optimalOrientation() {
                     data.mesh,
                     data.smoothedMesh,
                     nOrientations,
+                    weightPower,
                     deterministic);
 
         t.stopAndPrint();

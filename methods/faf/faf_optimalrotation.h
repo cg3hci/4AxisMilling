@@ -12,7 +12,8 @@ namespace FourAxisFabrication {
 void rotateToOptimalOrientation(
         cg3::EigenMesh& mesh,
         cg3::EigenMesh& smoothedMesh,
-        const unsigned int nOrientations,
+        const unsigned int nDirs,
+        const double weightPower,
         const bool deterministic);
 
 }

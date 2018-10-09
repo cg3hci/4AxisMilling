@@ -785,19 +785,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="3">
-       <widget class="QCheckBox" name="optimalOrientationDeterministicCheckBox">
-        <property name="layoutDirection">
-         <enum>Qt::LeftToRight</enum>
-        </property>
-        <property name="text">
-         <string>Deterministic</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item row="14" column="2">
        <widget class="QCheckBox" name="optimizationLoseHolesCheckBox">
         <property name="text">
@@ -815,13 +802,6 @@
         </property>
         <property name="value">
          <number>50</number>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="QPushButton" name="optimalOrientationButton">
-        <property name="text">
-         <string>Orientation</string>
         </property>
        </widget>
       </item>
@@ -1067,7 +1047,7 @@
          <number>50000</number>
         </property>
         <property name="value">
-         <number>5000</number>
+         <number>2000</number>
         </property>
        </widget>
       </item>
@@ -1085,6 +1065,43 @@
        <widget class="QPushButton" name="cutComponentsButton">
         <property name="text">
          <string>Cutting</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5">
+       <widget class="QPushButton" name="optimalOrientationButton">
+        <property name="text">
+         <string>Orientation</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="optimalOrientationWeightPowerLabel">
+        <property name="text">
+         <string>Weight power:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QDoubleSpinBox" name="optimalOrientationWeightPowerSpinBox">
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QCheckBox" name="optimalOrientationDeterministicCheckBox">
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="text">
+         <string>Deterministic</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
