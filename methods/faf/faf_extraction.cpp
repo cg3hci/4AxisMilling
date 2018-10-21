@@ -156,7 +156,7 @@ void extractResults(
     /* ----- GET CHARTS DATA ----- */
 
     //Get chart data
-    ChartData fourAxisChartData = getChartData(fourAxisComponent, fourAxisAssociation);
+    ChartData fourAxisChartData = getChartData(fourAxisComponent, fourAxisAssociation, minExtremes, maxExtremes);
     std::vector<int> chartToResult;
     std::vector<size_t> resultToChart;
 

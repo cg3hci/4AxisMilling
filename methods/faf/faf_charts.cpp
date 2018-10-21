@@ -13,12 +13,16 @@ namespace FourAxisFabrication {
 /**
  * @brief Initialize data associated to the charts
  * @param[in] targetMesh Target mesh
- * @param[in] data Four axis fabrication data
+ * @param[in] association Association of faces to the label
+ * @param[in] minExtremes Min extremes
+ * @param[in] maxExtremes Max extremes
  * @param[out] chartData Data of the charts
  */
 ChartData getChartData(
         const cg3::EigenMesh& targetMesh,
-        const std::vector<int>& association)
+        const std::vector<int>& association,
+        const std::vector<unsigned int>& minExtremes,
+        const std::vector<unsigned int>& maxExtremes)
 {
     typedef cg3::Dcel Dcel;
     typedef cg3::Dcel::Face Face;
@@ -27,6 +31,16 @@ ChartData getChartData(
 
     //Create Dcel from mesh used for navigation
     Dcel dcel(targetMesh);
+
+    std::set<unsigned int> extremeFaces;
+
+    for (unsigned int f : minExtremes) {
+        extremeFaces.insert(f);
+    }
+
+    for (unsigned int f : maxExtremes) {
+        extremeFaces.insert(f);
+    }
 
     //Result
     ChartData chartData;
@@ -49,9 +63,7 @@ ChartData getChartData(
 
             //Initialize chart data
             Chart chart;
-
             chart.id = chartData.charts.size();
-
             chart.label = label;
 
             //Half edges in the border of the chart
@@ -109,12 +121,24 @@ ChartData getChartData(
 
             //Add chart data
             chartData.charts.push_back(chart);
+            chartData.isExtreme.push_back(extremeFaces.find(startFaceId) != extremeFaces.end());
+
 
             borderHalfEdges.push_back(chartBorderHalfEdges);
         }
 
     }
 
+
+    //Check if chart is a hole chart
+    size_t nCharts = chartData.charts.size();
+    std::vector<bool> isHoleChart(nCharts, false);
+    for (size_t i = 0; i < nCharts; i++) {
+        Chart& chart = chartData.charts[i];
+        if (chart.adjacentLabels.size() == 1) {
+            isHoleChart[i] = true;
+        }
+    }
 
     //Calculate borders and chart adjacencies
     for (Chart& chart : chartData.charts) {
@@ -174,10 +198,25 @@ ChartData getChartData(
 
 
             //Get external borders
+            const HalfEdge* he;
+
             vStart = (unsigned int) furthestVertex;
             vCurrent = vStart;
             do {
-                const HalfEdge* he = vHeMap.at(vCurrent).at(0);
+                size_t vecPos = 0;
+                he = vHeMap.at(vCurrent).at(vecPos);
+
+                while (isHoleChart.at(chartData.faceChartMap.at(he->twin()->face()->id()))) {
+                    vecPos++;
+                    if (vecPos >= vHeMap.at(vCurrent).size())
+                        break;
+
+                    he = vHeMap.at(vCurrent).at(vecPos);
+                }
+                if (vecPos >= vHeMap.at(vCurrent).size()) {
+                    std::cout << "Error in detecting charts." << std::endl;
+                    exit(2);
+                }
 
                 unsigned int fId = he->face()->id();
                 unsigned int adjId = he->twin()->face()->id();
@@ -195,8 +234,7 @@ ChartData getChartData(
             }
             while (vCurrent != vStart);
 
-
-            //Get holes
+            //Get holes borders
             while (!remainingVertices.empty()) {
                 vStart = *(remainingVertices.begin());
                 vCurrent = vStart;
@@ -204,7 +242,7 @@ ChartData getChartData(
                 std::vector<unsigned int> currentHoleVertices;
                 std::vector<unsigned int> currentHoleFaces;
 
-                const HalfEdge* he = vHeMap.at(vStart).at(0);
+                he = vHeMap.at(vStart).at(0);
                 size_t currentHoleChartId = chartData.faceChartMap.at(he->twin()->face()->id());
 
                 do {
@@ -221,7 +259,7 @@ ChartData getChartData(
                     }
                     if (vecPos >= vHeMap.at(vCurrent).size()) {
                         std::cout << "Error in detecting charts." << std::endl;
-                        break;
+                        exit(3);
                     }
 
                     unsigned int fId = he->face()->id();

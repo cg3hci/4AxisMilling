@@ -156,13 +156,14 @@ void optimization(
         const double minChartArea,
         Data& data)
 {
-    //Get fabrication data
+    //Get fabrication data    
+    const std::vector<unsigned int>& minExtremes = data.minExtremes;
+    const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
     const std::vector<cg3::Vec3>& directions = data.directions;
     const cg3::Array2D<int>& visibility = data.visibility;
     std::vector<unsigned int>& targetDirections = data.targetDirections;
     std::vector<int>& association = data.association;
     std::vector<unsigned int>& associationNonVisibleFaces = data.associationNonVisibleFaces;
-
 
     const unsigned int nFaces = mesh.numberFaces();
 
@@ -173,7 +174,7 @@ void optimization(
     std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
 
     //Get chart data
-    ChartData chartData = getChartData(mesh, association);
+    ChartData chartData = getChartData(mesh, association, minExtremes, maxExtremes);
 
     //Relaxing data cost for holes
     if (relaxHoles) {
@@ -185,7 +186,7 @@ void optimization(
             for (unsigned int holeChartId : surroundingChart.holeCharts) {
                 const Chart& holeChart = chartData.charts.at(holeChartId);
 
-                if (holeChart.label != minLabel && holeChart.label != maxLabel) {
+                if (!chartData.isExtreme.at(holeChart.id)) {
                     std::set<unsigned int> remainingHoleChartFaces(holeChart.faces.begin(), holeChart.faces.end());
 
                     std::vector<unsigned int> facesToBeRelaxed;
@@ -220,7 +221,7 @@ void optimization(
 
         if (chartAffected > 0) {
             //Get new chart data
-            chartData = getChartData(mesh, association);
+            chartData = getChartData(mesh, association, minExtremes, maxExtremes);
         }
 
         std::cout << "Relaxed constraints for " << chartAffected << " hole charts. Faces affected: " << facesAffected << std::endl;
@@ -252,7 +253,7 @@ void optimization(
             for (size_t cId = 0; cId < chartData.charts.size(); cId++) {
                 const Chart& chart = chartData.charts.at(cId);
 
-                if (chart.label != minLabel && chart.label != maxLabel) {
+                if (!chartData.isExtreme.at(chart.id)) {
                     //Chart area
                     double chartArea = 0;
                     for (unsigned int fId : chart.faces)
@@ -328,7 +329,7 @@ void optimization(
 
 
                 //Get new chart data
-                chartData = getChartData(mesh, association);
+                chartData = getChartData(mesh, association, minExtremes, maxExtremes);
             }
         } while (smallestChartId >= 0);
 
@@ -349,8 +350,7 @@ void optimization(
             for (unsigned int holeChartId : surroundingChart.holeCharts) {
                 const Chart& holeChart = chartData.charts.at(holeChartId);
 
-
-                if (holeChart.label != minLabel && holeChart.label != maxLabel) {
+                if (!chartData.isExtreme.at(holeChart.id)) {
                     for (const int fId : holeChart.faces) {
                         association[fId] = surroundingChartLabel;
                         facesAffected++;
@@ -367,7 +367,7 @@ void optimization(
 
         if (chartAffected > 0) {
             //Get new chart data
-            chartData = getChartData(mesh, association);
+            chartData = getChartData(mesh, association, minExtremes, maxExtremes);
         }
 
         std::cout << "Lost details for " << chartAffected << " hole charts. Faces affected: " << facesAffected << ". Faces no longer visible: " << facesNoLongerVisible << std::endl;
@@ -427,6 +427,8 @@ void setupDataCost(
     const unsigned int nFaces = mesh.numberFaces();
     const unsigned int nLabels = targetLabels.size();
 
+    const double freeCostDot = cos(freeCostAngle);
+
     #pragma omp parallel for
     for (unsigned int faceId = 0; faceId < nFaces; faceId++){
         for (unsigned int label = 0; label < nLabels; ++label) {
@@ -440,12 +442,11 @@ void setupDataCost(
                 const cg3::Vec3 faceNormal = mesh.faceNormal(faceId);
 
                 double dot = faceNormal.dot(labelNormal);
-                double angle = acos(dot);
 
                 //If the angle is greater than the limit angle
-                if (angle > freeCostAngle) {
-                    double normalizedAngle = (angle - freeCostAngle)/(M_PI/2 - freeCostAngle);
-                    cost = pow(normalizedAngle, dataSigma);
+                if (dot < freeCostDot) {
+                    double normalizedDot = (dot - freeCostDot)/freeCostDot;
+                    cost = pow(normalizedDot, dataSigma);
                 }
                 else {
                     cost = 0;

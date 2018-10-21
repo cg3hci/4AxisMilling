@@ -36,17 +36,21 @@ struct Chart {
 struct ChartData {
     std::vector<size_t> faceChartMap;
     std::vector<Chart> charts;
+    std::vector<bool> isExtreme;
 
     void clear() {
         charts.clear();
         faceChartMap.clear();
+        isExtreme.clear();
     }
 };
 
 
 ChartData getChartData(
         const cg3::EigenMesh& targetMesh,
-        const std::vector<int>& association);
+        const std::vector<int>& association,
+        const std::vector<unsigned int>& minExtremes,
+        const std::vector<unsigned int>& maxExtremes);
 
 }
 
