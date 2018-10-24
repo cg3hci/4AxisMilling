@@ -29,11 +29,14 @@ struct XMinComparator {
 
 /* ----- EXTREMES ----- */
 
+
+
 /**
  * @brief Get min and max extremes of the mesh along the x direction.
  * The algorithm stops when the current triangle is not visible
  * by related the direction (-x for min and +x for max).
  * @param[in] mesh Input mesh
+ * @param[in] heightFieldAngle Height field angle
  * @param[out] data Four axis fabrication data
  */
 void selectExtremesOnXAxis(
@@ -41,16 +44,41 @@ void selectExtremesOnXAxis(
         const double heightFieldAngle,
         Data& data)
 {
+    //Faces adjacencies
+    const std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
+
     //Referencing output data
     std::vector<unsigned int>& minExtremes = data.minExtremes;
     std::vector<unsigned int>& maxExtremes = data.maxExtremes;
 
+    double levelSetMinX;
+    double levelSetMaxX;
+
+    selectExtremesOnXAxis(mesh, heightFieldAngle, ffAdj, minExtremes, maxExtremes, levelSetMinX, levelSetMaxX);
+}
+
+/**
+ * @brief Get min and max extremes of the mesh along the x direction.
+ * The algorithm stops when the current triangle is not visible
+ * by related the direction (-x for min and +x for max).
+ * @param[in] mesh Input mesh
+ * @param[in] heightFieldAngle Height field angle
+ * @param[in] ffAdj Face-face adjacencies of the mesh
+ * @param[out] minExtremes Min extremes
+ * @param[out] maxExtremes Max extremes
+ */
+void selectExtremesOnXAxis(
+        const cg3::EigenMesh& mesh,
+        const double heightFieldAngle,
+        const std::vector<std::vector<int>> ffAdj,
+        std::vector<unsigned int>& minExtremes,
+        std::vector<unsigned int>& maxExtremes,
+        double& levelSetMinX,
+        double& levelSetMaxX)
+{
     //Clearing current data (if any)
     minExtremes.clear();
     maxExtremes.clear();
-
-    //Faces adjacencies
-    const std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
 
     //Cos of height-field angle
     const double heightFieldAngleLimit = cos(heightFieldAngle);
@@ -83,7 +111,7 @@ void selectExtremesOnXAxis(
     }
 
     //Get the min x coordinate of the non-heightfield faces (it will be the level set)
-    double levelSetMinX = mesh.vertex(mesh.face(fIndices[iMin]).x()).x();
+    levelSetMinX = mesh.vertex(mesh.face(fIndices[iMin]).x()).x();
     while(iMin < fIndices.size()){
         cg3::Pointi face = mesh.face(fIndices[iMin]);
 
@@ -134,13 +162,13 @@ void selectExtremesOnXAxis(
 
     //Get max height-field faces
     int iMax = fIndices.size()-1;
-    while(mesh.faceNormal(fIndices[iMax]).dot(maxDirection) >= -std::numeric_limits<double>::epsilon()){
+    while(mesh.faceNormal(fIndices[iMax]).dot(maxDirection) >= heightFieldAngleLimit){
         maxHeightFieldSet.insert(fIndices[iMax]);
         iMax--;
     }
 
     //Get the max x coordinate of the non-selected faces (level set)
-    double levelSetMaxX = mesh.vertex(mesh.face(fIndices[iMax]).x()).x();
+    levelSetMaxX = mesh.vertex(mesh.face(fIndices[iMax]).x()).x();
     while(iMax >= 0){
         cg3::Pointi face = mesh.face(fIndices[iMax]);
 

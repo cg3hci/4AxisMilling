@@ -13,7 +13,7 @@ void rotateToOptimalOrientation(
         cg3::EigenMesh& mesh,
         cg3::EigenMesh& smoothedMesh,
         const unsigned int nDirs,
-        const double weightPower,
+        const double deepnessWeight,
         const bool deterministic);
 
 }

@@ -1078,21 +1078,24 @@
       <item row="1" column="1">
        <widget class="QLabel" name="optimalOrientationWeightPowerLabel">
         <property name="text">
-         <string>Weight power:</string>
+         <string>Deepness w:</string>
         </property>
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="optimalOrientationWeightPowerSpinBox">
+       <widget class="QDoubleSpinBox" name="optimalOrientationDeepnessWeightSpinBox">
         <property name="maximum">
-         <double>50.000000000000000</double>
+         <double>1.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
         </property>
         <property name="value">
-         <double>1.000000000000000</double>
+         <double>0.200000000000000</double>
         </property>
        </widget>
       </item>
-      <item row="1" column="3">
+      <item row="0" column="3">
        <widget class="QCheckBox" name="optimalOrientationDeterministicCheckBox">
         <property name="layoutDirection">
          <enum>Qt::LeftToRight</enum>

@@ -14,6 +14,15 @@ void selectExtremesOnXAxis(
         const double heightFieldAngle,
         Data& data);
 
+void selectExtremesOnXAxis(
+        const cg3::EigenMesh& mesh,
+        const double heightFieldAngle,
+        const std::vector<std::vector<int>> ffAdj,
+        std::vector<unsigned int>& minExtremes,
+        std::vector<unsigned int>& maxExtremes,
+        double& levelSetMinX,
+        double& levelSetMaxX);
+
 }
 
 
