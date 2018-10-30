@@ -28,7 +28,6 @@ namespace FourAxisFabrication {
 
 namespace internal {
 
-std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m);
 std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, const double offset);
 void getFabricationOrder(
         const std::vector<unsigned int>& association,
@@ -164,6 +163,7 @@ void extractResults(
 
     std::vector<cg3::EigenMesh> tmpResults;
     std::vector<unsigned int> tmpResultsAssociation;
+    std::vector<std::vector<unsigned int>> chartExternalBorders;
 
     //Initialize results with the chart data
     int rId = 0;
@@ -172,19 +172,22 @@ void extractResults(
         if (chart.label >= 0) {
             cg3::EigenMesh chartResult;
 
-            std::unordered_map<size_t, size_t> resultFaceToMeshFacesMap;
+            std::unordered_map<size_t, size_t> resultFaceToMeshFaceMap;
 
-            std::unordered_map<int, unsigned int> vertexMap;
+            std::unordered_map<unsigned int, unsigned int> meshVertexToResultVertexMap;
 
             for (unsigned int vId : chart.vertices) {
                 unsigned int newID = chartResult.addVertex(fourAxisScaled.vertex(vId));
-                vertexMap.insert(std::make_pair(vId, newID));
+                meshVertexToResultVertexMap.insert(std::make_pair(vId, newID));
             }
 
             for (unsigned int fId : chart.faces) {
                 cg3::Pointi f = fourAxisScaled.face(fId);
-                unsigned int newFaceId = chartResult.addFace(vertexMap.at(f.x()), vertexMap.at(f.y()), vertexMap.at(f.z()));
-                resultFaceToMeshFacesMap.insert(std::make_pair(newFaceId, fId));
+                unsigned int newFaceId = chartResult.addFace(
+                            meshVertexToResultVertexMap.at(static_cast<unsigned int>(f.x())),
+                            meshVertexToResultVertexMap.at(static_cast<unsigned int>(f.y())),
+                            meshVertexToResultVertexMap.at(static_cast<unsigned int>(f.z())));
+                resultFaceToMeshFaceMap.insert(std::make_pair(newFaceId, fId));
             }
 
             chartResult.updateFacesAndVerticesNormals();
@@ -194,12 +197,19 @@ void extractResults(
             tmpResultsAssociation.push_back(static_cast<unsigned int>(chart.label));
 
 
-            chartResult.setFaceColor(colorMap[chart.label]);
+            chartResult.setFaceColor(colorMap[static_cast<size_t>(chart.label)]);
 
             chartToResult.push_back(rId);
             resultToChart.push_back(chart.id);
 
-            resultFacesToMeshFaces.push_back(resultFaceToMeshFacesMap);
+            resultFacesToMeshFaces.push_back(resultFaceToMeshFaceMap);
+
+            std::vector<unsigned int> externalBorders(chart.borderVertices.size());
+            for (size_t i = 0; i < chart.borderVertices.size(); i++) {
+                unsigned int borderVertexId = chart.borderVertices[i];
+                externalBorders[i] = meshVertexToResultVertexMap.at(borderVertexId);
+            }
+            chartExternalBorders.push_back(externalBorders);
 
             rId++;
         }
@@ -210,10 +220,56 @@ void extractResults(
     size_t nResults = tmpResults.size();
 
 
+    /* ----- SUPPORTS ----- */
+
+
+    //Create a big box
+    cg3::BoundingBox bbSupport;
+    bbSupport.setMin(cg3::Pointd(-stockLength/2, -stockDiameter/2, -stockDiameter/2));
+    bbSupport.setMax(cg3::Pointd(stockLength/2, stockDiameter/2, stockDiameter/2));
+
+    if (minComponent.numberFaces() == 0 && minExtremes.size() > 0) {
+        //Get maximum x in the faces of the min extremes
+        double minLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(minExtremes[0]).x()).x();
+        for (int minFace : minExtremes) {
+            cg3::Pointi face = fourAxisScaled.face(minFace);
+
+            minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.x()).x());
+            minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.y()).x());
+            minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.z()).x());
+        }
+        //Set min extremes bounding box
+        cg3::BoundingBox minBB = bbSupport;
+        minBB.setMaxX(minLevelSetX);
+
+        //Min support
+        cg3::EigenMesh minBBMesh = cg3::EigenMeshAlgorithms::makeBox(minBB);
+        minSupport = cg3::libigl::difference(minBBMesh, fourAxisScaled);
+    }
+
+
+    if (maxComponent.numberFaces() == 0 && maxExtremes.size() > 0) {
+        //Get minimum x in the faces of the max extremes
+        double maxLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(maxExtremes[0]).x()).x();
+        for (int maxFace : maxExtremes) {
+            cg3::Pointi face = fourAxisScaled.face(maxFace);
+
+            maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.x()).x());
+            maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.y()).x());
+            maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.z()).x());
+        }
+
+        //Set max extremes bounding box
+        cg3::BoundingBox maxBB = bbSupport;
+        maxBB.setMinX(maxLevelSetX);
+
+        //Max support
+        cg3::EigenMesh maxBBMesh = cg3::EigenMeshAlgorithms::makeBox(maxBB);
+        maxSupport = cg3::libigl::difference(maxBBMesh, fourAxisScaled);
+    }
+
 
     /* ----- RESULTS WITH BOX ----- */
-
-
 
     std::cout << std::endl <<  "----- RESULT WITH BOX ----- " << std::endl << std::endl;
 
@@ -255,8 +311,9 @@ void extractResults(
         }
 
 
+
         //Compute external borders
-        std::vector<unsigned int> borderVertices = internal::computeExternalBorder(result);
+        std::vector<unsigned int>& borderVertices = chartExternalBorders.at(rId);
         size_t nBorderVertices = borderVertices.size();
 
         //Projected vertices data
@@ -629,7 +686,15 @@ void extractResults(
         result.addFace(boxVertices[7], boxVertices[3], boxVertices[2]);
         result.addFace(boxVertices[7], boxVertices[2], boxVertices[6]);
 
-        std::cout << "Result " << rId << ": " << discardedFaces << " discarded faces." << std::endl;
+        std::cout << "Result " << rId << ": " << discardedFaces << " discarded faces.";
+
+        //If it is an extreme, clear all the stock around it (until the extreme level set)
+        if (fourAxisChartData.isExtreme.at(resultToChart.at(rId))) {
+            result = cg3::libigl::difference(result, targetLabel == minLabel ? minSupport : maxSupport);
+            std::cout << " Extreme!";
+        }
+
+        std::cout << std::endl;
     }
 
     /* ----- HOLE FILLING ----- */
@@ -823,55 +888,6 @@ void extractResults(
     maxResult = maxScaled;
 
 
-    /* ----- SUPPORTS ----- */
-
-    cg3::BoundingBox bbScaled = fourAxisScaled.boundingBox();
-
-    //Scale of a 1.1 factor
-    bbScaled.setMin(bbScaled.min()*1.1);
-    bbScaled.setMax(bbScaled.max()*1.1);
-
-    if (minComponent.numberFaces() == 0 && minExtremes.size() > 0) {
-        //Get maximum x in the faces of the min extremes
-        double minLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(minExtremes[0]).x()).x();
-        for (int minFace : minExtremes) {
-            cg3::Pointi face = fourAxisScaled.face(minFace);
-
-            minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.x()).x());
-            minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.y()).x());
-            minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.z()).x());
-        }
-        //Set min extremes bounding box
-        cg3::BoundingBox minBB = bbScaled;
-        minBB.setMaxX(minLevelSetX);
-
-        //Min support
-        cg3::EigenMesh minBBMesh = cg3::EigenMeshAlgorithms::makeBox(minBB);
-        minSupport = cg3::libigl::difference(minBBMesh, fourAxisScaled);
-    }
-
-
-    if (maxComponent.numberFaces() == 0 && maxExtremes.size() > 0) {
-        //Get minimum x in the faces of the max extremes
-        double maxLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(maxExtremes[0]).x()).x();
-        for (int maxFace : maxExtremes) {
-            cg3::Pointi face = fourAxisScaled.face(maxFace);
-
-            maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.x()).x());
-            maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.y()).x());
-            maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.z()).x());
-        }
-
-        //Set max extremes bounding box
-        cg3::BoundingBox maxBB = bbScaled;
-        maxBB.setMinX(maxLevelSetX);
-
-        //Max support
-        cg3::EigenMesh maxBBMesh = cg3::EigenMeshAlgorithms::makeBox(maxBB);
-        maxSupport = cg3::libigl::difference(maxBBMesh, fourAxisScaled);
-    }
-
-
     /* ----- UPDATING MESHES DATA ----- */
 
     for (size_t i = 0; i < boxes.size(); i++) {
@@ -967,80 +983,6 @@ void extractResults(
 
 namespace internal {
 
-/**
- * @brief Compute borders of an eigen mesh
- * @param m Eigen mesh
- * @return Vector of id vertex of the borders
- */
-std::vector<unsigned int> computeExternalBorder(const cg3::SimpleEigenMesh& m)
-{
-    typedef cg3::Dcel Dcel;
-    typedef cg3::Dcel::HalfEdge HalfEdge;
-    typedef cg3::Dcel::Vertex Vertex;
-
-    //Translate to DCEL
-    Dcel dcel(m);
-
-    //Result
-    std::vector<unsigned int> externalBorders;
-
-    if (m.numberFaces() == 0)
-        return externalBorders;
-
-    unsigned int nVertices = m.numberVertices();
-
-    //Center of the chart
-    cg3::Pointd chartCenter(0,0,0);
-    for (const Vertex* vertex : dcel.vertexIterator()) {
-        chartCenter += vertex->coordinate();
-    }
-    chartCenter /= nVertices;
-
-    //Border vertices and next map
-    std::map<unsigned int, unsigned int> vNext;
-
-
-    //Furthest vertex
-    int furthestVertex = -1;
-    double maxDistance = 0;
-
-    for (const HalfEdge* he : dcel.halfEdgeIterator()) {
-        if (he->twin() == nullptr) {
-            const Vertex* fromV = he->fromVertex();
-            const Vertex* toV = he->toVertex();
-
-            const unsigned int fromId = fromV->id();
-            const unsigned int toId = toV->id();
-
-            //Fill next map
-            vNext[fromId] = toId;
-
-            //Get furthest point from center: it is certainly part of the external borders
-            const cg3::Vec3 vec = fromV->coordinate() - chartCenter;
-            double distance = vec.length();
-            if (distance >= maxDistance) {
-                maxDistance = distance;
-                furthestVertex = fromId;
-            }
-        }
-    }
-    assert(furthestVertex >= 0);
-
-    unsigned int vStart;
-    unsigned int vCurrent;
-
-    //Get external borders
-    vStart = (unsigned int) furthestVertex;
-    vCurrent = vStart;
-    do {
-        externalBorders.push_back(vCurrent);
-
-        vCurrent = vNext.at(vCurrent);
-    }
-    while (vCurrent != vStart);
-
-    return externalBorders;
-}
 
 /**
  * @brief Compute polygon offset

@@ -7,8 +7,25 @@
 #include <cg3/meshes/dcel/dcel.h>
 
 #include <unordered_map>
+#include <unordered_set>
 
 namespace FourAxisFabrication {
+
+namespace internal {
+bool getChartBorders(
+        const ChartData& chartData,
+        const Chart& chart,
+        const std::unordered_map<unsigned int, std::vector<unsigned int>>& vNext,
+        const std::unordered_map<unsigned int, std::vector<const cg3::Dcel::HalfEdge*>>& vHeMap,
+        unsigned int vStart,
+        unsigned int vCurrent,
+        const bool isHoleChart,
+        std::set<size_t>& currentBorderCharts,
+        std::vector<unsigned int>& currentBorderFaces,
+        std::vector<unsigned int>& currentBorderVertices,
+        std::unordered_set<unsigned int>& visitedBorderVertex,
+        int& currentHoleChartId);
+} //namespace internal
 
 /**
  * @brief Initialize data associated to the charts
@@ -32,7 +49,7 @@ ChartData getChartData(
     //Create Dcel from mesh used for navigation
     Dcel dcel(targetMesh);
 
-    std::set<unsigned int> extremeFaces;
+    std::unordered_set<unsigned int> extremeFaces;
 
     for (unsigned int f : minExtremes) {
         extremeFaces.insert(f);
@@ -66,18 +83,23 @@ ChartData getChartData(
             chart.id = chartData.charts.size();
             chart.label = label;
 
+            bool isChartExtreme = false;
+
             //Half edges in the border of the chart
             std::vector<const HalfEdge*> chartBorderHalfEdges;
 
             //Stack for iterating on adjacent faces
-            std::stack<int> stack;
+            std::stack<unsigned int> stack;
             stack.push(startFaceId);
 
 
             //Region growing algorithm to get all chart faces
             while (!stack.empty()) {
-                int currentFaceId = stack.top();
+                unsigned int currentFaceId = stack.top();
                 stack.pop();
+                if (extremeFaces.find(startFaceId) != extremeFaces.end())
+                    isChartExtreme = true;
+
 
                 if (!visited[currentFaceId]) {
                     visited[currentFaceId] = true;
@@ -121,23 +143,11 @@ ChartData getChartData(
 
             //Add chart data
             chartData.charts.push_back(chart);
-            chartData.isExtreme.push_back(extremeFaces.find(startFaceId) != extremeFaces.end());
-
+            chartData.isExtreme.push_back(isChartExtreme);
 
             borderHalfEdges.push_back(chartBorderHalfEdges);
         }
 
-    }
-
-
-    //Check if chart is a hole chart
-    size_t nCharts = chartData.charts.size();
-    std::vector<bool> isHoleChart(nCharts, false);
-    for (size_t i = 0; i < nCharts; i++) {
-        Chart& chart = chartData.charts[i];
-        if (chart.adjacentLabels.size() == 1) {
-            isHoleChart[i] = true;
-        }
     }
 
     //Calculate borders and chart adjacencies
@@ -188,7 +198,7 @@ ChartData getChartData(
                 double distance = vec.length();
                 if (distance >= maxDistance) {
                     maxDistance = distance;
-                    furthestVertex = fromId;
+                    furthestVertex = static_cast<int>(fromId);
                 }
             }
             assert(furthestVertex >= 0);
@@ -198,90 +208,80 @@ ChartData getChartData(
 
 
             //Get external borders
-            const HalfEdge* he;
-
-            vStart = (unsigned int) furthestVertex;
+            vStart = static_cast<unsigned int>(furthestVertex);
             vCurrent = vStart;
-            do {
-                size_t vecPos = 0;
-                he = vHeMap.at(vCurrent).at(vecPos);
 
-                while (isHoleChart.at(chartData.faceChartMap.at(he->twin()->face()->id()))) {
-                    vecPos++;
-                    if (vecPos >= vHeMap.at(vCurrent).size())
-                        break;
+            std::set<size_t> currentBorderCharts;
+            std::vector<unsigned int> currentBorderFaces;
+            std::vector<unsigned int> currentBorderVertices;
+            std::unordered_set<unsigned int> visitedBorderVertex;
 
-                    he = vHeMap.at(vCurrent).at(vecPos);
-                }
-                if (vecPos >= vHeMap.at(vCurrent).size()) {
-                    std::cout << "Error in detecting charts." << std::endl;
-                    exit(2);
-                }
+            int currentHoleId = -1;
+            bool externalBorderSuccess = internal::getChartBorders(
+                        chartData,
+                        chart,
+                        vNext,
+                        vHeMap,
+                        vStart,
+                        vCurrent,
+                        false,
+                        currentBorderCharts,
+                        currentBorderFaces,
+                        currentBorderVertices,
+                        visitedBorderVertex,
+                        currentHoleId);
 
-                unsigned int fId = he->face()->id();
-                unsigned int adjId = he->twin()->face()->id();
+            if (!externalBorderSuccess)
+                std::cout << "Error in detecting external borders." << std::endl;
 
-                //Add adjacent chart
-                chart.borderCharts.insert(chartData.faceChartMap.at(adjId));
+            //Add adjacent chart
+            chart.borderCharts = currentBorderCharts;
+            chart.borderFaces = currentBorderFaces;
+            chart.borderVertices = currentBorderVertices;
 
-                chart.borderFaces.push_back(fId);
+            for (unsigned int v : currentBorderVertices)
+                remainingVertices.erase(v);
 
-                chart.borderVertices.push_back(vCurrent);
-
-                remainingVertices.erase(vCurrent);
-
-                vCurrent = vNext.at(vCurrent).at(0);
-            }
-            while (vCurrent != vStart);
 
             //Get holes borders
             while (!remainingVertices.empty()) {
                 vStart = *(remainingVertices.begin());
                 vCurrent = vStart;
 
-                std::vector<unsigned int> currentHoleVertices;
+                std::set<size_t> currentHoleCharts;
                 std::vector<unsigned int> currentHoleFaces;
+                std::vector<unsigned int> currentHoleVertices;
+                std::unordered_set<unsigned int> visitedHoleVertex;
 
-                he = vHeMap.at(vStart).at(0);
-                size_t currentHoleChartId = chartData.faceChartMap.at(he->twin()->face()->id());
+                int currentHoleId = -1;
+                bool holeBorderSuccess = internal::getChartBorders(
+                            chartData,
+                            chart,
+                            vNext,
+                            vHeMap,
+                            vStart,
+                            vCurrent,
+                            true,
+                            currentHoleCharts,
+                            currentHoleFaces,
+                            currentHoleVertices,
+                            visitedHoleVertex,
+                            currentHoleId);
 
-                do {
-                    size_t vecPos = 0;
+                if (!holeBorderSuccess)
+                    std::cout << "Error in detecting hole borders." << std::endl;
 
-                    he = vHeMap.at(vCurrent).at(vecPos);
+                if (currentHoleId == -1)
+                    std::cout << "Error in detecting hole chart ids in borders." << std::endl;
 
-                    while (chartData.faceChartMap.at(he->twin()->face()->id()) != currentHoleChartId) {
-                        vecPos++;
-                        if (vecPos >= vHeMap.at(vCurrent).size())
-                            break;
 
-                        he = vHeMap.at(vCurrent).at(vecPos);
-                    }
-                    if (vecPos >= vHeMap.at(vCurrent).size()) {
-                        std::cout << "Error in detecting charts." << std::endl;
-                        exit(3);
-                    }
+                //Add adjacent chart
+                chart.holeCharts.insert(static_cast<size_t>(currentHoleId));
+                chart.holeFaces.push_back(currentHoleFaces);
+                chart.holeVertices.push_back(currentHoleVertices);
 
-                    unsigned int fId = he->face()->id();
-                    unsigned int adjId = he->twin()->face()->id();
-
-                    //Add adjacent hole chart
-                    chart.holeCharts.insert(chartData.faceChartMap.at(adjId));
-
-                    currentHoleFaces.push_back(fId);
-
-                    currentHoleVertices.push_back(vCurrent);
-
-                    remainingVertices.erase(vCurrent);
-
-                    vCurrent = vNext.at(vCurrent).at(vecPos);
-                }
-                while (vCurrent != vStart);
-
-                if (vCurrent == vStart) {
-                    chart.holeVertices.push_back(currentHoleVertices);
-                    chart.holeFaces.push_back(currentHoleFaces);
-                }
+                for (unsigned int v : currentHoleVertices)
+                    remainingVertices.erase(v);
             }
         }
     }
@@ -289,5 +289,113 @@ ChartData getChartData(
 
     return chartData;
 }
+
+
+namespace internal {
+bool getChartBorders(
+        const ChartData& chartData,
+        const Chart& chart,
+        const std::unordered_map<unsigned int, std::vector<unsigned int>>& vNext,
+        const std::unordered_map<unsigned int, std::vector<const cg3::Dcel::HalfEdge*>>& vHeMap,
+        unsigned int vStart,
+        unsigned int vCurrent,
+        const bool isHoleChart,
+        std::set<size_t>& currentBorderCharts,
+        std::vector<unsigned int>& currentBorderFaces,
+        std::vector<unsigned int>& currentBorderVertices,
+        std::unordered_set<unsigned int>& visitedBorderVertex,
+        int& currentHoleChartId)
+{
+    const cg3::Dcel::HalfEdge* he;
+
+
+    do {
+        if (visitedBorderVertex.find(vCurrent) != visitedBorderVertex.end())
+            return false;
+
+        if (vNext.at(vCurrent).size() == 1) {
+            he = vHeMap.at(vCurrent).at(0);
+
+            unsigned int fId = he->face()->id();
+            unsigned int adjId = he->twin()->face()->id();
+            size_t adjChart = chartData.faceChartMap.at(adjId);
+
+            if (currentHoleChartId == -1 && isHoleChart) {
+                currentHoleChartId = static_cast<int>(adjChart);
+            }
+
+            currentBorderCharts.insert(adjChart);
+            currentBorderFaces.push_back(fId);
+            currentBorderVertices.push_back(vCurrent);
+            visitedBorderVertex.insert(vCurrent);
+
+            vCurrent = vNext.at(vCurrent).at(0);
+        }
+        else {
+            size_t pos = 0;
+            bool success = false;
+            do {
+                std::set<size_t> newCurrentBorderCharts;
+                std::vector<unsigned int> newCurrentBorderFaces;
+                std::vector<unsigned int> newCurrentBorderVertices;
+                std::unordered_set<unsigned int> copyVisitedBorderVertex = visitedBorderVertex;
+
+                he = vHeMap.at(vCurrent).at(pos);
+
+                unsigned int fId = he->face()->id();
+                unsigned int adjId = he->twin()->face()->id();
+                size_t adjChart = chartData.faceChartMap.at(adjId);
+
+                if (currentHoleChartId == -1 && isHoleChart) {
+                    currentHoleChartId = static_cast<int>(adjChart);
+                }
+
+                int adjHoleChartId = -1;
+                adjHoleChartId = static_cast<int>(adjChart);
+
+                newCurrentBorderCharts.insert(adjChart);
+                newCurrentBorderFaces.push_back(fId);
+                newCurrentBorderVertices.push_back(vCurrent);
+                copyVisitedBorderVertex.insert(vCurrent);
+
+                if (!isHoleChart || adjHoleChartId == currentHoleChartId) {
+                    unsigned int nextVCurrent = vNext.at(vCurrent).at(pos);
+
+                    success = internal::getChartBorders(
+                                chartData,
+                                chart,
+                                vNext,
+                                vHeMap,
+                                vStart,
+                                nextVCurrent,
+                                isHoleChart,
+                                newCurrentBorderCharts,
+                                newCurrentBorderFaces,
+                                newCurrentBorderVertices,
+                                copyVisitedBorderVertex,
+                                currentHoleChartId);
+                }
+
+                if (success) {
+                    currentBorderCharts.insert(newCurrentBorderCharts.begin(), newCurrentBorderCharts.end());
+                    currentBorderFaces.insert(currentBorderFaces.end(), newCurrentBorderFaces.begin(), newCurrentBorderFaces.end());
+                    currentBorderVertices.insert(currentBorderVertices.end(), newCurrentBorderVertices.begin(), newCurrentBorderVertices.end());
+                    visitedBorderVertex = copyVisitedBorderVertex;
+
+                    return true;
+                }
+
+                pos++;
+                if (pos >= vHeMap.at(vCurrent).size())
+                    std::cout << "Error in detecting borders (no path)." << std::endl;
+            }
+            while (!success);
+        }
+    }
+    while (vCurrent != vStart);
+
+    return true;
+}
+} //namespace internal
 
 }

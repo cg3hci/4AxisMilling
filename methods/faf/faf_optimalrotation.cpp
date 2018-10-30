@@ -313,7 +313,7 @@ void principalComponentAnalysis(
     using namespace Eigen;
 
     MatrixX3d centered = mat.rowwise() - mat.colwise().mean();
-    Matrix3d cov = centered.adjoint() * centered;
+    Matrix3d cov = (centered.adjoint() * centered) / mat.rows();
 
     SelfAdjointEigenSolver<Matrix3d> eig(cov);
 
@@ -332,8 +332,10 @@ void rotateToPrincipalComponents(
     Eigen::Matrix3d eigenVectors;
     internal::principalComponentAnalysis(smoothedMesh, eigenValues, eigenVectors);
 
-    std::cout << eigenValues << std::endl;
-    std::cout << eigenVectors << std::endl;
+    std::cout << "Principal components: " << std::endl;
+    std::cout << "Eigenvalues: " << eigenValues.transpose() << std::endl;
+    std::cout << "Eigenvectors: " << std::endl << eigenVectors << std::endl;
+    std::cout << std::endl;
 
     //Swap vectors if not orthogonal on the proper side
     const Vector3d& eigenVec1 = eigenVectors.row(0);
