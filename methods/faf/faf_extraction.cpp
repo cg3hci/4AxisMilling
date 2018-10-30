@@ -61,7 +61,6 @@ void extractResults(
         const double modelLength,
         const double stockLength,
         const double stockDiameter,
-        const double supportHeight, //TODO
         const double firstLayerAngle,
         const double secondLayerAngle,
         const double firstLayerHeight,
@@ -587,7 +586,6 @@ void extractResults(
         secondLayerPoints2D = usedSecondLayerPoints;
 
 
-
         /* ----- BOX ----- */
 
         //Create new 2D square
@@ -1010,15 +1008,13 @@ std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, co
     co.Execute(solution, offset * INT_DOUBLE_TRANSLATION);
 
     size_t bestIndex = 0;
-    long long int bestDifference = std::numeric_limits<long long int>::max();
+    double bestArea = -std::numeric_limits<double>::max();
     for (size_t i = 0; i < solution.size(); i++) {
         Path& path = solution[i];
-        long long int difference = static_cast<long long int>(path.size() - polygon.size());
-        if (difference < 0)
-            difference = -difference;
+        double area = Area(path);
 
-        if (difference < bestDifference) {
-            bestDifference = difference;
+        if (area >= bestArea) {
+            bestArea = area;
             bestIndex = i;
         }
     }

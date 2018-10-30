@@ -654,13 +654,6 @@
         </property>
        </widget>
       </item>
-      <item row="24" column="3">
-       <widget class="QLabel" name="extractResultsSupportHeightLabel">
-        <property name="text">
-         <string>Support height:</string>
-        </property>
-       </widget>
-      </item>
       <item row="24" column="2">
        <widget class="QDoubleSpinBox" name="extractResultsModelLengthSpinBox">
         <property name="maximum">
@@ -681,34 +674,10 @@
         </property>
        </widget>
       </item>
-      <item row="25" column="1">
-       <widget class="QLabel" name="extractResultsFirstLayerAngleLabel">
-        <property name="text">
-         <string>First angle:</string>
-        </property>
-       </widget>
-      </item>
       <item row="4" column="3">
        <widget class="QCheckBox" name="checkVisibilityXDirectionsCheckBox">
         <property name="text">
          <string>Include +x/-x</string>
-        </property>
-       </widget>
-      </item>
-      <item row="25" column="2">
-       <widget class="QDoubleSpinBox" name="extractResultsFirstLayerAngleSpinBox">
-        <property name="maximum">
-         <double>90.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>15.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="26" column="1">
-       <widget class="QLabel" name="extractResultsSecondLayerAngleLabel">
-        <property name="text">
-         <string>Second angle:</string>
         </property>
        </widget>
       </item>
@@ -895,16 +864,6 @@
         </property>
        </widget>
       </item>
-      <item row="26" column="2">
-       <widget class="QDoubleSpinBox" name="extractResultsSecondLayerAngleSpinBox">
-        <property name="maximum">
-         <double>90.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>30.000000000000000</double>
-        </property>
-       </widget>
-      </item>
       <item row="18" column="1">
        <widget class="QCheckBox" name="cutComponentsCheckBox">
         <property name="text">
@@ -1051,16 +1010,6 @@
         </property>
        </widget>
       </item>
-      <item row="24" column="4">
-       <widget class="QDoubleSpinBox" name="extractResultsSupportHeightSpinBox">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>10.000000000000000</double>
-        </property>
-       </widget>
-      </item>
       <item row="18" column="5">
        <widget class="QPushButton" name="cutComponentsButton">
         <property name="text">
@@ -1105,6 +1054,40 @@
         </property>
         <property name="checked">
          <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="24" column="3">
+       <widget class="QLabel" name="extractResultsFirstLayerAngleLabel">
+        <property name="text">
+         <string>First angle:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="24" column="4">
+       <widget class="QDoubleSpinBox" name="extractResultsFirstLayerAngleSpinBox">
+        <property name="maximum">
+         <double>90.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>15.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="25" column="1">
+       <widget class="QLabel" name="extractResultsSecondLayerAngleLabel">
+        <property name="text">
+         <string>Second angle:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="25" column="2">
+       <widget class="QDoubleSpinBox" name="extractResultsSecondLayerAngleSpinBox">
+        <property name="maximum">
+         <double>90.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>30.000000000000000</double>
         </property>
        </widget>
       </item>

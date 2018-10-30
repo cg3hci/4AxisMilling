@@ -137,8 +137,6 @@ void FourAxisFabricationManager::updateUI() {
     ui->extractResultsStockDiameterSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsModelLengthLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsModelLengthSpinBox->setEnabled(!data.areResultsExtracted);
-    ui->extractResultsSupportHeightSpinBox->setEnabled(!data.areResultsExtracted);
-    ui->extractResultsSupportHeightLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsFirstLayerAngleLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsFirstLayerAngleSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsSecondLayerAngleLabel->setEnabled(!data.areResultsExtracted);
@@ -190,8 +188,6 @@ void FourAxisFabricationManager::optimalOrientation() {
         unsigned int nOrientations = (unsigned int) ui->optimalOrientationOrientationsSpinBox->value();
         double deepnessWeight = (double) ui->optimalOrientationDeepnessWeightSpinBox->value();
         bool deterministic = ui->optimalOrientationDeterministicCheckBox->isChecked();
-
-        std::cout << deepnessWeight << std::endl;;
 
         cg3::Timer t("Optimal orientation");
 
@@ -444,7 +440,6 @@ void FourAxisFabricationManager::extractResults() {
         double modelLength = ui->extractResultsModelLengthSpinBox->value();
         double stockLength = ui->extractResultsStockLengthSpinBox->value();
         double stockDiameter = ui->extractResultsStockDiameterSpinBox->value();
-        double supportHeight = ui->extractResultsSupportHeightSpinBox->value();
         double firstLayerAngle = ui->extractResultsFirstLayerAngleSpinBox->value() / 180.0 * M_PI;
         double secondLayerAngle = ui->extractResultsSecondLayerAngleSpinBox->value() / 180.0 * M_PI;
         double firstLayerHeight = ui->extractResultsFirstLayerHeightSpinBox->value();
@@ -454,7 +449,7 @@ void FourAxisFabricationManager::extractResults() {
         cg3::Timer t("Extract results");
 
         //Extract results
-        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, supportHeight, firstLayerAngle, secondLayerAngle, firstLayerHeight, xDirectionsAfter, rotateResults);
+        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, firstLayerAngle, secondLayerAngle, firstLayerHeight, xDirectionsAfter, rotateResults);
 
         t.stopAndPrint();
 
