@@ -386,8 +386,10 @@ bool getChartBorders(
                 }
 
                 pos++;
-                if (pos >= vHeMap.at(vCurrent).size())
+                if (pos >= vHeMap.at(vCurrent).size()) {
                     std::cout << "Error in detecting borders (no path)." << std::endl;
+                    return false;
+                }
             }
             while (!success);
         }

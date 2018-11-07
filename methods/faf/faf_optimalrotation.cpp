@@ -58,11 +58,12 @@ void rotateToOptimalOrientation(
         cg3::EigenMesh& smoothedMesh,
         const unsigned int nDirs,
         const double deepnessWeight,
+        const double offsetWeight,
         const bool deterministic)
 {    
-    const double normalWeight = 1-deepnessWeight;
+    const double normalWeight = 1 - deepnessWeight - offsetWeight;
 
-    const double offsetAngle = M_PI/4;
+    const double offsetAngle = M_PI/2;
     const double heightFieldAngle = M_PI/2;
 
     //Translate mesh on the centre
@@ -118,6 +119,7 @@ void rotateToOptimalOrientation(
 
     double maxNormalScore = -std::numeric_limits<double>::max();
     double maxDeepnessScore = -std::numeric_limits<double>::max();
+    double minOffsetScore = std::numeric_limits<double>::max();
 
     for (size_t i = 0; i < candidateDirs.size(); i++) {
         const cg3::Vec3& dir = candidateDirs[i];
@@ -169,20 +171,22 @@ void rotateToOptimalOrientation(
         }
 
         //Deepness
-        double minDeepness = 0.5 + std::min(0.5, (levelSetMinX - bb.minX()) / (bb.maxX() - bb.minX()));
-        double maxDeepness = 0.5 + std::min(0.5, 1 - ((levelSetMaxX - bb.minX()) / (bb.maxX() - bb.minX())));
-        deepnessScores[i] = 0.5*minDeepness + 0.5*maxDeepness;
+        double minDeepness = std::min(0.5, (levelSetMinX - bb.minX()) / (bb.maxX() - bb.minX()));
+        double maxDeepness = std::min(0.5, 1 - ((levelSetMaxX - bb.minX()) / (bb.maxX() - bb.minX())));
+        deepnessScores[i] = minDeepness + maxDeepness;
 
 
         //Get the maximum normal score
         maxNormalScore = std::max(normalScores[i], maxNormalScore);
         maxDeepnessScore = std::max(deepnessScores[i], maxDeepnessScore);
+        minOffsetScore = std::min(offsetScores[i], minOffsetScore);
     }
 
     //Normalize scores
     for (size_t i = 0; i < candidateDirs.size(); i++) {
         normalScores[i] = normalScores[i] / maxNormalScore;
         deepnessScores[i] = deepnessScores[i] / maxDeepnessScore;
+        offsetScores[i] = (offsetScores[i] - minOffsetScore) / (1 - minOffsetScore);
     }
 
     //Compute the best orientation
@@ -193,7 +197,7 @@ void rotateToOptimalOrientation(
         const cg3::Vec3& dir = candidateDirs[i];
 
         //Get the score
-        double score = (normalWeight * normalScores[i] + deepnessWeight * deepnessScores[i]) + offsetScores[i];
+        double score = normalWeight * normalScores[i] + deepnessWeight * deepnessScores[i] + offsetWeight * offsetScores[i];
 
         //Select the best orientation
         if (score >= bestScore) {
