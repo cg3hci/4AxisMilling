@@ -57,11 +57,11 @@ void rotateToOptimalOrientation(
         cg3::EigenMesh& mesh,
         cg3::EigenMesh& smoothedMesh,
         const unsigned int nDirs,
-        const double deepnessWeight,
-        const double offsetWeight,
+        const double extremeWeight,
+        const double BBweight,
         const bool deterministic)
-{    
-    const double normalWeight = 1 - deepnessWeight - offsetWeight;
+{
+    const double normalWeight = 1 - extremeWeight - BBweight;
 
     const double offsetAngle = M_PI/2;
     const double heightFieldAngle = M_PI/2;
@@ -74,26 +74,26 @@ void rotateToOptimalOrientation(
     internal::rotateToPrincipalComponents(mesh, smoothedMesh);
 
 
-    //Rotate to the longest side of the bounding box
-    smoothedMesh.updateBoundingBox();
-    cg3::BoundingBox b = smoothedMesh.boundingBox();
+//    //Rotate to the longest side of the bounding box
+//    smoothedMesh.updateBoundingBox();
+//    cg3::BoundingBox b = smoothedMesh.boundingBox();
 
-    //If Y length is the greatest one then rotate by 90° around zAxis
-    if (b.lengthY() > b.lengthX() && b.lengthY() > b.lengthZ()){
-        cg3::Vec3 zAxis(0,0,1);
-        double angle = M_PI/2;
+//    //If Y length is the greatest one then rotate by 90° around zAxis
+//    if (b.lengthY() > b.lengthX() && b.lengthY() > b.lengthZ()){
+//        cg3::Vec3 zAxis(0,0,1);
+//        double angle = M_PI/2;
 
-        mesh.rotate(cg3::rotationMatrix(zAxis, angle));
-        smoothedMesh.rotate(cg3::rotationMatrix(zAxis, angle));
-    }
-    //If Z length is the greatest one then rotate by 90° around yAxis
-    else if (b.lengthZ() > b.lengthX() && b.lengthZ() > b.lengthY()){
-        cg3::Vec3 yAxis(0,1,0);
-        double angle = M_PI/2;
+//        mesh.rotate(cg3::rotationMatrix(zAxis, angle));
+//        smoothedMesh.rotate(cg3::rotationMatrix(zAxis, angle));
+//    }
+//    //If Z length is the greatest one then rotate by 90° around yAxis
+//    else if (b.lengthZ() > b.lengthX() && b.lengthZ() > b.lengthY()){
+//        cg3::Vec3 yAxis(0,1,0);
+//        double angle = M_PI/2;
 
-        mesh.rotate(cg3::rotationMatrix(yAxis, angle));
-        smoothedMesh.rotate(cg3::rotationMatrix(yAxis, angle));
-    }
+//        mesh.rotate(cg3::rotationMatrix(yAxis, angle));
+//        smoothedMesh.rotate(cg3::rotationMatrix(yAxis, angle));
+//    }
 
 
     //Get the direction pool (sphere coverage, fibonacci sampling)l
@@ -114,12 +114,12 @@ void rotateToOptimalOrientation(
     const std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
 
     std::vector<double> normalScores(candidateDirs.size(), 0.0);
-    std::vector<double> deepnessScores(candidateDirs.size(), 0.0);
-    std::vector<double> offsetScores(candidateDirs.size(), 0.0);
+    std::vector<double> extremeScores(candidateDirs.size(), 0.0);
+    std::vector<double> BBScores(candidateDirs.size(), 0.0);
 
     double maxNormalScore = -std::numeric_limits<double>::max();
-    double maxDeepnessScore = -std::numeric_limits<double>::max();
-    double minOffsetScore = std::numeric_limits<double>::max();
+    double maxBBScore = -std::numeric_limits<double>::max();
+    double maxExtremeScore = -std::numeric_limits<double>::max();
 
     for (size_t i = 0; i < candidateDirs.size(); i++) {
         const cg3::Vec3& dir = candidateDirs[i];
@@ -137,9 +137,9 @@ void rotateToOptimalOrientation(
         copyMesh.rotate(rot);
         copyMesh.updateBoundingBox();
         copyMesh.updateFaceNormals();
-        cg3::BoundingBox bb = copyMesh.boundingBox();
+        cg3::BoundingBox copyBB = copyMesh.boundingBox();
 
-        offsetScores[i] = dirDot;
+        BBScores[i] = copyBB.lengthX();
 
         std::vector<unsigned int> minExtremes;
         std::vector<unsigned int> maxExtremes;
@@ -151,42 +151,49 @@ void rotateToOptimalOrientation(
         extremesSet.insert(minExtremes.begin(), minExtremes.end());
         extremesSet.insert(maxExtremes.begin(), maxExtremes.end());
 
+        double totalArea = 0;
+        double minArea = 0;
+        double maxArea = 0;
+
         //Get normal scores
         for (size_t fId = 0; fId < minExtremes.size(); fId++) {
             cg3::Vec3 n = copyMesh.faceNormal(minExtremes[fId]);
             double a = copyMesh.faceArea(fId);
             normalScores[i] += a * n.dot(-xAxis);
+            minArea += a;
+            totalArea += a;
         }
         for (size_t fId = 0; fId < maxExtremes.size(); fId++) {
             cg3::Vec3 n = copyMesh.faceNormal(maxExtremes[fId]);
             double a = copyMesh.faceArea(fId);
             normalScores[i] += a * n.dot(xAxis);
+            maxArea += a;
+            totalArea += a;
         }
         for(unsigned int fId = 0; fId < copyMesh.numberFaces(); fId++) {
             if (extremesSet.find(fId) == extremesSet.end()) {
                 cg3::Vec3 n = copyMesh.faceNormal(fId);
                 double a = copyMesh.faceArea(fId);
-                normalScores[i] += a * (1 - std::fabs(n.dot(xAxis)));
+                normalScores[i] += a * (1 - std::fabs(n.dot(xAxis)));                
+                totalArea += a;
             }
         }
 
-        //Deepness
-        double minDeepness = std::min(0.5, (levelSetMinX - bb.minX()) / (bb.maxX() - bb.minX()));
-        double maxDeepness = std::min(0.5, 1 - ((levelSetMaxX - bb.minX()) / (bb.maxX() - bb.minX())));
-        deepnessScores[i] = minDeepness + maxDeepness;
+        //Flatness
+        extremeScores[i] = (minArea + maxArea) / totalArea;
 
 
         //Get the maximum normal score
         maxNormalScore = std::max(normalScores[i], maxNormalScore);
-        maxDeepnessScore = std::max(deepnessScores[i], maxDeepnessScore);
-        minOffsetScore = std::min(offsetScores[i], minOffsetScore);
+        maxBBScore = std::max(BBScores[i], maxBBScore);
+        maxExtremeScore = std::max(extremeScores[i], maxExtremeScore);
     }
 
     //Normalize scores
     for (size_t i = 0; i < candidateDirs.size(); i++) {
         normalScores[i] = normalScores[i] / maxNormalScore;
-        deepnessScores[i] = deepnessScores[i] / maxDeepnessScore;
-        offsetScores[i] = (offsetScores[i] - minOffsetScore) / (1 - minOffsetScore);
+        BBScores[i] = BBScores[i]/ maxBBScore;
+        extremeScores[i] = extremeScores[i]/ maxExtremeScore;
     }
 
     //Compute the best orientation
@@ -197,7 +204,10 @@ void rotateToOptimalOrientation(
         const cg3::Vec3& dir = candidateDirs[i];
 
         //Get the score
-        double score = normalWeight * normalScores[i] + deepnessWeight * deepnessScores[i] + offsetWeight * offsetScores[i];
+        double score =
+                normalWeight * normalScores[i] +
+                BBweight * BBScores[i] +
+                extremeWeight * extremeScores[i];
 
         //Select the best orientation
         if (score >= bestScore) {

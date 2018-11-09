@@ -36,8 +36,13 @@ void setupSmoothCost(
         const double compactness,
         std::vector<float>& smoothCost);
 
-}
 
+float getSmoothTerm(
+        int f1, int f2,
+        int l1, int l2,
+        void *extra_data);
+
+}
 
 /* Get optimal association for each face */
 
@@ -87,13 +92,18 @@ void getAssociation(
 
     //Get the costs
     internal::setupDataCost(mesh, targetLabels, freeCostAngle, dataSigma, fixExtremes, data, dataCost);
-    internal::setupSmoothCost(targetLabels, compactness, smoothCost);
+    //Fixed compactness cost
+//    internal::setupSmoothCost(targetLabels, compactness, smoothCost);
+
 
     try {
         GCoptimizationGeneralGraph* gc = new GCoptimizationGeneralGraph(nFaces, nLabels);
 
         gc->setDataCost(dataCost.data());
-        gc->setSmoothCost(smoothCost.data());
+        //Set smooth cost with not fixed compactness cost
+        gc->setSmoothCost(internal::getSmoothTerm, (void*) &mesh);
+        //Fixed compactness cost
+//        gc->setSmoothCost(smoothCost.data());
 
         //Set adjacencies
         std::vector<bool> visited(nFaces, false);
@@ -510,6 +520,31 @@ void setupSmoothCost(
             smoothCost[l1 * nLabels + l2] = cost;
         }
     }
+}
+
+float getSmoothTerm(
+        int f1, int f2,
+        int l1, int l2,
+        void *extra_data)
+{
+    cg3::EigenMesh* mesh = (cg3::EigenMesh*) extra_data;
+
+    float smoothSigma = 0.2;
+    float compactness = 4;
+    float epsilon = 0.05;
+
+    if (l1 == l2)
+        return 0.f;
+
+    cg3::Vec3 faceNormal1 = mesh->faceNormal(f1);
+    cg3::Vec3 faceNormal2 = mesh->faceNormal(f2);
+
+    float dot = faceNormal1.dot(faceNormal2);
+    float cost = exp(-0.5 * pow((dot - 1.f)/smoothSigma, 2.f));
+
+    float smoothTerm = compactness * (cost + epsilon);
+
+    return smoothTerm;
 }
 
 }

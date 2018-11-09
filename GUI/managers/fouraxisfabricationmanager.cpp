@@ -82,10 +82,10 @@ void FourAxisFabricationManager::updateUI() {
     ui->optimalOrientationOrientationsLabel->setEnabled(!data.isMeshOriented);
     ui->optimalOrientationOrientationsSpinBox->setEnabled(!data.isMeshOriented);
     ui->optimalOrientationDeterministicCheckBox->setEnabled(!data.isMeshOriented);
-    ui->optimalOrientationDeepnessWeightLabel->setEnabled(!data.isMeshOriented);
-    ui->optimalOrientationDeepnessWeightSpinBox->setEnabled(!data.isMeshOriented);
-    ui->optimalOrientationOffsetWeightLabel->setEnabled(!data.isMeshOriented);
-    ui->optimalOrientationOffsetWeightSpinBox->setEnabled(!data.isMeshOriented);
+    ui->optimalOrientationExtremeWeightLabel->setEnabled(!data.isMeshOriented);
+    ui->optimalOrientationExtremeWeightSpinBox->setEnabled(!data.isMeshOriented);
+    ui->optimalOrientationBBWeightLabel->setEnabled(!data.isMeshOriented);
+    ui->optimalOrientationBBWeightSpinBox->setEnabled(!data.isMeshOriented);
 
     //Select extremes
     ui->selectExtremesButton->setEnabled(!data.areExtremesSelected);
@@ -188,8 +188,8 @@ void FourAxisFabricationManager::optimalOrientation() {
 
         //Get UI data
         unsigned int nOrientations = (unsigned int) ui->optimalOrientationOrientationsSpinBox->value();
-        double deepnessWeight = (double) ui->optimalOrientationDeepnessWeightSpinBox->value();
-        double offsetWeight = (double) ui->optimalOrientationOffsetWeightSpinBox->value();
+        double extremeWeight = (double) ui->optimalOrientationExtremeWeightSpinBox->value();
+        double BBWeight = (double) ui->optimalOrientationBBWeightSpinBox->value();
         bool deterministic = ui->optimalOrientationDeterministicCheckBox->isChecked();
 
         cg3::Timer t("Optimal orientation");
@@ -199,8 +199,8 @@ void FourAxisFabricationManager::optimalOrientation() {
                     data.mesh,
                     data.smoothedMesh,
                     nOrientations,
-                    deepnessWeight,
-                    offsetWeight,
+                    extremeWeight,
+                    BBWeight,
                     deterministic);
 
         t.stopAndPrint();
