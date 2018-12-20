@@ -17,6 +17,7 @@ void getAssociation(
         const cg3::EigenMesh& mesh,
         const double freeCostAngle,
         const double dataSigma,
+        const double smoothSigma,
         const double compactness,
         const bool fixExtremes,
         Data& data);

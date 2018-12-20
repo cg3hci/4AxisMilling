@@ -18,9 +18,17 @@
 
 #define MAXCOST GCO_MAX_ENERGYTERM
 
+
+
 namespace FourAxisFabrication {
 
 namespace internal {
+
+struct SmoothData {
+    const cg3::EigenMesh& mesh;
+    double smoothSigma;
+    double compactness;
+};
 
 void setupDataCost(
         const cg3::EigenMesh& mesh,
@@ -59,6 +67,7 @@ void getAssociation(
         const cg3::EigenMesh& mesh,
         const double freeCostAngle,
         const double dataSigma,
+        const double smoothSigma,
         const double compactness,
         const bool fixExtremes,
         Data& data)
@@ -95,15 +104,13 @@ void getAssociation(
     //Fixed compactness cost
 //    internal::setupSmoothCost(targetLabels, compactness, smoothCost);
 
-
     try {
         GCoptimizationGeneralGraph* gc = new GCoptimizationGeneralGraph(nFaces, nLabels);
 
         gc->setDataCost(dataCost.data());
-        //Set smooth cost with not fixed compactness cost
-        gc->setSmoothCost(internal::getSmoothTerm, (void*) &mesh);
-        //Fixed compactness cost
-//        gc->setSmoothCost(smoothCost.data());
+        //Set smooth cost
+        internal::SmoothData smoothData = {mesh, smoothSigma, compactness};
+        gc->setSmoothCost(internal::getSmoothTerm, (void*) &smoothData);
 
         //Set adjacencies
         std::vector<bool> visited(nFaces, false);
@@ -527,22 +534,60 @@ float getSmoothTerm(
         int l1, int l2,
         void *extra_data)
 {
-    cg3::EigenMesh* mesh = (cg3::EigenMesh*) extra_data;
+    SmoothData* smoothData = (SmoothData*) extra_data;
+    const cg3::EigenMesh& mesh = smoothData->mesh;
+    float smoothSigma = smoothData->smoothSigma;
+    float compactness = smoothData->compactness;
 
-    float smoothSigma = 0.2;
-    float compactness = 4;
-    float epsilon = 0.05;
+    //    float smoothSigma = 0.2;
+    //    float compactness = 4;
+    //    float epsilon = 0.05;
+
+    //    if (l1 == l2)
+    //        return 0.f;
+
+    //    cg3::Vec3 faceNormal1 = mesh->faceNormal(f1);
+    //    cg3::Vec3 faceNormal2 = mesh->faceNormal(f2);
+
+    //    float dot = faceNormal1.dot(faceNormal2);
+    //    float cost = exp(-0.5 * pow((dot - 1.f)/smoothSigma, 2.f));
+
+    //    float smoothTerm = compactness * (cost + epsilon);
 
     if (l1 == l2)
-        return 0.f;
+        return 0.0;
 
-    cg3::Vec3 faceNormal1 = mesh->faceNormal(f1);
-    cg3::Vec3 faceNormal2 = mesh->faceNormal(f2);
+    cg3::Pointi face1 = mesh.face(f1);
+    cg3::Pointi face2 = mesh.face(f2);
 
-    float dot = faceNormal1.dot(faceNormal2);
-    float cost = exp(-0.5 * pow((dot - 1.f)/smoothSigma, 2.f));
+    //TODO FARLO PIU' EFFICIENTE
+    std::set<int> vertices1;
+    vertices1.insert(face1.x());
+    vertices1.insert(face1.y());
+    vertices1.insert(face1.z());
+    std::set<int> vertices2;
+    vertices2.insert(face2.x());
+    vertices2.insert(face2.y());
+    vertices2.insert(face2.z());
+    std::set<int> intersect;
+    std::set_intersection(vertices1.begin(), vertices1.end(), vertices2.begin(), vertices2.end(), std::inserter(intersect,intersect.begin()));
 
-    float smoothTerm = compactness * (cost + epsilon);
+    if (intersect.size() != 2) {
+        std::cout << "Error intersection" << std::endl;
+        exit(-5);
+    }
+
+    std::set<int>::iterator it = intersect.begin();
+    cg3::Pointd v1 = mesh.vertex(*it);
+    it++;
+    cg3::Pointd v2 = mesh.vertex(*it);
+
+    cg3::Vec3 dir = v1 - v2;
+    dir.normalize();
+
+    float directionCost = static_cast<float>(1 - (dir.x() * dir.x()));
+
+    float smoothTerm = compactness + (directionCost * smoothSigma);
 
     return smoothTerm;
 }

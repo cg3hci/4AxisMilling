@@ -36,7 +36,7 @@ FINAL_RELEASE {
 exists($$(GUROBI_HOME)){
     message (Gurobi)
     INCLUDEPATH += $$(GUROBI_HOME)/include
-    LIBS += -L$$(GUROBI_HOME)/lib -lgurobi_g++5.2 -lgurobi80
+    LIBS += -L$$(GUROBI_HOME)/lib -lgurobi_g++5.2 -lgurobi81
     DEFINES += GUROBI_DEFINED
 }
 

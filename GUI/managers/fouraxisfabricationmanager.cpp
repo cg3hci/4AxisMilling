@@ -105,6 +105,8 @@ void FourAxisFabricationManager::updateUI() {
     ui->getAssociationButton->setEnabled(!data.isAssociationComputed);
     ui->getAssociationDataSigmaSpinBox->setEnabled(!data.isAssociationComputed);
     ui->getAssociationDataSigmaLabel->setEnabled(!data.isAssociationComputed);
+    ui->getAssociationSmoothSigmaSpinBox->setEnabled(!data.isAssociationComputed);
+    ui->getAssociationSmoothSigmaLabel->setEnabled(!data.isAssociationComputed);
     ui->getAssociationFreeCostAngleSpinBox->setEnabled(!data.isAssociationComputed);
     ui->getAssociationFreeCostAngleLabel->setEnabled(!data.isAssociationComputed);    
     ui->getAssociationCompactnessLabel->setEnabled(!data.isAssociationComputed);
@@ -282,6 +284,7 @@ void FourAxisFabricationManager::getAssociation() {
         //Get UI data
         double freeCostAngle = ui->getAssociationFreeCostAngleSpinBox->value() / 180.0 * M_PI;
         double dataSigma = ui->getAssociationDataSigmaSpinBox->value();
+        double smoothSigma = ui->getAssociationSmoothSigmaSpinBox->value();
         double compactness = ui->getAssociationCompactnessSpinBox->value();
         bool fixExtremes = ui->getAssociationFixExtremesCheckBox->isChecked();
 
@@ -292,6 +295,7 @@ void FourAxisFabricationManager::getAssociation() {
                     data.smoothedMesh,
                     freeCostAngle,
                     dataSigma,
+                    smoothSigma,
                     compactness,
                     fixExtremes,
                     data);
