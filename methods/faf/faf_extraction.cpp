@@ -31,12 +31,12 @@ namespace internal {
 std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, const double offset);
 void getFabricationOrder(
         const std::vector<unsigned int>& association,
-        const cg3::Array2D<int>& costMatrix,
+        const cg3::Array2D<double>& costMatrix,
         const size_t minLabel,
         const size_t maxLabel,
         const bool extremeResults,
-        std::vector<int>& cost,
-        std::vector<int>& gain,
+        std::vector<double>& cost,
+        std::vector<double>& gain,
         size_t& currentPosition,
         double& totalCost,
         std::vector<size_t>& resultPosition);
@@ -719,7 +719,7 @@ void extractResults(
     //Csg tree
     CSGTree csgFourAxisScaled = cg3::libigl::eigenMeshToCSGTree(fourAxisScaled);
 
-    cg3::Array2D<int> costMatrix(nResults, nResults, 0);
+    cg3::Array2D<double> costMatrix(nResults, nResults, 0);
 
     boxes.resize(nResults);
     for (size_t rId = 0; rId < nResults; rId++) {
@@ -744,7 +744,7 @@ void extractResults(
         unsigned int nFirstFaces = csgFourAxisScaled.F().rows();
         unsigned int nSecondFaces = csgTmpResult.F().rows();
 
-        int totalCost = 0;
+        double totalCost = 0;
 
         for (unsigned int i = 0; i < birthFaces.rows(); i++) {
             unsigned int birthFace = birthFaces[i];
@@ -753,9 +753,9 @@ void extractResults(
             if (birthFace < nFirstFaces) {
                 unsigned int birthChartId = fourAxisChartData.faceChartMap.at(birthFace);
 
-                costMatrix(rId, chartToResult[birthChartId])++;
+                costMatrix(rId, chartToResult[birthChartId]) += result.faceArea(i);
 
-                totalCost++;
+                totalCost += result.faceArea(i);
 
                 //Color other chart face of the mesh
                 box.setFaceColor(colorMap[fourAxisAssociation[birthFace]], i);
@@ -800,8 +800,8 @@ void extractResults(
     size_t currentPosition = 0;
 
     //Generate cost and gain data
-    std::vector<int> cost(nResults, 0);
-    std::vector<int> gain(nResults, 0);
+    std::vector<double> cost(nResults, 0);
+    std::vector<double> gain(nResults, 0);
     for (size_t i = 0; i < nResults; i++) {
         for (size_t j = 0; j < nResults; j++) {
             cost[i] += costMatrix(i,j);
@@ -844,7 +844,10 @@ void extractResults(
     tmpResults.clear();
     tmpResultsAssociation.clear();
 
-    std::cout << std::endl << "Faces fabricated from other directions: " << totalCost << std::endl;
+    double totalArea = 0;
+    for (int i = 0; i < fourAxisScaled.numberFaces(); i++)
+        totalArea += fourAxisScaled.faceArea(i);
+    std::cout << std::endl << "Area fabricated from other directions: " << totalCost << " (w.r.t. total area (" << totalArea << "): " << totalCost/totalArea << ")" << std::endl;
 
 
     /* ----- INITIAL STOCK GENERATION ----- */
@@ -1042,12 +1045,12 @@ std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, co
  */
 void getFabricationOrder(
         const std::vector<unsigned int>& association,
-        const cg3::Array2D<int>& costMatrix,
+        const cg3::Array2D<double>& costMatrix,
         const size_t minLabel,
         const size_t maxLabel,
         const bool extremeResults,
-        std::vector<int>& cost,
-        std::vector<int>& gain,
+        std::vector<double>& cost,
+        std::vector<double>& gain,
         size_t& currentPosition,
         double& totalCost,
         std::vector<size_t>& resultPosition)
