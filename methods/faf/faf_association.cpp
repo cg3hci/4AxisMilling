@@ -462,7 +462,7 @@ void setupDataCost(
 
                 //If the angle is greater than the limit angle
                 if (dot < freeCostDot) {
-                    double normalizedDot = (dot - freeCostDot)/freeCostDot;
+                    double normalizedDot = ((1 - dot) - freeCostDot)/freeCostDot;
                     cost = pow(normalizedDot, dataSigma);
                 }
                 else {

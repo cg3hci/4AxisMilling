@@ -396,7 +396,7 @@ bool isHeightFieldValid(
 
         //Check if the triangle normal has an angle less than 90° with the given direction
         const cg3::Vec3& associatedDirection = data.directions[data.association[fId]];
-        if (faceNormal.dot(associatedDirection) < heightfieldLimit)
+        if (faceNormal.dot(associatedDirection) + 0.0001 <= heightfieldLimit)
             return false;
     }
     return true;
