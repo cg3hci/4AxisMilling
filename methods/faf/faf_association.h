@@ -15,18 +15,10 @@ namespace FourAxisFabrication {
 
 void getAssociation(
         const cg3::EigenMesh& mesh,
-        const double freeCostAngle,
         const double dataSigma,
         const double smoothSigma,
         const double compactness,
         const bool fixExtremes,
-        Data& data);
-
-void optimization(
-        const cg3::EigenMesh& mesh,
-        const bool relaxHoles,
-        const bool loseHoles,
-        const double minChartArea,
         Data& data);
 
 

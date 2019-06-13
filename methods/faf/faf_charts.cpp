@@ -92,14 +92,13 @@ ChartData getChartData(
             std::stack<unsigned int> stack;
             stack.push(startFaceId);
 
-
             //Region growing algorithm to get all chart faces
             while (!stack.empty()) {
                 unsigned int currentFaceId = stack.top();
                 stack.pop();
+
                 if (extremeFaces.find(startFaceId) != extremeFaces.end())
                     isChartExtreme = true;
-
 
                 if (!visited[currentFaceId]) {
                     visited[currentFaceId] = true;
@@ -134,6 +133,17 @@ ChartData getChartData(
 
                             chart.adjacentFaces.insert(adjId);
                             chart.adjacentLabels.insert(adjLabel);
+
+                            //Set edge-label map
+                            unsigned int fromId = he->fromVertex()->id();
+                            unsigned int toId = he->toVertex()->id();
+
+                            std::pair<unsigned int, unsigned int> edge(fromId, toId);
+                            std::array<int, 2> labelArray;
+                            labelArray[0] = label;
+                            labelArray[1] = adjLabel;
+
+                            chartData.edgeLabelMap.insert(std::make_pair(edge, labelArray));
                         }
                     }
 
@@ -308,12 +318,11 @@ bool getChartBorders(
 {
     const cg3::Dcel::HalfEdge* he;
 
-
     do {
-        if (visitedBorderVertex.find(vCurrent) != visitedBorderVertex.end())
-            return false;
-
         if (vNext.at(vCurrent).size() == 1) {
+            if (visitedBorderVertex.find(vCurrent) != visitedBorderVertex.end())
+                return false;
+
             he = vHeMap.at(vCurrent).at(0);
 
             unsigned int fId = he->face()->id();

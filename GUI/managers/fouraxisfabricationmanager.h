@@ -85,6 +85,7 @@ private:
 
     /* Computing methods */
 
+    void smoothing();
     void optimalOrientation();
     void selectExtremes();
     void checkVisibility();
@@ -98,11 +99,13 @@ private:
 
     /* Visualization methods */
 
-    void addDrawableMeshes();
+    void addDrawableMesh();
+    void addDrawableSmoothedMesh();
     void addDrawableRestoredMesh();
     void addDrawableCutComponents();
     void addDrawableResults();
-    void updateDrawableMeshes();
+    void updateDrawableMesh();
+    void updateDrawableSmoothedMesh();
     void updateDrawableRestoredMesh();
 
     void deleteDrawableObjects();
@@ -145,6 +148,7 @@ private slots:
 
     /* UI slots Four Axis Fabrication */
 
+    void on_smoothingButton_clicked();
     void on_optimalOrientationButton_clicked();
     void on_selectExtremesButton_clicked();
     void on_checkVisibilityButton_clicked();

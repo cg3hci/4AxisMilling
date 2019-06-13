@@ -14,6 +14,7 @@ Data::Data() {
 
 void Data::clear() {
     isMeshLoaded = false;
+    isMeshSmoothed = false;
     isMeshOriented = false;
     areExtremesSelected = false;
     isVisibilityChecked = false;
@@ -76,6 +77,7 @@ void Data::serialize(std::ofstream &binaryFile) const
                 "faf_data",
                 binaryFile,
                 isMeshLoaded,
+                isMeshSmoothed,
                 isMeshOriented,
                 areExtremesSelected,
                 isVisibilityChecked,
@@ -124,6 +126,7 @@ void Data::deserialize(std::ifstream &binaryFile)
                 "faf_data",
                 binaryFile,
                 isMeshLoaded,
+                isMeshSmoothed,
                 isMeshOriented,
                 areExtremesSelected,
                 isVisibilityChecked,

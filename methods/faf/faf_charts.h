@@ -37,6 +37,7 @@ struct ChartData {
     std::vector<size_t> faceChartMap;
     std::vector<Chart> charts;
     std::vector<bool> isExtreme;
+    std::map<std::pair<unsigned int, unsigned int>, std::array<int, 2>> edgeLabelMap;
 
     void clear() {
         charts.clear();

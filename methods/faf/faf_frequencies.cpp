@@ -22,7 +22,7 @@
 #include "faf_visibilitycheck.h"
 #include "faf_association.h"
 
-#define BINARY_SEARCH_ITERATIONS 10
+#define BINARY_SEARCH_ITERATIONS 20
 
 namespace FourAxisFabrication {
 
@@ -43,19 +43,18 @@ std::vector<cg3::Vec3> computeDifferentialCoordinates(
         const cg3::EigenMesh& mesh,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies);
 
-cg3::Pointd getTargetPoint(
-        const cg3::EigenMesh& mesh,
+cg3::Pointd getTargetPoint(const cg3::EigenMesh& mesh,
         const std::vector<cg3::Vec3>& differentialCoordinates,
-        const int vId,
+        const unsigned int vId,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies);
 
-bool isHeightFieldValid(
-        const cg3::EigenMesh& mesh,
+bool isMoveValid(const cg3::EigenMesh& mesh,
         const Data& data,
-        const int vId,
+        const unsigned int vId,
         const cg3::Pointd& newPoint,
         const std::vector<std::vector<int>>& vertexFaceAdjacencies,
-        const double heightfieldAngle);
+        const double heightfieldAngle,
+        const double normalAngle);
 
 }
 
@@ -77,38 +76,54 @@ void restoreFrequencies(
         cg3::EigenMesh& smoothedMesh,
         Data& data)
 {
-    assert(originalMesh.numberVertices() == smoothedMesh.numberVertices());
-    assert(originalMesh.numberFaces() == smoothedMesh.numberFaces());
+    assert(originalMesh.numberVertices() <= smoothedMesh.numberVertices());
+    assert(originalMesh.numberFaces() <= smoothedMesh.numberFaces());
 
     //Get vertex-vertex adjacencies
-    const std::vector<std::vector<int>> vvAdj =
+    const std::vector<std::vector<int>> vvAdjOriginal =
             cg3::libigl::vertexToVertexAdjacencies(originalMesh);
-    assert(vvAdj.size() == originalMesh.numberVertices());
+    assert(vvAdjOriginal.size() == originalMesh.numberVertices());
+    const std::vector<std::vector<int>> vvAdjSmoothed =
+            cg3::libigl::vertexToVertexAdjacencies(smoothedMesh);
+    assert(vvAdjSmoothed.size() == smoothedMesh.numberVertices());
 
-    //Get vertex-face adjacencies
-    const std::vector<std::vector<int>> vfAdj =
-            cg3::libigl::vertexToFaceIncidences(originalMesh);
-    assert(vfAdj.size() == originalMesh.numberVertices());
+    //Get differential coordinates
+    const std::vector<cg3::Vec3> differentialCoordinatesOriginal =
+            internal::computeDifferentialCoordinates(originalMesh, vvAdjOriginal);
+    const std::vector<cg3::Vec3> differentialCoordinatesSmoothed =
+            internal::computeDifferentialCoordinates(smoothedMesh, vvAdjSmoothed);
 
-    //Get face-face adjacencies
-    const std::vector<std::vector<int>> ffAdj =
-            cg3::libigl::faceToFaceAdjacencies(originalMesh);
-    assert(ffAdj.size() == originalMesh.numberFaces());
 
-    const std::vector<cg3::Vec3> differentialCoordinates =
-            internal::computeDifferentialCoordinates(originalMesh, vvAdj);
+    //Update differential coordinates with the new faces and vertices
+    std::vector<cg3::Vec3> differentialCoordinates(smoothedMesh.numberVertices());
+    std::vector<std::vector<int>> vvAdj(smoothedMesh.numberVertices());
+
+    for (size_t i = 0; i < smoothedMesh.numberVertices(); i++) {
+        if (i < differentialCoordinatesOriginal.size()) {
+            differentialCoordinates[i] = differentialCoordinatesOriginal[i];
+            vvAdj[i] = vvAdjOriginal[i];
+        }
+        else {
+            differentialCoordinates[i] = differentialCoordinatesSmoothed[i];
+            vvAdj[i] = vvAdjSmoothed[i];
+        }
+    }
+
+    //Get vertex-face adjacencies of the smoothed mesh
+    const std::vector<std::vector<int>> vfAdjSmoothed =
+            cg3::libigl::vertexToFaceIncidences(smoothedMesh);
+    assert(vfAdjSmoothed.size() == smoothedMesh.numberVertices());
 
     //Copy the target mesh
     cg3::EigenMesh& restoredMesh = data.restoredMesh;
     restoredMesh = smoothedMesh;
-
 
     for (unsigned int i = 0; i < iterations; ++i) {
         internal::restoreFrequenciesValidHeightfields(
                     restoredMesh,
                     differentialCoordinates,
                     vvAdj,
-                    vfAdj,
+                    vfAdjSmoothed,
                     data,
                     heightfieldAngle);
     }
@@ -266,15 +281,16 @@ bool restoreFrequenciesValidHeightfields(
 
         //Do binary search until the face normals do not violate the heightfield conditions
         int count = 0;
-        while (!internal::isHeightFieldValid(targetMesh, data, vId, targetPoint, vertexFaceAdjacencies, heightfieldAngle) &&
-               count < BINARY_SEARCH_ITERATIONS)
-        {
-            targetPoint = 0.5 * (targetPoint + currentPoint);
+        bool isValid = internal::isMoveValid(targetMesh, data, vId, targetPoint, vertexFaceAdjacencies, heightfieldAngle, M_PI/4);
+        while (!isValid && count < BINARY_SEARCH_ITERATIONS) {
+            targetPoint = (0.5 * (targetPoint - currentPoint) + currentPoint);
+
+            isValid = internal::isMoveValid(targetMesh, data, vId, targetPoint, vertexFaceAdjacencies, heightfieldAngle, M_PI/4);
 
             count++;
         }
 
-        if (count < BINARY_SEARCH_ITERATIONS) {
+        if (isValid) {
             targetMesh.setVertex(vId, targetPoint);
             aVertexHasMoved = true;
         }
@@ -328,7 +344,7 @@ std::vector<cg3::Vec3> computeDifferentialCoordinates(
 cg3::Pointd getTargetPoint(
         const cg3::EigenMesh& targetMesh,
         const std::vector<cg3::Vec3>& differentialCoordinates,
-        const int vId,        
+        const unsigned int vId,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies)
 {
     const std::vector<int>& neighbors = vertexVertexAdjacencies.at(vId);
@@ -357,19 +373,22 @@ cg3::Pointd getTargetPoint(
  * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  * @return True if the move is valid, false otherwise
  */
-bool isHeightFieldValid(
+bool isMoveValid(
         const cg3::EigenMesh& targetMesh,
         const Data& data,
-        const int vId,
+        const unsigned int vId,
         const cg3::Pointd& newPoint,
         const std::vector<std::vector<int>>& vertexFaceAdjacencies,
-        const double heightfieldAngle)
+        const double heightfieldAngle,
+        const double normalAngle)
 {    
     const double heightfieldLimit = cos(heightfieldAngle);
+    const double normalAngleLimit = cos(normalAngle);
 
     const std::vector<int>& faces = vertexFaceAdjacencies.at(vId);
     for (const int& fId : faces) {
         const cg3::Pointi face = targetMesh.face(fId);
+        const cg3::Vec3 faceNormal = targetMesh.faceNormal(fId);
 
         cg3::Pointd p1, p2, p3;
 
@@ -392,11 +411,15 @@ bool isHeightFieldValid(
         }
         cg3::Triangle3Dd triangle(p1, p2, p3);
 
-        cg3::Vec3 faceNormal = triangle.normal();
+        cg3::Vec3 newNormal = triangle.normal();
+
+        //Check if normal has not changed too much
+        if (newNormal.dot(faceNormal) < normalAngleLimit)
+            return false;
 
         //Check if the triangle normal has an angle less than 90° with the given direction
         const cg3::Vec3& associatedDirection = data.directions[data.association[fId]];
-        if (faceNormal.dot(associatedDirection) + 0.0001 <= heightfieldLimit)
+        if (newNormal.dot(associatedDirection) <= heightfieldLimit)
             return false;
     }
     return true;

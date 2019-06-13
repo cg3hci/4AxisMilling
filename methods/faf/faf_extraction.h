@@ -20,10 +20,11 @@ void extractResults(
         const double stockLength,
         const double stockDiameter,
         const double firstLayerAngle,
-        const double secondLayerAngle,
-        const double millableHeight,
-        const bool rotateResults,
-        const bool xDirectionsAfter);
+        const double firstLayerOffset,
+        const double secondLayerStepWidth,
+        const double secondLayerStepHeight,
+        const bool xDirectionsAfter,
+        const bool rotateResults);
 
 }
 

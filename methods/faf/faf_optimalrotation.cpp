@@ -61,9 +61,10 @@ void rotateToOptimalOrientation(
         const double BBweight,
         const bool deterministic)
 {
+    cg3::Vec3 xAxis(1,0,0);
+
     const double normalWeight = 1 - extremeWeight - BBweight;
 
-    const double offsetAngle = M_PI/2;
     const double heightFieldAngle = M_PI/2;
 
     //Translate mesh on the centre
@@ -71,7 +72,6 @@ void rotateToOptimalOrientation(
     mesh.translate(-bbCenter);
     smoothedMesh.translate(-bbCenter);
 
-    internal::rotateToPrincipalComponents(mesh, smoothedMesh);
 
 
 //    //Rotate to the longest side of the bounding box
@@ -99,15 +99,26 @@ void rotateToOptimalOrientation(
     //Get the direction pool (sphere coverage, fibonacci sampling)l
     std::vector<cg3::Vec3> dirPool = cg3::sphereCoverage(nDirs, deterministic);
 
+//    internal::rotateToPrincipalComponents(mesh, smoothedMesh);
+
+//    //Get candidate rotation dirs
+//    const double offsetAngle = M_PI/2;
+//    const double offsetAngleLimit = cos(offsetAngle);
+//    const cg3::Vec3 xAxis(1,0,0);
+//    std::vector<cg3::Vec3> candidateDirs;
+//    for (cg3::Vec3& dir : dirPool) {
+//        dir.normalize();
+//        if (dir.dot(xAxis) >= offsetAngleLimit) {
+//            candidateDirs.push_back(dir);
+//        }
+//    }
+
+
     //Get candidate rotation dirs
-    const double offsetAngleLimit = cos(offsetAngle);
-    const cg3::Vec3 xAxis(1,0,0);
     std::vector<cg3::Vec3> candidateDirs;
     for (cg3::Vec3& dir : dirPool) {
         dir.normalize();
-        if (dir.dot(xAxis) >= offsetAngleLimit) {
-            candidateDirs.push_back(dir);
-        }
+        candidateDirs.push_back(dir);
     }
 
     //Faces adjacencies

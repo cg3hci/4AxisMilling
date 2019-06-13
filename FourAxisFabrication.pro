@@ -7,6 +7,8 @@ CONFIG(release, debug|release){
     CONFIG += FINAL_RELEASE
 }
 
+VCGLIBPATH = /usr/include/vcglib
+
 #CONFIG += c++14
 
 CONFIG += ALL
@@ -17,7 +19,7 @@ ALL {
     #CONFIG += USE_LIBIGL_EIGEN
     CONFIG += MULTI_LABEL_OPTIMIZATION
     CONFIG += CLIPPER
-    CONFIG += CG3_ALL
+    CONFIG += CG3_CORE CG3_DATA_STRUCTURES CG3_MESHES CG3_ALGORITHMS CG3_CGAL CG3_LIBIGL CG3_VIEWER CG3_VCGLIB
     include(cg3lib/cg3.pri)
 }
 
@@ -71,7 +73,9 @@ HEADERS += \
     methods/faf/faf_charts.h \
     methods/faf/faf_association.h \
     methods/faf/includes/view_renderer.h \
-    GUI/managers/fouraxisfabricationmanager.h
+    GUI/managers/fouraxisfabricationmanager.h \
+    methods/faf/faf_optimization.h \
+    methods/faf/faf_smoothing.h
 
 SOURCES += \
     main.cpp \
@@ -85,7 +89,9 @@ SOURCES += \
     methods/faf/faf_charts.cpp \
     methods/faf/faf_association.cpp \
     methods/faf/includes/view_renderer.cpp \
-    GUI/managers/fouraxisfabricationmanager.cpp
+    GUI/managers/fouraxisfabricationmanager.cpp \
+    methods/faf/faf_optimization.cpp \
+    methods/faf/faf_smoothing.cpp
 
 
 FORMS += \

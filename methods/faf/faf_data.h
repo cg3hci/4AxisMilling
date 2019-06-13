@@ -33,6 +33,7 @@ public:
 
     /* Flags */
     bool isMeshLoaded;
+    bool isMeshSmoothed;
     bool isMeshOriented;
     bool areExtremesSelected;
     bool isVisibilityChecked;
