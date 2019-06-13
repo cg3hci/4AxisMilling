@@ -1169,7 +1169,7 @@
          <number>1000</number>
         </property>
         <property name="value">
-         <number>100</number>
+         <number>500</number>
         </property>
        </widget>
       </item>
@@ -1182,7 +1182,7 @@
          <double>0.010000000000000</double>
         </property>
         <property name="value">
-         <double>0.890000000000000</double>
+         <double>0.900000000000000</double>
         </property>
        </widget>
       </item>
@@ -1198,7 +1198,7 @@
          <double>0.010000000000000</double>
         </property>
         <property name="value">
-         <double>-0.700000000000000</double>
+         <double>-0.890000000000000</double>
         </property>
        </widget>
       </item>
