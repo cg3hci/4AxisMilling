@@ -253,6 +253,7 @@ void FourAxisFabricationManager::optimalOrientation() {
 
         data.isMeshOriented = true;
 
+        updateDrawableMesh();
         updateDrawableSmoothedMesh();
     }
 }
