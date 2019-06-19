@@ -22,7 +22,7 @@
 #include "faf_visibilitycheck.h"
 #include "faf_association.h"
 
-#define BINARY_SEARCH_ITERATIONS 20
+#define BINARY_SEARCH_ITERATIONS 10
 
 namespace FourAxisFabrication {
 
@@ -360,20 +360,23 @@ bool restoreFrequenciesValidHeightfields(
     for(unsigned int vId = 0; vId < targetMesh.numberVertices(); ++vId) {
         //Get current and target point
         cg3::Pointd currentPoint = targetMesh.vertex(vId);
+
+        bool isInitiallyValid = internal::isMoveValid(targetMesh, data, vId, currentPoint, vertexFaceAdjacencies, heightfieldAngle, M_PI/4);
+
         cg3::Pointd targetPoint = internal::getTargetPoint(targetMesh, differentialCoordinates, vId, vertexVertexAdjacencies);
 
         //Do binary search until the face normals do not violate the heightfield conditions
         int count = 0;
         bool isValid = internal::isMoveValid(targetMesh, data, vId, targetPoint, vertexFaceAdjacencies, heightfieldAngle, M_PI/4);
         while (!isValid && count < BINARY_SEARCH_ITERATIONS) {
-            targetPoint = (0.5 * (targetPoint - currentPoint) + currentPoint);
+            targetPoint = 0.5 * (targetPoint + currentPoint);
 
             isValid = internal::isMoveValid(targetMesh, data, vId, targetPoint, vertexFaceAdjacencies, heightfieldAngle, M_PI/4);
 
             count++;
         }
 
-        if (isValid) {
+        if (isValid || !isInitiallyValid) {
             targetMesh.setVertex(vId, targetPoint);
             aVertexHasMoved = true;
         }
