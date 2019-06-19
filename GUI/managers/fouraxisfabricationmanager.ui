@@ -1210,7 +1210,7 @@
          <string>Reassing non-visible triangles to adjacent chart</string>
         </property>
         <property name="checked">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -1218,6 +1218,9 @@
        <widget class="QCheckBox" name="recheckVisibilityCheckBox">
         <property name="text">
          <string>Recheck</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
