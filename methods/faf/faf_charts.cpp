@@ -319,10 +319,12 @@ bool getChartBorders(
     const cg3::Dcel::HalfEdge* he;
 
     do {
-        if (vNext.at(vCurrent).size() == 1) {
-            if (visitedBorderVertex.find(vCurrent) != visitedBorderVertex.end())
-                return false;
+        if (visitedBorderVertex.find(vCurrent) != visitedBorderVertex.end() && !isHoleChart) {
+            std::cout << "Error in detecting borders (already visited)." << std::endl;
+            return false;
+        }
 
+        if (vNext.at(vCurrent).size() == 1) {
             he = vHeMap.at(vCurrent).at(0);
 
             unsigned int fId = he->face()->id();

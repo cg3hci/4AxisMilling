@@ -24,6 +24,7 @@ void restoreFrequencies(
 
 
 void recheckVisibilityAfterRestore(
+        const bool recheck,
         const unsigned int resolution,
         const double heightFieldAngle,
         const bool includeXDirections,

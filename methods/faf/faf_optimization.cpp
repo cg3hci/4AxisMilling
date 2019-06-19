@@ -20,7 +20,8 @@ void reassignLabelsAfterLineSmoothing(
         const cg3::EigenMesh& mesh,
         const std::set<std::pair<cg3::Pointd, cg3::Pointd>>& newEdgesCoordinates,
         const std::vector<cg3::Vec3>& directions,
-        std::vector<int>& association);
+        std::vector<int>& association,
+        cg3::Array2D<int>& visibility);
 }
 
 /**
@@ -42,7 +43,7 @@ void optimization(
 {
     //Get fabrication data    
     const std::vector<cg3::Vec3>& directions = data.directions;
-    const cg3::Array2D<int>& visibility = data.visibility;
+    cg3::Array2D<int>& visibility = data.visibility;
     std::vector<unsigned int>& minExtremes = data.minExtremes;
     std::vector<unsigned int>& maxExtremes = data.maxExtremes;
     std::vector<unsigned int>& targetDirections = data.targetDirections;
@@ -165,13 +166,19 @@ void optimization(
                     queue.push(fId);
                 }
 
+                assert(!queue.empty());
+                if (queue.empty())
+                    break;
+
                 while (!queue.empty()) {
                     unsigned int fId = queue.front();
                     queue.pop();
 
+                    if (visitedFaces.find(fId) != visitedFaces.end())
+                        continue;
+
                     visitedFaces.insert(fId);
 
-                    cg3::Vec3 normal = mesh.faceNormal(fId);
                     const std::vector<int>& adjacentFaces = ffAdj.at(fId);
 
                     //The best label for the face is one among the adjacent
@@ -182,12 +189,13 @@ void optimization(
                     for (const unsigned int adjId : adjacentFaces) {
                         int adjLabel = association[adjId];
 
-                        if (chartLabel == adjLabel && chartData.faceChartMap.at(adjId) == chart.id) {
+                        if (chartLabel == adjLabel) {
                             //Add the not visited faces in the border to the queue
                             if (visitedFaces.find(adjId) == visitedFaces.end())
                                 queue.push(adjId);
                         }
                         else {
+                            cg3::Vec3 normal = mesh.faceNormal(fId);
                             double dot = normal.dot(directions[adjLabel]);
 
                             if (dot >= maxDot) {
@@ -196,8 +204,9 @@ void optimization(
                             }
                         }
                     }
+                    assert(bestLabel != -1 && bestLabel != chartLabel);
 
-                    association[fId] = bestLabel;                    
+                    association[fId] = bestLabel;
 
                     if (visibility(bestLabel, fId) == 0) {
                         facesNoLongerVisible++;
@@ -254,28 +263,6 @@ void optimization(
         std::cout << "Lost details for " << chartAffected << " hole charts. Faces affected: " << facesAffected << ". Faces no longer visible: " << facesNoLongerVisible << std::endl;
     }
 
-    //Update association non-visible faces
-    associationNonVisibleFaces.clear();
-    for (unsigned int fId = 0; fId < nFaces; fId++){
-        if (visibility(association[fId], fId) == 0) {
-            associationNonVisibleFaces.push_back(fId);
-        }
-    }
-
-    //The remaining directions are the new target directions
-    std::vector<bool> usedDirections(directions.size(), false);
-    std::vector<unsigned int> newTargetDirections;
-    for (unsigned int fId = 0; fId < nFaces; fId++){
-        usedDirections[association[fId]] = true;
-    }
-    //Set target directions
-    for (unsigned int lId = 0; lId < directions.size(); ++lId) {
-        if (usedDirections[lId]) {
-            newTargetDirections.push_back(lId);
-        }
-    }
-
-    targetDirections = newTargetDirections;
 
     if (smoothEdgeLines) {
         std::vector<std::pair<cg3::Pointd, cg3::Pointd>> polylines;
@@ -314,18 +301,23 @@ void optimization(
 
         unsigned int newNumberFaces = mesh.numberFaces();
 
-        for (unsigned int i = initialNumFaces; i < newNumberFaces; i++) {
-            association.push_back(-1);
+        visibility.conservativeResize(visibility.rows(), newNumberFaces);
+        association.resize(newNumberFaces);
+        for (unsigned int fId = initialNumFaces; fId < newNumberFaces; fId++) {
+            association[fId] = -1;
+            for (int lId = 0; lId < directions.size(); lId++) {
+                visibility(lId, fId) = 0;
+            }
         }
 
-        internal::reassignLabelsAfterLineSmoothing(mesh, newEdgesCoordinates, data.directions, association);
+        internal::reassignLabelsAfterLineSmoothing(mesh, newEdgesCoordinates, data.directions, association, visibility);
 
         //Update min and max extremes
         int minLabel = targetDirections[targetDirections.size()-2];
         int maxLabel = targetDirections[targetDirections.size()-1];
         minExtremes.clear();
         maxExtremes.clear();
-        for (size_t fId = 0; fId < mesh.numberFaces(); fId++) {
+        for (size_t fId = 0; fId < newNumberFaces; fId++) {
             if (association[fId] == minLabel)
                 minExtremes.push_back(fId);
             else if (association[fId] == maxLabel)
@@ -333,7 +325,30 @@ void optimization(
         }
     }
 
+    unsigned int newNumberFaces = mesh.numberFaces();
 
+    //Update association non-visible faces
+    associationNonVisibleFaces.clear();
+    for (unsigned int fId = 0; fId < newNumberFaces; fId++){
+        if (visibility(association[fId], fId) == 0) {
+            associationNonVisibleFaces.push_back(fId);
+        }
+    }
+
+    //The remaining directions are the new target directions
+    std::vector<bool> usedDirections(directions.size(), false);
+    std::vector<unsigned int> newTargetDirections;
+    for (unsigned int fId = 0; fId < newNumberFaces; fId++){
+        usedDirections[association[fId]] = true;
+    }
+    //Set target directions
+    for (unsigned int lId = 0; lId < directions.size(); ++lId) {
+        if (usedDirections[lId]) {
+            newTargetDirections.push_back(lId);
+        }
+    }
+
+    targetDirections = newTargetDirections;
 }
 
 
@@ -342,7 +357,8 @@ void reassignLabelsAfterLineSmoothing(
         const cg3::EigenMesh& mesh,
         const std::set<std::pair<cg3::Pointd, cg3::Pointd>>& newEdgesCoordinates,
         const std::vector<cg3::Vec3>& directions,
-        std::vector<int>& association)
+        std::vector<int>& association,
+        cg3::Array2D<int>& visibility)
 {
     std::stack<unsigned int> stack;
 
@@ -411,6 +427,7 @@ void reassignLabelsAfterLineSmoothing(
         }
         for (unsigned int currentChartFace : currentChartFaces) {
             association[currentChartFace] = bestLabel;
+            visibility(bestLabel, currentChartFace) = 1;
         }
     }
 }

@@ -134,6 +134,7 @@ void FourAxisFabricationManager::updateUI() {
     ui->restoreFrequenciesIterationsSpinBox->setEnabled(!data.areFrequenciesRestored);
 
     //Recheck visibility after restore
+    ui->recheckVisibilityCheckBox->setEnabled(!data.isVisibilityRecheckedAfterRestore);
     ui->recheckVisibilityReassignNonVisibleCheckBox->setEnabled(!data.isVisibilityRecheckedAfterRestore);
     ui->recheckVisibilityButton->setEnabled(!data.isVisibilityRecheckedAfterRestore);
 
@@ -203,7 +204,7 @@ void FourAxisFabricationManager::smoothing() {
         float lambda = ui->smoothingLambdaSpinBox->value();
         float mu = ui->smoothingMuSpinBox->value();
 
-        cg3::Timer t(std::string("Optimal orientation"));
+        cg3::Timer t(std::string("Smoothing"));
 
         //Get smoothed mesh
         FourAxisFabrication::taubinSmoothing(
@@ -212,7 +213,6 @@ void FourAxisFabricationManager::smoothing() {
                     lambda,
                     mu);
 
-        std::cout << "Smoothing" << std::endl;
         t.stopAndPrint();
 
         data.isMeshSmoothed = true;
@@ -228,8 +228,6 @@ void FourAxisFabricationManager::smoothing() {
 void FourAxisFabricationManager::optimalOrientation() {
     if (!data.isMeshOriented) {
         smoothing();
-
-        std::cout << std::endl << "#######################################################################" << std::endl << std::endl;
 
         //Get UI data
         unsigned int nOrientations = (unsigned int) ui->optimalOrientationOrientationsSpinBox->value();
@@ -248,7 +246,6 @@ void FourAxisFabricationManager::optimalOrientation() {
                     BBWeight,
                     deterministic);
 
-        std::cout << "Optimal orientation" << std::endl;
         t.stopAndPrint();
 
         data.isMeshOriented = true;
@@ -433,6 +430,7 @@ void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
         unsigned int resolution = (unsigned int) ui->checkVisibilityResolutionSpinBox->value();
         bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
+        bool recheck = ui->recheckVisibilityCheckBox->isChecked();
         bool reassign = ui->recheckVisibilityReassignNonVisibleCheckBox->isChecked();
         FourAxisFabrication::CheckMode checkMode =
                 (ui->checkVisibilityGLRadio->isChecked() ?
@@ -445,7 +443,7 @@ void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
         cg3::Timer tCheck("Recheck visibility after frequencies have been restored");
 
         //Check if it is a valid association
-        FourAxisFabrication::recheckVisibilityAfterRestore(resolution, heightfieldAngle, includeXDirections, reassign, data, checkMode);
+        FourAxisFabrication::recheckVisibilityAfterRestore(recheck, resolution, heightfieldAngle, includeXDirections, reassign, data, checkMode);
 
         tCheck.stopAndPrint();
 
@@ -492,6 +490,7 @@ void FourAxisFabricationManager::extractResults() {
         cutComponents();
 
         //Get UI data
+        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
         double modelLength = ui->extractResultsModelLengthSpinBox->value();
         double stockLength = ui->extractResultsStockLengthSpinBox->value();
         double stockDiameter = ui->extractResultsStockDiameterSpinBox->value();
@@ -506,7 +505,7 @@ void FourAxisFabricationManager::extractResults() {
 
 
         //Extract results
-        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, firstLayerAngle, firstLayerOffset, secondLayerStepWidth, secondLayerStepHeight, xDirectionsAfter, rotateResults);
+        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, firstLayerAngle, firstLayerOffset, secondLayerStepWidth, secondLayerStepHeight, heightfieldAngle, xDirectionsAfter, rotateResults);
 
         t.stopAndPrint();
 

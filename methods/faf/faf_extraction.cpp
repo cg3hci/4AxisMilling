@@ -992,6 +992,7 @@ void getFabricationOrder(
  * @param[in] firstLayerOffset Offset of the first layer
  * @param[in] secondLayerStepWidth Height of each step of the second layers
  * @param[in] secondLayerStepHeight Width of each step of the second layers
+ * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  * @param[in] xDirectionsAfter xDirections are fabricated at the end. If false they are fabricated before.
  * @param[in] rotateMeshes Rotate resulting meshes on the given direction
  */
@@ -1004,10 +1005,15 @@ void extractResults(
         const double firstLayerOffset,
         const double secondLayerStepWidth,
         const double secondLayerStepHeight,
+        const double heightfieldAngle,
         const bool xDirectionsAfter,
         const bool rotateResults)
 {
     typedef cg3::libigl::CSGTree CSGTree;
+
+
+    //Cos of the height field angle
+    const double heightFieldLimit = cos(heightfieldAngle);
 
     //Referencing input data
     const std::vector<unsigned int>& minExtremes = data.minExtremes;
@@ -1015,8 +1021,7 @@ void extractResults(
 
     const std::vector<double>& angles = data.angles;
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
-
-    const cg3::Array2D<int>& fourAxisVisibility = data.fourAxisVisibility;
+    const std::vector<cg3::Vec3>& directions = data.directions;
 
     const cg3::EigenMesh& minComponent = data.minComponent;
     const cg3::EigenMesh& maxComponent = data.maxComponent;
@@ -1277,6 +1282,8 @@ void extractResults(
             projectedPoints2DMap.insert(std::make_pair(p2D, vId));
 
             minZ = std::min(minZ, p.z());
+
+            const cg3::Array2D<int>& fourAxisVisibility = data.fourAxisVisibility;
         }
 
         // VF adjacencies
@@ -1292,7 +1299,7 @@ void extractResults(
 
             bool hasNonVisibleIncidentFaces = false;
             for (int fId : vfAdj.at(vId)) {
-                if (fourAxisVisibility(targetLabel, resultFaceToMeshFacesMap.at(fId)) == 0) {
+                if (directions.at(targetLabel).dot(result.faceNormal(fId)) < heightFieldLimit) {
                     hasNonVisibleIncidentFaces = true;
                 }
             }

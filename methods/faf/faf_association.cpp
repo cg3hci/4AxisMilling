@@ -34,10 +34,10 @@ void setupDataCost(
         const Data& data,
         std::vector<float>& dataCost);
 
-void setupSmoothCost(
-        const std::vector<unsigned int> targetLabels,
-        const double compactness,
-        std::vector<float>& smoothCost);
+//void setupSmoothCost(
+//        const std::vector<unsigned int> targetLabels,
+//        const double compactness,
+//        std::vector<float>& smoothCost);
 
 
 float getSmoothTerm(
@@ -242,16 +242,15 @@ void setupDataCost(
 
             double cost;
 
+            const cg3::Vec3 faceNormal = mesh.faceNormal(faceId);
+            double dot = faceNormal.dot(labelNormal);
+
             //Visible
             if (visibility(directionIndex, faceId) == 1) {
-                const cg3::Vec3 faceNormal = mesh.faceNormal(faceId);
-
-                double dot = faceNormal.dot(labelNormal);
-
                 cost = pow(1.f - dot, dataSigma);
             }
             //Not visibile
-            else {
+            else {                
                 cost = MAXCOST;
             }
 
@@ -278,37 +277,37 @@ void setupDataCost(
     }
 }
 
-/**
- * @brief Setup smooth cost
- * @param[in] targetLabel Target labels
- * @param[in] compactness Compactness
- * @param[out] smoothCost Smooth cost output
- */
-void setupSmoothCost(
-        const std::vector<unsigned int> targetLabels,
-        const double compactness,
-        std::vector<float>& smoothCost)
-{
-    const unsigned int nLabels = targetLabels.size();
+///**
+// * @brief Setup smooth cost
+// * @param[in] targetLabel Target labels
+// * @param[in] compactness Compactness
+// * @param[out] smoothCost Smooth cost output
+// */
+//void setupSmoothCost(
+//        const std::vector<unsigned int> targetLabels,
+//        const double compactness,
+//        std::vector<float>& smoothCost)
+//{
+//    const unsigned int nLabels = targetLabels.size();
 
-    #pragma omp parallel for
-    for (unsigned int l1 = 0; l1 < nLabels; ++l1) {
+//    #pragma omp parallel for
+//    for (unsigned int l1 = 0; l1 < nLabels; ++l1) {
 
-        #pragma omp parallel for
-        for (unsigned int l2 = 0; l2 < nLabels; ++l2) {
-            double cost;
+//        #pragma omp parallel for
+//        for (unsigned int l2 = 0; l2 < nLabels; ++l2) {
+//            double cost;
 
-            if (l1 == l2) {
-                cost = 0.f;
-            }
-            else {
-                cost = compactness;
-            }
+//            if (l1 == l2) {
+//                cost = 0.f;
+//            }
+//            else {
+//                cost = compactness;
+//            }
 
-            smoothCost[l1 * nLabels + l2] = cost;
-        }
-    }
-}
+//            smoothCost[l1 * nLabels + l2] = cost;
+//        }
+//    }
+//}
 
 float getSmoothTerm(
         int f1, int f2,
@@ -320,7 +319,7 @@ float getSmoothTerm(
     float smoothSigma = smoothData->smoothSigma;
     float compactness = smoothData->compactness;
 
-    float epsilon = 0.0001;
+    float epsilon = 0.001;
 
     if (l1 == l2)
         return 0.f;

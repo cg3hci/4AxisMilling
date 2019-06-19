@@ -143,15 +143,17 @@ void restoreFrequencies(
  * in a 2D projection from a given direction.
  * If assign is true, it tries to solve the visibility problem, assigning triangles
  * to adjacent directions from which it is visible
- * @param[out] data Four axis fabrication data
+ * @param[in] recheck Recheck flag, if false visibilty is not rechecked
  * @param[in] resolution Resolution for the rendering
  * @param[in] heightfieldAngle Limit angle with triangles normal in order to be a heightfield
  * @param[in] includeXDirections Compute visibility for +x and -x directions
  * @param[in] reassign Reassign the non-visible triangles to an adjacent chart
+ * @param[out] data Four axis fabrication data
  * @param[in] checkMode Visibility check mode
  * @returns The number of no longer visible triangles
  */
-void recheckVisibilityAfterRestore(        
+void recheckVisibilityAfterRestore(
+        const bool recheck,
         const unsigned int resolution,
         const double heightfieldAngle,
         const bool includeXDirections,
@@ -172,80 +174,161 @@ void recheckVisibilityAfterRestore(
 
     const unsigned int nDirections = static_cast<unsigned int>(directions.size()-2);
 
-    //Initialize new data
-    Data newData;
-    newData.minExtremes = minExtremes;
-    newData.maxExtremes = maxExtremes;
+    if (recheck) {
+        //Initialize new data
+        Data newData;
+        newData.minExtremes = minExtremes;
+        newData.maxExtremes = maxExtremes;
 
-    //Get new visibility
-    getVisibility(restoredMesh, nDirections, resolution, heightfieldAngle, includeXDirections, newData, checkMode);
-    restoredMeshVisibility = newData.visibility;
+        //Get new visibility
+        getVisibility(restoredMesh, nDirections, resolution, heightfieldAngle, includeXDirections, newData, checkMode);
+        restoredMeshVisibility = newData.visibility;
 
-    //Update association non-visible faces
-    restoredMeshNonVisibleFaces.clear();
-    for (unsigned int fId = 0; fId < restoredMesh.numberFaces(); fId++){
-        if (restoredMeshVisibility(restoredMeshAssociation[fId], fId) == 0) {
-            restoredMeshNonVisibleFaces.push_back(fId);
+        //Update association non-visible faces
+        restoredMeshNonVisibleFaces.clear();
+        for (unsigned int fId = 0; fId < restoredMesh.numberFaces(); fId++){
+            if (restoredMeshVisibility(restoredMeshAssociation[fId], fId) == 0) {
+                restoredMeshNonVisibleFaces.push_back(fId);
+            }
         }
-    }
 
-    std::cout << "Non-visible triangles after frequencies restore: " << restoredMeshNonVisibleFaces.size() << std::endl;
+        std::cout << "Non-visible triangles after frequencies restore: " << restoredMeshNonVisibleFaces.size() << std::endl;
 
-    if (reassign) {
-        unsigned int facesReassigned = 0;
+        if (reassign) {
+            unsigned int facesReassigned = 0;
 
-        //Get face-face adjacencies
-        const std::vector<std::vector<int>> ffAdj =
-                cg3::libigl::faceToFaceAdjacencies(restoredMesh);
+            //Get face-face adjacencies
+            const std::vector<std::vector<int>> ffAdj =
+                    cg3::libigl::faceToFaceAdjacencies(restoredMesh);
 
 
-        bool done;
+            bool done;
 
-        do {
-            std::vector<unsigned int> newNonVisibleFaces;
+            do {
+                std::vector<unsigned int> newNonVisibleFaces;
 
-            done = true;
+                done = true;
 
-            for (unsigned int fId : restoredMeshNonVisibleFaces) {
-                cg3::Vec3 normal = restoredMesh.faceNormal(fId);
-                const std::vector<int>& adjacentFaces = ffAdj.at(fId);
+                for (unsigned int fId : restoredMeshNonVisibleFaces) {
+                    cg3::Vec3 normal = restoredMesh.faceNormal(fId);
+                    const std::vector<int>& adjacentFaces = ffAdj.at(fId);
 
-                //The best label for the face is one among the adjacent
-                //which has the less dot product with the normal
-                double maxDot = -1;
-                int bestLabel = -1;
+                    //The best label for the face is one among the adjacent
+                    //which has the less dot product with the normal
+                    double maxDot = -1;
+                    int bestLabel = -1;
 
-                for (const unsigned int adjId : adjacentFaces) {
-                    int adjLabel = restoredMeshAssociation[adjId];
+                    for (const unsigned int adjId : adjacentFaces) {
+                        int adjLabel = restoredMeshAssociation[adjId];
 
-                    //If it is visible
-                    if (restoredMeshVisibility(adjLabel, fId) == 1) {
-                        double dot = normal.dot(directions[adjLabel]);
+                        //If it is visible
+                        if (restoredMeshVisibility(adjLabel, fId) == 1) {
+                            double dot = normal.dot(directions[adjLabel]);
 
-                        if (dot >= maxDot) {
-                            maxDot = dot;
-                            bestLabel = adjLabel;
+                            if (dot >= maxDot) {
+                                maxDot = dot;
+                                bestLabel = adjLabel;
+                            }
                         }
+                    }
+
+                    if (bestLabel >= 0) {
+                        restoredMeshAssociation[fId] = bestLabel;
+                        facesReassigned++; //Initialize new data
+                        Data newData;
+                        newData.minExtremes = minExtremes;
+                        newData.maxExtremes = maxExtremes;
+
+                        //Get new visibility
+                        getVisibility(restoredMesh, nDirections, resolution, heightfieldAngle, includeXDirections, newData, checkMode);
+                        restoredMeshVisibility = newData.visibility;
+
+                        //Update association non-visible faces
+                        restoredMeshNonVisibleFaces.clear();
+                        for (unsigned int fId = 0; fId < restoredMesh.numberFaces(); fId++){
+                            if (restoredMeshVisibility(restoredMeshAssociation[fId], fId) == 0) {
+                                restoredMeshNonVisibleFaces.push_back(fId);
+                            }
+                        }
+
+                        std::cout << "Non-visible triangles after frequencies restore: " << restoredMeshNonVisibleFaces.size() << std::endl;
+
+                        if (reassign) {
+                            unsigned int facesReassigned = 0;
+
+                            //Get face-face adjacencies
+                            const std::vector<std::vector<int>> ffAdj =
+                                    cg3::libigl::faceToFaceAdjacencies(restoredMesh);
+
+
+                            bool done;
+
+                            do {
+                                std::vector<unsigned int> newNonVisibleFaces;
+
+                                done = true;
+
+                                for (unsigned int fId : restoredMeshNonVisibleFaces) {
+                                    cg3::Vec3 normal = restoredMesh.faceNormal(fId);
+                                    const std::vector<int>& adjacentFaces = ffAdj.at(fId);
+
+                                    //The best label for the face is one among the adjacent
+                                    //which has the less dot product with the normal
+                                    double maxDot = -1;
+                                    int bestLabel = -1;
+
+                                    for (const unsigned int adjId : adjacentFaces) {
+                                        int adjLabel = restoredMeshAssociation[adjId];
+
+                                        //If it is visible
+                                        if (restoredMeshVisibility(adjLabel, fId) == 1) {
+                                            double dot = normal.dot(directions[adjLabel]);
+
+                                            if (dot >= maxDot) {
+                                                maxDot = dot;
+                                                bestLabel = adjLabel;
+                                            }
+                                        }
+                                    }
+
+                                    if (bestLabel >= 0) {
+                                        restoredMeshAssociation[fId] = bestLabel;
+                                        facesReassigned++;
+
+                                        done = false;
+                                    }
+                                    else {
+                                        newNonVisibleFaces.push_back(fId);
+                                    }
+                                }
+
+                                restoredMeshNonVisibleFaces = newNonVisibleFaces;
+
+                            } while (!done);
+
+                            std::cout << "Faces reassigned: " << facesReassigned << std::endl;
+                        }
+
+                        done = false;
+                    }
+                    else {
+                        newNonVisibleFaces.push_back(fId);
                     }
                 }
 
-                if (bestLabel >= 0) {
-                    restoredMeshAssociation[fId] = bestLabel;
-                    facesReassigned++;
+                restoredMeshNonVisibleFaces = newNonVisibleFaces;
 
-                    done = false;
-                }
-                else {
-                    newNonVisibleFaces.push_back(fId);
-                }
-            }
+            } while (!done);
 
-            restoredMeshNonVisibleFaces = newNonVisibleFaces;
-
-        } while (!done);
-
-        std::cout << "Faces reassigned: " << facesReassigned << std::endl;
+            std::cout << "Faces reassigned: " << facesReassigned << std::endl;
+        }
     }
+    else {
+        restoredMeshAssociation = data.association;
+        restoredMeshVisibility = data.visibility;
+        restoredMeshNonVisibleFaces = data.nonVisibleFaces;
+    }
+
 }
 
 

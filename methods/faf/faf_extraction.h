@@ -23,6 +23,7 @@ void extractResults(
         const double firstLayerOffset,
         const double secondLayerStepWidth,
         const double secondLayerStepHeight,
+        const double heightfieldAngle,
         const bool xDirectionsAfter,
         const bool rotateResults);
 
