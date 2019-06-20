@@ -1,7 +1,7 @@
 #ifndef VIEWRENDERER_H
 #define VIEWRENDERER_H
 
-#include <cg3/geometry/bounding_box.h>
+#include <cg3/geometry/bounding_box3.h>
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
 
 #include <unordered_set>
@@ -19,7 +19,7 @@ class ViewRenderer
 {
 public:
     ViewRenderer(const cg3::SimpleEigenMesh& mesh, int resolution = 2048);
-    ViewRenderer(const cg3::SimpleEigenMesh& mesh, const cg3::BoundingBox& bb, int resolution = 2048);
+    ViewRenderer(const cg3::SimpleEigenMesh& mesh, const cg3::BoundingBox3& bb, int resolution = 2048);
     ~ViewRenderer();
 
     std::vector<bool> renderVisibility(const cg3::Vec3& dir, bool exact = true, bool saveImg = false);
@@ -45,7 +45,7 @@ private:
 
     //Mesh
     cg3::SimpleEigenMesh mesh;
-    cg3::BoundingBox boundingBox;
+    cg3::BoundingBox3 boundingBox;
 
     std::vector<GLfloat> verticesArray;
     std::vector<GLint> vertexToFaceIndicesArray;

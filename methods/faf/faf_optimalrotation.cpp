@@ -2,7 +2,7 @@
 
 #include "faf_extremes.h"
 
-#include <cg3/geometry/transformations.h>
+#include <cg3/geometry/transformations3.h>
 #include <cg3/algorithms/sphere_coverage.h>
 #include <cg3/libigl/mesh_adjacencies.h>
 
@@ -68,7 +68,7 @@ void rotateToOptimalOrientation(
     const double heightFieldAngle = M_PI/2;
 
     //Translate mesh on the centre
-    cg3::Pointd bbCenter = smoothedMesh.boundingBox().center();
+    cg3::Point3d bbCenter = smoothedMesh.boundingBox().center();
     mesh.translate(-bbCenter);
     smoothedMesh.translate(-bbCenter);
 
@@ -148,7 +148,7 @@ void rotateToOptimalOrientation(
         copyMesh.rotate(rot);
         copyMesh.updateBoundingBox();
         copyMesh.updateFaceNormals();
-        cg3::BoundingBox copyBB = copyMesh.boundingBox();
+        cg3::BoundingBox3 copyBB = copyMesh.boundingBox();
 
         BBScores[i] = copyBB.lengthX();
 
@@ -320,7 +320,7 @@ void principalComponentAnalysis(
 
     MatrixX3d mat(nVertices, 3);
     for(unsigned int vId = 0; vId < nVertices; vId++) {
-        cg3::Pointd p = mesh.vertex(vId);
+        cg3::Point3d p = mesh.vertex(vId);
 
         mat(vId, 0) = p.x();
         mat(vId, 1) = p.y();
@@ -380,24 +380,24 @@ void rotateToPrincipalComponents(
 
     //Rotate meshes
     for(unsigned int vId = 0; vId < mesh.numberVertices(); vId++) {
-        cg3::Pointd p = mesh.vertex(vId);
+        cg3::Point3d p = mesh.vertex(vId);
 
         Vector3d pEig;
         pEig << p.x(), p.y(), p.z();
 
         Vector3d newPEig = rot * pEig;
-        cg3::Pointd newP(newPEig(0), newPEig(1), newPEig(2));
+        cg3::Point3d newP(newPEig(0), newPEig(1), newPEig(2));
 
         mesh.setVertex(vId, newP);
     }
     for(unsigned int vId = 0; vId < smoothedMesh.numberVertices(); vId++) {
-        cg3::Pointd p = smoothedMesh.vertex(vId);
+        cg3::Point3d p = smoothedMesh.vertex(vId);
 
         Vector3d pEig;
         pEig << p.x(), p.y(), p.z();
 
         Vector3d newPEig = rot * pEig;
-        cg3::Pointd newP(newPEig(0), newPEig(1), newPEig(2));
+        cg3::Point3d newP(newPEig(0), newPEig(1), newPEig(2));
 
         smoothedMesh.setVertex(vId, newP);
     }

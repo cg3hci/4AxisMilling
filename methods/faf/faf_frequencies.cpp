@@ -12,12 +12,12 @@
 #include <cg3/libigl/mesh_adjacencies.h>
 #endif
 
-#include <cg3/geometry/triangle.h>
+#include <cg3/geometry/triangle3.h>
 
-#include <cg3/geometry/2d/triangle2d_utils.h>
-#include <cg3/geometry/utils3d.h>
+#include <cg3/geometry/triangle2_utils.h>
+#include <cg3/geometry/utils3.h>
 
-#include <cg3/geometry/transformations.h>
+#include <cg3/geometry/transformations3.h>
 
 #include "faf_visibilitycheck.h"
 #include "faf_association.h"
@@ -43,7 +43,7 @@ std::vector<cg3::Vec3> computeDifferentialCoordinates(
         const cg3::EigenMesh& mesh,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies);
 
-cg3::Pointd getTargetPoint(const cg3::EigenMesh& mesh,
+cg3::Point3d getTargetPoint(const cg3::EigenMesh& mesh,
         const std::vector<cg3::Vec3>& differentialCoordinates,
         const unsigned int vId,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies);
@@ -51,7 +51,7 @@ cg3::Pointd getTargetPoint(const cg3::EigenMesh& mesh,
 bool isMoveValid(const cg3::EigenMesh& mesh,
         const Data& data,
         const unsigned int vId,
-        const cg3::Pointd& newPoint,
+        const cg3::Point3d& newPoint,
         const std::vector<std::vector<int>>& vertexFaceAdjacencies,
         const double heightfieldAngle,
         const double normalAngle);
@@ -286,11 +286,11 @@ bool restoreFrequenciesValidHeightfields(
     bool aVertexHasMoved = false;
     for(unsigned int vId = 0; vId < targetMesh.numberVertices(); ++vId) {
         //Get current and target point
-        cg3::Pointd currentPoint = targetMesh.vertex(vId);
+        cg3::Point3d currentPoint = targetMesh.vertex(vId);
 
         bool isInitiallyValid = internal::isMoveValid(targetMesh, data, vId, currentPoint, vertexFaceAdjacencies, heightfieldAngle, M_PI/4);
 
-        cg3::Pointd targetPoint = internal::getTargetPoint(targetMesh, differentialCoordinates, vId, vertexVertexAdjacencies);
+        cg3::Point3d targetPoint = internal::getTargetPoint(targetMesh, differentialCoordinates, vId, vertexVertexAdjacencies);
 
         //Do binary search until the face normals do not violate the heightfield conditions
         int count = 0;
@@ -329,7 +329,7 @@ std::vector<cg3::Vec3> computeDifferentialCoordinates(
     #pragma omp parallel for
     for(unsigned int vId = 0; vId < mesh.numberVertices(); ++vId) {
         //Calculate differential coordinates for each point
-        cg3::Pointd currentPoint = mesh.vertex(vId);
+        cg3::Point3d currentPoint = mesh.vertex(vId);
         cg3::Vec3 delta(0,0,0);
 
         const std::vector<int>& neighbors = vertexVertexAdjacencies.at(vId);
@@ -354,7 +354,7 @@ std::vector<cg3::Vec3> computeDifferentialCoordinates(
  * @param vertexVertexAdjacencies Vertex-vertex adjacencies of the mesh
  * @return Target point
  */
-cg3::Pointd getTargetPoint(
+cg3::Point3d getTargetPoint(
         const cg3::EigenMesh& targetMesh,
         const std::vector<cg3::Vec3>& differentialCoordinates,
         const unsigned int vId,
@@ -362,7 +362,7 @@ cg3::Pointd getTargetPoint(
 {
     const std::vector<int>& neighbors = vertexVertexAdjacencies.at(vId);
 
-    cg3::Pointd delta(0,0,0);
+    cg3::Point3d delta(0,0,0);
 
     //Calculate delta
     for(const int& neighborId : neighbors) {
@@ -370,7 +370,7 @@ cg3::Pointd getTargetPoint(
     }
     delta /= neighbors.size();
 
-    cg3::Pointd targetPoint = differentialCoordinates.at(vId) + delta;
+    cg3::Point3d targetPoint = differentialCoordinates.at(vId) + delta;
 
     return targetPoint;
 }
@@ -390,7 +390,7 @@ bool isMoveValid(
         const cg3::EigenMesh& targetMesh,
         const Data& data,
         const unsigned int vId,
-        const cg3::Pointd& newPoint,
+        const cg3::Point3d& newPoint,
         const std::vector<std::vector<int>>& vertexFaceAdjacencies,
         const double heightfieldAngle,
         const double normalAngle)
@@ -400,10 +400,10 @@ bool isMoveValid(
 
     const std::vector<int>& faces = vertexFaceAdjacencies.at(vId);
     for (const int& fId : faces) {
-        const cg3::Pointi face = targetMesh.face(fId);
+        const cg3::Point3i face = targetMesh.face(fId);
         const cg3::Vec3 faceNormal = targetMesh.faceNormal(fId);
 
-        cg3::Pointd p1, p2, p3;
+        cg3::Point3d p1, p2, p3;
 
         //Get the triangle with new point
         if (face.x() == vId) {
@@ -422,7 +422,7 @@ bool isMoveValid(
             p2 = targetMesh.vertex(face.y());
             p3 = newPoint;
         }
-        cg3::Triangle3Dd triangle(p1, p2, p3);
+        cg3::Triangle3d triangle(p1, p2, p3);
 
         cg3::Vec3 newNormal = triangle.normal();
 

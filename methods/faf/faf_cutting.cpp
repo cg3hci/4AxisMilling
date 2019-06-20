@@ -58,7 +58,7 @@ void cutComponents(
     int maxLabel = targetDirections[targetDirections.size()-1];
 
     //Referencing bounding box of the mesh
-    cg3::BoundingBox bb = restoredMesh.boundingBox();
+    cg3::BoundingBox3 bb = restoredMesh.boundingBox();
 
 
 
@@ -67,7 +67,7 @@ void cutComponents(
         double minLevelSetX = restoredMesh.vertex(restoredMesh.face(minExtremes[0]).x()).x();
         for (int minFace : minExtremes) {
             if (restoredMeshAssociation[minFace] == minLabel) {
-                cg3::Pointi face = restoredMesh.face(minFace);
+                cg3::Point3i face = restoredMesh.face(minFace);
 
                 minLevelSetX = std::max(minLevelSetX, restoredMesh.vertex(face.x()).x());
                 minLevelSetX = std::max(minLevelSetX, restoredMesh.vertex(face.y()).x());
@@ -75,7 +75,7 @@ void cutComponents(
             }
         }
         //Set min extremes bounding box
-        cg3::BoundingBox minBB = bb;
+        cg3::BoundingBox3 minBB = bb;
         minBB.setMaxX(minLevelSetX);
 
 
@@ -83,7 +83,7 @@ void cutComponents(
         double maxLevelSetX = restoredMesh.vertex(restoredMesh.face(maxExtremes[0]).x()).x();
         for (int maxFace : maxExtremes) {
             if (restoredMeshAssociation[maxFace] == maxLabel) {
-                cg3::Pointi face = restoredMesh.face(maxFace);
+                cg3::Point3i face = restoredMesh.face(maxFace);
 
                 maxLevelSetX = std::min(maxLevelSetX, restoredMesh.vertex(face.x()).x());
                 maxLevelSetX = std::min(maxLevelSetX, restoredMesh.vertex(face.y()).x());
@@ -91,7 +91,7 @@ void cutComponents(
             }
         }
         //Set max extremes bounding box
-        cg3::BoundingBox maxBB = bb;
+        cg3::BoundingBox3 maxBB = bb;
         maxBB.setMinX(maxLevelSetX);
 
 

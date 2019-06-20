@@ -5,15 +5,15 @@
 #include "faf_extraction.h"
 #include "faf_charts.h"
 
-#include <cg3/geometry/transformations.h>
-#include <cg3/geometry/2d/point2d.h>
+#include <cg3/geometry/transformations3.h>
+#include <cg3/geometry/point2.h>
 
 #include <cg3/libigl/mesh_adjacencies.h>
 
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
 
-#include <cg3/cgal/2d/triangulation2d.h>
-#include <cg3/cgal/holefilling.h>
+#include <cg3/cgal/triangulation2.h>
+#include <cg3/cgal/hole_filling.h>
 
 #include <cg3/libigl/booleans.h>
 #include <cg3/libigl/connected_components.h>
@@ -28,7 +28,7 @@ namespace FourAxisFabrication {
 
 namespace internal {
 
-std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, const double offset);
+std::vector<cg3::Point2d> offsetPolygon(std::vector<cg3::Point2d>& polygon, const double offset);
 void getFabricationOrder(
         const std::vector<unsigned int>& association,
         const cg3::Array2D<double>& costMatrix,
@@ -1058,7 +1058,7 @@ void extractResults(
 
 
     //Get the scale factor
-    cg3::BoundingBox bb = fourAxisComponent.boundingBox();
+    cg3::BoundingBox3 bb = fourAxisComponent.boundingBox();
     double minX = bb.minX();
     double maxX = bb.maxX();
     const double scaleFactor = modelLength / (maxX - minX);
@@ -1126,7 +1126,7 @@ void extractResults(
             }
 
             for (unsigned int fId : chart.faces) {
-                cg3::Pointi f = fourAxisScaled.face(fId);
+                cg3::Point3i f = fourAxisScaled.face(fId);
                 unsigned int newFaceId = chartResult.addFace(
                             meshVertexToResultVertexMap.at(static_cast<unsigned int>(f.x())),
                             meshVertexToResultVertexMap.at(static_cast<unsigned int>(f.y())),
@@ -1168,22 +1168,22 @@ void extractResults(
 
 
     //Create a big box
-    cg3::BoundingBox bbSupport;
-    bbSupport.setMin(cg3::Pointd(-stockLength/2, -stockDiameter/2, -stockDiameter/2));
-    bbSupport.setMax(cg3::Pointd(stockLength/2, stockDiameter/2, stockDiameter/2));
+    cg3::BoundingBox3 bbSupport;
+    bbSupport.setMin(cg3::Point3d(-stockLength/2, -stockDiameter/2, -stockDiameter/2));
+    bbSupport.setMax(cg3::Point3d(stockLength/2, stockDiameter/2, stockDiameter/2));
 
     if (minComponent.numberFaces() == 0 && minExtremes.size() > 0) {
         //Get maximum x in the faces of the min extremes
         double minLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(minExtremes[0]).x()).x();
         for (int minFace : minExtremes) {
-            cg3::Pointi face = fourAxisScaled.face(minFace);
+            cg3::Point3i face = fourAxisScaled.face(minFace);
 
             minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.x()).x());
             minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.y()).x());
             minLevelSetX = std::max(minLevelSetX, fourAxisScaled.vertex(face.z()).x());
         }
         //Set min extremes bounding box
-        cg3::BoundingBox minBB = bbSupport;
+        cg3::BoundingBox3 minBB = bbSupport;
         minBB.setMaxX(minLevelSetX);
 
         //Min support
@@ -1196,7 +1196,7 @@ void extractResults(
         //Get minimum x in the faces of the max extremes
         double maxLevelSetX = fourAxisScaled.vertex(fourAxisScaled.face(maxExtremes[0]).x()).x();
         for (int maxFace : maxExtremes) {
-            cg3::Pointi face = fourAxisScaled.face(maxFace);
+            cg3::Point3i face = fourAxisScaled.face(maxFace);
 
             maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.x()).x());
             maxLevelSetX = std::min(maxLevelSetX, fourAxisScaled.vertex(face.y()).x());
@@ -1204,7 +1204,7 @@ void extractResults(
         }
 
         //Set max extremes bounding box
-        cg3::BoundingBox maxBB = bbSupport;
+        cg3::BoundingBox3 maxBB = bbSupport;
         maxBB.setMinX(maxLevelSetX);
 
         //Max support
@@ -1222,8 +1222,8 @@ void extractResults(
     const double boxHeight = stockDiameter*2;
 
     //Triangulation data-structures
-    std::vector<std::array<cg3::Point2Dd, 3>> triangulation;
-    std::vector<std::vector<cg3::Point2Dd>> holes;
+    std::vector<std::array<cg3::Point2d, 3>> triangulation;
+    std::vector<std::vector<cg3::Point2d>> holes;
 
     for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
@@ -1255,9 +1255,9 @@ void extractResults(
         size_t nBorderVertices = borderVertices.size();
 
         //Projected vertices data
-        std::vector<cg3::Pointd> projectedPoints3D(nBorderVertices);
-        std::vector<cg3::Point2Dd> projectedPoints2D(nBorderVertices);
-        std::map<cg3::Point2Dd, unsigned int> projectedPoints2DMap;
+        std::vector<cg3::Point3d> projectedPoints3D(nBorderVertices);
+        std::vector<cg3::Point2d> projectedPoints2D(nBorderVertices);
+        std::map<cg3::Point2d, unsigned int> projectedPoints2DMap;
 
 
 
@@ -1268,14 +1268,14 @@ void extractResults(
         for (size_t i = 0; i < nBorderVertices; i++) {
             //Get vertices and rotate them
             unsigned int vId = borderVertices[i];
-            cg3::Pointd p = result.vertex(vId);
+            cg3::Point3d p = result.vertex(vId);
             p.rotate(projectionMatrix);
 
             //Projected points 3D
             projectedPoints3D[i] = p;
 
             //Projected points 2D
-            cg3::Point2Dd p2D(p.x(), p.y());
+            cg3::Point2d p2D(p.x(), p.y());
             projectedPoints2D[i] = p2D;
 
             //Fill map
@@ -1294,7 +1294,7 @@ void extractResults(
         //Select vertices with non visible faces
         for (size_t i = 0; i < nBorderVertices; i++) {
             //Get vertex
-            const cg3::Point2Dd& p2D = projectedPoints2D[i];
+            const cg3::Point2d& p2D = projectedPoints2D[i];
             unsigned int vId = projectedPoints2DMap.at(p2D);
 
             bool hasNonVisibleIncidentFaces = false;
@@ -1313,11 +1313,11 @@ void extractResults(
         /* ------- FIRST LAYER OFFSET POLYGONS ------- */
 
 
-        cg3::Pointd minCoord(0,0,0);
-        cg3::Pointd maxCoord(0,0,0);
+        cg3::Point3d minCoord(0,0,0);
+        cg3::Point3d maxCoord(0,0,0);
 
-        std::vector<cg3::Point2Dd> currentFirstLayerPoints2D = projectedPoints2D;
-        std::map<cg3::Point2Dd, unsigned int> currentFirstLayerPoints2DMap = projectedPoints2DMap;
+        std::vector<cg3::Point2d> currentFirstLayerPoints2D = projectedPoints2D;
+        std::map<cg3::Point2d, unsigned int> currentFirstLayerPoints2DMap = projectedPoints2DMap;
 
 
         //Get min length of the edges
@@ -1345,13 +1345,13 @@ void extractResults(
             const double currentStepHeight = currentStepOffset / tan(firstLayerAngle);
 
             //Get new layer projected points
-            std::vector<cg3::Point2Dd> newLayerPoints2D =
+            std::vector<cg3::Point2d> newLayerPoints2D =
                     internal::offsetPolygon(currentFirstLayerPoints2D, currentStepOffset);
             size_t nNewLayerVertices = newLayerPoints2D.size();
 
             //New layer vertices data
-            std::set<cg3::Point2Dd> newLayerPoints2DSet;
-            std::map<cg3::Point2Dd, unsigned int> newLayerPoints2DMap;
+            std::set<cg3::Point2d> newLayerPoints2DSet;
+            std::map<cg3::Point2d, unsigned int> newLayerPoints2DMap;
 
             //Add to the set
             for (size_t i = 0; i < nNewLayerVertices; i++) {
@@ -1362,10 +1362,10 @@ void extractResults(
             //Delaunay triangulation of the offset with the surface
             holes.resize(1);
             holes[0] = currentFirstLayerPoints2D;
-            triangulation = cg3::cgal::triangulate(newLayerPoints2D, holes);
+            triangulation = cg3::cgal::triangulate2(newLayerPoints2D, holes);
 
             //Add triangulation to result
-            for (std::array<cg3::Point2Dd, 3>& triangle : triangulation) {
+            for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
                 bool isThereNewVertex = false; //Flag to check if a new point has been created
                 bool isThereHoleVertex = false; //Flag to check if at least a surface vertex has been found
                 bool isThereNonVisibleFaces = false; //Flag to check if the vertex is incident in non visible face
@@ -1387,7 +1387,7 @@ void extractResults(
                         }
 
                         //Project on 3D
-                        cg3::Pointd p3D = result.vertex(v[i]);
+                        cg3::Point3d p3D = result.vertex(v[i]);
                         p3D.rotate(projectionMatrix);
 
                         //Get minimum new triangle height
@@ -1412,9 +1412,9 @@ void extractResults(
                             }
                             //Not yet inserted in the mesh
                             else {
-                                const cg3::Point2Dd& p2D = triangle[i];
+                                const cg3::Point2d& p2D = triangle[i];
 
-                                cg3::Pointd newPoint(p2D.x(), p2D.y(), minTriangleHeight);
+                                cg3::Point3d newPoint(p2D.x(), p2D.y(), minTriangleHeight);
                                 minCoord.setX(std::min(minCoord.x(), newPoint.x()));
                                 minCoord.setY(std::min(minCoord.y(), newPoint.y()));
                                 minCoord.setZ(std::min(minCoord.z(), newPoint.z()));
@@ -1439,9 +1439,9 @@ void extractResults(
             }
 
             //Get used first layer points
-            std::vector<cg3::Point2Dd> usedNewLayerPoints;
+            std::vector<cg3::Point2d> usedNewLayerPoints;
             for (size_t i = 0; i < nNewLayerVertices; i++) {
-                const cg3::Point2Dd& p2D = newLayerPoints2D[i];
+                const cg3::Point2d& p2D = newLayerPoints2D[i];
                 if (newLayerPoints2DMap.find(p2D) != newLayerPoints2DMap.end()) {
                     usedNewLayerPoints.push_back(p2D);
                 }
@@ -1462,8 +1462,8 @@ void extractResults(
         double totalHeight = maxCoord.z();
 
 
-        std::vector<cg3::Point2Dd> currentSecondLayerPoints2D = currentFirstLayerPoints2D;
-        std::map<cg3::Point2Dd, unsigned int> currentSecondLayerPoints2DMap = currentFirstLayerPoints2DMap;
+        std::vector<cg3::Point2d> currentSecondLayerPoints2D = currentFirstLayerPoints2D;
+        std::map<cg3::Point2d, unsigned int> currentSecondLayerPoints2DMap = currentFirstLayerPoints2DMap;
 
         while (totalHeight < boxHeight) {
             minCoord.x() -= secondLayerStepWidth;
@@ -1473,20 +1473,20 @@ void extractResults(
             maxCoord.y() += secondLayerStepWidth;
 
             //Create new 2D square (down)
-            std::map<cg3::Point2Dd, unsigned int> downPoints2DMap;
-            std::vector<cg3::Point2Dd> squarePoints2D(4);
-            squarePoints2D[0] = cg3::Point2Dd(minCoord.x(), minCoord.y());
-            squarePoints2D[1] = cg3::Point2Dd(maxCoord.x(), minCoord.y());
-            squarePoints2D[2] = cg3::Point2Dd(maxCoord.x(), maxCoord.y());
-            squarePoints2D[3] = cg3::Point2Dd(minCoord.x(), maxCoord.y());
+            std::map<cg3::Point2d, unsigned int> downPoints2DMap;
+            std::vector<cg3::Point2d> squarePoints2D(4);
+            squarePoints2D[0] = cg3::Point2d(minCoord.x(), minCoord.y());
+            squarePoints2D[1] = cg3::Point2d(maxCoord.x(), minCoord.y());
+            squarePoints2D[2] = cg3::Point2d(maxCoord.x(), maxCoord.y());
+            squarePoints2D[3] = cg3::Point2d(minCoord.x(), maxCoord.y());
 
             //Adding down vertices
             std::vector<unsigned int> downVertices(4);
 
             for (size_t i = 0; i < squarePoints2D.size(); i++) {
-                const cg3::Point2Dd& p2D = squarePoints2D[i];
+                const cg3::Point2d& p2D = squarePoints2D[i];
 
-                cg3::Pointd newPoint(p2D.x(), p2D.y(), totalHeight);
+                cg3::Point3d newPoint(p2D.x(), p2D.y(), totalHeight);
                 newPoint.rotate(inverseProjectionMatrix);
 
                 unsigned int vid = result.addVertex(newPoint);
@@ -1498,10 +1498,10 @@ void extractResults(
             //Delaunay triangulation between second layer polygon and new square
             holes.resize(1);
             holes[0] = currentSecondLayerPoints2D;
-            triangulation = cg3::cgal::triangulate(squarePoints2D, holes);
+            triangulation = cg3::cgal::triangulate2(squarePoints2D, holes);
 
             //Add triangulation to result
-            for (std::array<cg3::Point2Dd, 3>& triangle : triangulation) {
+            for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
                 bool isThereNewVertex = false; //Flag to check if a new point has been created (flipped triangles on projection)
 
                 unsigned int v[3];
@@ -1528,15 +1528,15 @@ void extractResults(
             totalHeight = std::min(totalHeight, boxHeight);
 
             //Create new 2D square (up)
-            std::map<cg3::Point2Dd, unsigned int> upPoints2DMap;
+            std::map<cg3::Point2d, unsigned int> upPoints2DMap;
 
             //Adding up square vertices
             std::vector<unsigned int> upVertices(4);
 
             for (size_t i = 0; i < squarePoints2D.size(); i++) {
-                const cg3::Point2Dd& p2D = squarePoints2D[i];
+                const cg3::Point2d& p2D = squarePoints2D[i];
 
-                cg3::Pointd newPoint(p2D.x(), p2D.y(), totalHeight);
+                cg3::Point3d newPoint(p2D.x(), p2D.y(), totalHeight);
                 newPoint.rotate(inverseProjectionMatrix);
 
                 unsigned int vid = result.addVertex(newPoint);
@@ -1567,20 +1567,20 @@ void extractResults(
         /* ----- BOX ----- */
 
         //Create new 2D square
-        std::map<cg3::Point2Dd, unsigned int> boxUpperPoints2DMap;
-        std::vector<cg3::Point2Dd> boxUpperPoints2D(4);
-        boxUpperPoints2D[0] = cg3::Point2Dd(-boxWidth, -boxHeight);
-        boxUpperPoints2D[1] = cg3::Point2Dd(+boxWidth, -boxHeight);
-        boxUpperPoints2D[2] = cg3::Point2Dd(+boxWidth, +boxHeight);
-        boxUpperPoints2D[3] = cg3::Point2Dd(-boxWidth, +boxHeight);
+        std::map<cg3::Point2d, unsigned int> boxUpperPoints2DMap;
+        std::vector<cg3::Point2d> boxUpperPoints2D(4);
+        boxUpperPoints2D[0] = cg3::Point2d(-boxWidth, -boxHeight);
+        boxUpperPoints2D[1] = cg3::Point2d(+boxWidth, -boxHeight);
+        boxUpperPoints2D[2] = cg3::Point2d(+boxWidth, +boxHeight);
+        boxUpperPoints2D[3] = cg3::Point2d(-boxWidth, +boxHeight);
 
         //Adding box vertices
         std::vector<unsigned int> squareVertices(4);
 
         for (size_t i = 0; i < boxUpperPoints2D.size(); i++) {
-            const cg3::Point2Dd& p2D = boxUpperPoints2D[i];
+            const cg3::Point2d& p2D = boxUpperPoints2D[i];
 
-            cg3::Pointd newPoint(p2D.x(), p2D.y(), boxHeight);
+            cg3::Point3d newPoint(p2D.x(), p2D.y(), boxHeight);
             newPoint.rotate(inverseProjectionMatrix);
 
             unsigned int vid = result.addVertex(newPoint);
@@ -1592,10 +1592,10 @@ void extractResults(
         //Delaunay triangulation between second layer polygon and square polygon
         holes.resize(1);
         holes[0] = currentSecondLayerPoints2D;
-        triangulation = cg3::cgal::triangulate(boxUpperPoints2D, holes);
+        triangulation = cg3::cgal::triangulate2(boxUpperPoints2D, holes);
 
         //Add triangulation to result
-        for (std::array<cg3::Point2Dd, 3>& triangle : triangulation) {
+        for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
             bool isThereNewVertex = false; //Flag to check if a new point has been created (flipped triangles on projection)
 
             unsigned int v[3];
@@ -1627,21 +1627,21 @@ void extractResults(
         boxVertices[2] = squareVertices[2];
         boxVertices[3] = squareVertices[3];
 
-        cg3::Pointd p;
+        cg3::Point3d p;
 
-        p = cg3::Pointd(-boxWidth, -boxHeight, -boxHeight);
+        p = cg3::Point3d(-boxWidth, -boxHeight, -boxHeight);
         p.rotate(inverseProjectionMatrix);
         boxVertices[4] = result.addVertex(p);
 
-        p = cg3::Pointd(boxWidth, -boxHeight, -boxHeight);
+        p = cg3::Point3d(boxWidth, -boxHeight, -boxHeight);
         p.rotate(inverseProjectionMatrix);
         boxVertices[5] = result.addVertex(p);
 
-        p = cg3::Pointd(boxWidth, boxHeight, -boxHeight);
+        p = cg3::Point3d(boxWidth, boxHeight, -boxHeight);
         p.rotate(inverseProjectionMatrix);
         boxVertices[6] = result.addVertex(p);
 
-        p = cg3::Pointd(-boxWidth, boxHeight, -boxHeight);
+        p = cg3::Point3d(-boxWidth, boxHeight, -boxHeight);
         p.rotate(inverseProjectionMatrix);
         boxVertices[7] = result.addVertex(p);
 
@@ -1843,7 +1843,7 @@ void extractResults(
     //Creating stock mesh
     double stockRadius = stockDiameter/2;
     double stockHalfLength = stockLength/2;
-    cg3::EigenMesh currentStock = cg3::EigenMesh(cg3::EigenMeshAlgorithms::makeCylinder(cg3::Pointd(-stockHalfLength,0,0), cg3::Pointd(+stockHalfLength,0,0), stockRadius, CYLINDER_SUBD));
+    cg3::EigenMesh currentStock = cg3::EigenMesh(cg3::EigenMeshAlgorithms::makeCylinder(cg3::Point3d(-stockHalfLength,0,0), cg3::Point3d(+stockHalfLength,0,0), stockRadius, CYLINDER_SUBD));
 
 
 
@@ -1976,7 +1976,7 @@ namespace internal {
  * @param offset Offset
  * @return
  */
-std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, const double offset) {
+std::vector<cg3::Point2d> offsetPolygon(std::vector<cg3::Point2d>& polygon, const double offset) {
     using namespace ClipperLib;
 
     const double INT_DOUBLE_TRANSLATION = 1e+6;
@@ -1984,7 +1984,7 @@ std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, co
     Path subj;
     Paths solution;
 
-    for (cg3::Point2Dd& point : polygon) {
+    for (cg3::Point2d& point : polygon) {
         subj <<
                 IntPoint(
                     static_cast<long long int>(point.x() * INT_DOUBLE_TRANSLATION),
@@ -2007,9 +2007,9 @@ std::vector<cg3::Point2Dd> offsetPolygon(std::vector<cg3::Point2Dd>& polygon, co
         }
     }
 
-    std::vector<cg3::Point2Dd> result;
+    std::vector<cg3::Point2d> result;
     for (IntPoint& ip : solution[bestIndex]) {
-        result.push_back(cg3::Point2Dd(ip.X / INT_DOUBLE_TRANSLATION, ip.Y / INT_DOUBLE_TRANSLATION));
+        result.push_back(cg3::Point2d(ip.X / INT_DOUBLE_TRANSLATION, ip.Y / INT_DOUBLE_TRANSLATION));
     }
     return result;
 }

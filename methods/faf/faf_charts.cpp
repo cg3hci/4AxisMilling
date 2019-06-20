@@ -1,6 +1,6 @@
 #include "faf_charts.h"
 
-#include <cg3/geometry/transformations.h>
+#include <cg3/geometry/transformations3.h>
 
 #include <cg3/libigl/mesh_adjacencies.h>
 
@@ -168,7 +168,7 @@ ChartData getChartData(
             size_t nVertices = chart.vertices.size();
 
             //Center of the chart
-            cg3::Pointd chartCenter(0,0,0);
+            cg3::Point3d chartCenter(0,0,0);
             for (const unsigned int& vId : chart.vertices) {
                 const Vertex* vertex = dcel.vertex(vId);
                 chartCenter += vertex->coordinate();

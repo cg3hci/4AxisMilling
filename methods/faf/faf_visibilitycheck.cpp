@@ -4,17 +4,17 @@
  */
 #include "faf_visibilitycheck.h"
 
-#include <cg3/geometry/transformations.h>
-#include <cg3/geometry/2d/point2d.h>
-#include <cg3/geometry/point.h>
-#include <cg3/geometry/2d/triangle2d.h>
-#include <cg3/geometry/2d/triangle2d_utils.h>
+#include <cg3/geometry/transformations3.h>
+#include <cg3/geometry/point2.h>
+#include <cg3/geometry/point3.h>
+#include <cg3/geometry/triangle2.h>
+#include <cg3/geometry/triangle2_utils.h>
 
 #include "includes/view_renderer.h"
 
 #include <cg3/data_structures/trees/aabbtree.h>
 
-#include <cg3/cgal/aabbtree.h>
+#include <cg3/cgal/aabb_tree3.h>
 
 
 namespace FourAxisFabrication {
@@ -78,7 +78,7 @@ void getVisibilityRayShootingOnZ(
         const unsigned int faceId,
         const unsigned int directionIndex,
         const cg3::Vec3& direction,
-        cg3::cgal::AABBTree& aabbTree,
+        cg3::cgal::AABBTree3& aabbTree,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle);
 
@@ -99,7 +99,7 @@ void getVisibilityProjectionOnZ(
         const unsigned int faceId,
         const unsigned int directionIndex,
         const cg3::Vec3& direction,
-        cg3::AABBTree<2, cg3::Triangle2Dd>& aabbTree,
+        cg3::AABBTree<2, cg3::Triangle2d>& aabbTree,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle);
 
@@ -111,13 +111,13 @@ struct TriangleZComparator {
     TriangleZComparator(const cg3::SimpleEigenMesh& m);
     bool operator()(unsigned int f1, unsigned int f2);
 };
-bool triangle2DComparator(const cg3::Triangle2Dd& t1, const cg3::Triangle2Dd& t2);
+bool triangle2DComparator(const cg3::Triangle2d& t1, const cg3::Triangle2d& t2);
 
 
 /* AABB extractor functions */
 
 double triangle2DAABBExtractor(
-        const cg3::Triangle2Dd& triangle,
+        const cg3::Triangle2d& triangle,
         const cg3::AABBValueType& valueType,
         const int& dim);
 
@@ -515,9 +515,9 @@ void getVisibilityProjectionOnZ(
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle)
 {
-    cg3::AABBTree<2, cg3::Triangle2Dd> aabbTreeMax(
+    cg3::AABBTree<2, cg3::Triangle2d> aabbTreeMax(
                 &internal::triangle2DAABBExtractor, &internal::triangle2DComparator);
-    cg3::AABBTree<2, cg3::Triangle2Dd> aabbTreeMin(
+    cg3::AABBTree<2, cg3::Triangle2d> aabbTreeMin(
                 &internal::triangle2DAABBExtractor, &internal::triangle2DComparator);
 
     //Order the face by z-coordinate of the barycenter
@@ -565,7 +565,7 @@ void getVisibilityProjectionOnZ(
         const unsigned int faceId,
         const unsigned int directionIndex,
         const cg3::Vec3& direction,
-        cg3::AABBTree<2, cg3::Triangle2Dd>& aabbTree,
+        cg3::AABBTree<2, cg3::Triangle2d>& aabbTree,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle)
 {
@@ -573,18 +573,18 @@ void getVisibilityProjectionOnZ(
 
     //If it is visible (checking the angle between normal and the target direction)
     if (direction.dot(mesh.faceNormal(faceId)) >= heightFieldLimit) {
-        const cg3::Pointi& faceData = mesh.face(faceId);
-        const cg3::Pointd& v1 = mesh.vertex(faceData.x());
-        const cg3::Pointd& v2 = mesh.vertex(faceData.y());
-        const cg3::Pointd& v3 = mesh.vertex(faceData.z());
+        const cg3::Point3i& faceData = mesh.face(faceId);
+        const cg3::Point3d& v1 = mesh.vertex(faceData.x());
+        const cg3::Point3d& v2 = mesh.vertex(faceData.y());
+        const cg3::Point3d& v3 = mesh.vertex(faceData.z());
 
         //Project on the z plane
-        cg3::Point2Dd v1Projected(v1.x(), v1.y());
-        cg3::Point2Dd v2Projected(v2.x(), v2.y());
-        cg3::Point2Dd v3Projected(v3.x(), v3.y());
+        cg3::Point2d v1Projected(v1.x(), v1.y());
+        cg3::Point2d v2Projected(v2.x(), v2.y());
+        cg3::Point2d v3Projected(v3.x(), v3.y());
 
         //Create triangle
-        cg3::Triangle2Dd triangle(v1Projected, v2Projected, v3Projected);
+        cg3::Triangle2d triangle(v1Projected, v2Projected, v3Projected);
         cg3::sortTriangle2DPointsAndReorderCounterClockwise(triangle);
 
         //Check for intersections
@@ -611,8 +611,8 @@ void getVisibilityProjectionOnZ(
  */
 TriangleZComparator::TriangleZComparator(const cg3::SimpleEigenMesh& m) : m(m) {}
 bool TriangleZComparator::operator()(unsigned int f1, unsigned int f2){
-    const cg3::Pointi& ff1 = m.face(f1);
-    const cg3::Pointi& ff2 = m.face(f2);
+    const cg3::Point3i& ff1 = m.face(f1);
+    const cg3::Point3i& ff2 = m.face(f2);
     double minZ1 = std::min(std::min(m.vertex(ff1.x()).z(), m.vertex(ff1.y()).z()),m.vertex(ff1.z()).z());
     double minZ2 = std::min(std::min(m.vertex(ff2.x()).z(), m.vertex(ff2.y()).z()),m.vertex(ff2.z()).z());
     return minZ1 < minZ2;
@@ -624,7 +624,7 @@ bool TriangleZComparator::operator()(unsigned int f1, unsigned int f2){
  * @param t2 Triangle 2
  * @return True if triangle 1 is less than triangle 2
  */
-bool triangle2DComparator(const cg3::Triangle2Dd& t1, const cg3::Triangle2Dd& t2) {
+bool triangle2DComparator(const cg3::Triangle2d& t1, const cg3::Triangle2d& t2) {
     if (t1.v1() < t2.v1())
         return true;
     if (t2.v1() < t1.v1())
@@ -648,7 +648,7 @@ bool triangle2DComparator(const cg3::Triangle2Dd& t1, const cg3::Triangle2Dd& t2
  * @return Requested coordinate of the AABB
  */
 double triangle2DAABBExtractor(
-        const cg3::Triangle2Dd& triangle,
+        const cg3::Triangle2d& triangle,
         const cg3::AABBValueType& valueType,
         const int& dim)
 {
@@ -699,7 +699,7 @@ void getVisibilityRayShootingOnZ(
     const double heightFieldLimit = cos(heightfieldAngle);
 
     //Create cgal AABB on the current mesh
-    cg3::cgal::AABBTree tree(mesh);
+    cg3::cgal::AABBTree3 tree(mesh);
 
     //Get bounding box min and max z-coordinate
     double minZ = mesh.boundingBox().minZ()-1;
@@ -707,20 +707,20 @@ void getVisibilityRayShootingOnZ(
 
     for(unsigned int faceIndex : faces){
         //Get the face data
-        cg3::Pointi f = mesh.face(faceIndex);
+        cg3::Point3i f = mesh.face(faceIndex);
         cg3::Vec3 v1 = mesh.vertex(f.x());
         cg3::Vec3 v2 = mesh.vertex(f.y());
         cg3::Vec3 v3 = mesh.vertex(f.z());
 
         //Barycenter of the face
-        cg3::Pointd bar((v1 + v2 + v3) / 3);
+        cg3::Point3d bar((v1 + v2 + v3) / 3);
 
         //Calculate the intersection in the mesh
         std::list<int> barIntersection;
 
         tree.getIntersectedEigenFaces(
-                    cg3::Pointd(bar.x(), bar.y(), maxZ),
-                    cg3::Pointd(bar.x(), bar.y(), minZ),
+                    cg3::Point3d(bar.x(), bar.y(), maxZ),
+                    cg3::Point3d(bar.x(), bar.y(), minZ),
                     barIntersection);
 
 
@@ -748,8 +748,8 @@ void getVisibilityRayShootingOnZ(
 
         for (int intersectedFace : barIntersection) {
             //Get the face data
-            cg3::Pointi faceData = mesh.face(intersectedFace);
-            cg3::Pointd currentBarycenter = (
+            cg3::Point3i faceData = mesh.face(intersectedFace);
+            cg3::Point3d currentBarycenter = (
                         mesh.vertex(faceData.x()) +
                         mesh.vertex(faceData.y()) +
                         mesh.vertex(faceData.z())

@@ -9,7 +9,7 @@
 #include <string>
 #include <fstream>
 
-#include <cg3/geometry/transformations.h>
+#include <cg3/geometry/transformations3.h>
 
 #include <cg3/utilities/string.h>
 #include <cg3/utilities/timer.h>
@@ -394,7 +394,7 @@ void FourAxisFabricationManager::restoreFrequencies() {
         unsigned int nIterations = (unsigned int) ui->restoreFrequenciesIterationsSpinBox->value();
 
         double haussDistance = cg3::libigl::hausdorffDistance(data.mesh, data.smoothedMesh);
-        cg3::BoundingBox originalMeshBB = data.mesh.boundingBox();
+        cg3::BoundingBox3 originalMeshBB = data.mesh.boundingBox();
         double haussDistanceBB = haussDistance/originalMeshBB.diag();
 
         std::cout << "Smoothed -> Haussdorff distance: " << haussDistance << " (w.r.t. bounding box: " << haussDistanceBB << ")" << std::endl;
@@ -1549,7 +1549,7 @@ void FourAxisFabricationManager::on_centerOnOriginButton_clicked() {
 void FourAxisFabricationManager::on_plusXButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
-        data.mesh.translate(cg3::Pointd(ui->stepSpinBox->value(), 0, 0));
+        data.mesh.translate(cg3::Point3d(ui->stepSpinBox->value(), 0, 0));
 
         //Update canvas and fit the scene
         mainWindow.canvas.update();
@@ -1560,7 +1560,7 @@ void FourAxisFabricationManager::on_plusXButton_clicked() {
 void FourAxisFabricationManager::on_minusXButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
-        data.mesh.translate(cg3::Pointd(-ui->stepSpinBox->value(), 0, 0));
+        data.mesh.translate(cg3::Point3d(-ui->stepSpinBox->value(), 0, 0));
 
         //Update canvas and fit the scene
         mainWindow.canvas.update();
@@ -1571,7 +1571,7 @@ void FourAxisFabricationManager::on_minusXButton_clicked() {
 void FourAxisFabricationManager::on_plusYButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
-        data.mesh.translate(cg3::Pointd(0, ui->stepSpinBox->value(), 0));
+        data.mesh.translate(cg3::Point3d(0, ui->stepSpinBox->value(), 0));
 
         //Update canvas and fit the scene
         mainWindow.canvas.update();
@@ -1582,7 +1582,7 @@ void FourAxisFabricationManager::on_plusYButton_clicked() {
 void FourAxisFabricationManager::on_minusYButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
-        data.mesh.translate(cg3::Pointd(0, -ui->stepSpinBox->value(), 0));
+        data.mesh.translate(cg3::Point3d(0, -ui->stepSpinBox->value(), 0));
 
         //Update canvas and fit the scene
         mainWindow.canvas.update();
@@ -1593,7 +1593,7 @@ void FourAxisFabricationManager::on_minusYButton_clicked() {
 void FourAxisFabricationManager::on_plusZButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
-        data.mesh.translate(cg3::Pointd(0, 0, ui->stepSpinBox->value()));
+        data.mesh.translate(cg3::Point3d(0, 0, ui->stepSpinBox->value()));
 
         //Update canvas and fit the scene
         mainWindow.canvas.update();
@@ -1604,7 +1604,7 @@ void FourAxisFabricationManager::on_plusZButton_clicked() {
 void FourAxisFabricationManager::on_minusZButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
-        data.mesh.translate(cg3::Pointd(0, 0, -ui->stepSpinBox->value()));
+        data.mesh.translate(cg3::Point3d(0, 0, -ui->stepSpinBox->value()));
 
         //Update canvas and fit the scene
         mainWindow.canvas.update();

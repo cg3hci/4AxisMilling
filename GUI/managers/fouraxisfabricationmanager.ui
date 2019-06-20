@@ -1210,7 +1210,7 @@
          <string>Reassing non-visible triangles to adjacent chart</string>
         </property>
         <property name="checked">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
        </widget>
       </item>

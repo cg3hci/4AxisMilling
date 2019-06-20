@@ -17,8 +17,8 @@ struct XMinComparator {
     const cg3::SimpleEigenMesh& m;
     inline XMinComparator(const cg3::SimpleEigenMesh& m) : m(m) {}
     inline bool operator()(unsigned int f1, unsigned int f2){
-        const cg3::Pointi& ff1 = m.face(f1);
-        const cg3::Pointi& ff2 = m.face(f2);
+        const cg3::Point3i& ff1 = m.face(f1);
+        const cg3::Point3i& ff2 = m.face(f2);
         double c1 = std::min(std::min(m.vertex(ff1.x()).x(), m.vertex(ff1.y()).x()), m.vertex(ff1.z()).x());
         double c2 = std::min(std::min(m.vertex(ff2.x()).x(), m.vertex(ff2.y()).x()), m.vertex(ff2.z()).x());
         return c1 < c2;
@@ -113,7 +113,7 @@ void selectExtremesOnXAxis(
     //Get the min x coordinate of the non-heightfield faces (it will be the level set)
     levelSetMinX = mesh.vertex(mesh.face(fIndices[iMin]).x()).x();
     while(iMin < fIndices.size()){
-        cg3::Pointi face = mesh.face(fIndices[iMin]);
+        cg3::Point3i face = mesh.face(fIndices[iMin]);
 
         levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.x()).x());
         levelSetMinX = std::min(levelSetMinX, mesh.vertex(face.y()).x());
@@ -132,7 +132,7 @@ void selectExtremesOnXAxis(
         minQueue.pop();
 
         if (!minVisited[fId]) {
-            cg3::Pointi face = mesh.face(fId);
+            cg3::Point3i face = mesh.face(fId);
 
             minVisited[fId] = true;
 
@@ -170,7 +170,7 @@ void selectExtremesOnXAxis(
     //Get the max x coordinate of the non-selected faces (level set)
     levelSetMaxX = mesh.vertex(mesh.face(fIndices[iMax]).x()).x();
     while(iMax >= 0){
-        cg3::Pointi face = mesh.face(fIndices[iMax]);
+        cg3::Point3i face = mesh.face(fIndices[iMax]);
 
         levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.x()).x());
         levelSetMaxX = std::max(levelSetMaxX, mesh.vertex(face.y()).x());
@@ -189,7 +189,7 @@ void selectExtremesOnXAxis(
         maxQueue.pop();
 
         if (!maxVisited[fId]) {
-            cg3::Pointi face = mesh.face(fId);
+            cg3::Point3i face = mesh.face(fId);
 
             maxVisited[fId] = true;
 

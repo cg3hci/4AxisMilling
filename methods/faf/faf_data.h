@@ -9,9 +9,9 @@
 
 #include <cg3/data_structures/arrays/array2d.h>
 
-#include <cg3/geometry/point.h>
-
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
+
+#include <cg3/geometry/point3.h>
 
 #include "faf_charts.h"
 

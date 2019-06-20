@@ -18,7 +18,7 @@ namespace FourAxisFabrication {
 namespace internal {
 void reassignLabelsAfterLineSmoothing(
         const cg3::EigenMesh& mesh,
-        const std::set<std::pair<cg3::Pointd, cg3::Pointd>>& newEdgesCoordinates,
+        const std::set<std::pair<cg3::Point3d, cg3::Point3d>>& newEdgesCoordinates,
         const std::vector<cg3::Vec3>& directions,
         std::vector<int>& association,
         cg3::Array2D<int>& visibility);
@@ -265,7 +265,7 @@ void optimization(
 
 
     if (smoothEdgeLines) {
-        std::vector<std::pair<cg3::Pointd, cg3::Pointd>> polylines;
+        std::vector<std::pair<cg3::Point3d, cg3::Point3d>> polylines;
 
         std::unordered_set<int> computedLabels;
 
@@ -296,7 +296,7 @@ void optimization(
 
         unsigned int initialNumFaces = mesh.numberFaces();
 
-        std::set<std::pair<cg3::Pointd, cg3::Pointd>> newEdgesCoordinates;
+        std::set<std::pair<cg3::Point3d, cg3::Point3d>> newEdgesCoordinates;
         mesh = cg3::vcglib::curveOnManifold(mesh, polylines, newEdgesCoordinates, 15, 15, 0.1, false, true);
 
         unsigned int newNumberFaces = mesh.numberFaces();
@@ -355,7 +355,7 @@ void optimization(
 namespace internal {
 void reassignLabelsAfterLineSmoothing(
         const cg3::EigenMesh& mesh,
-        const std::set<std::pair<cg3::Pointd, cg3::Pointd>>& newEdgesCoordinates,
+        const std::set<std::pair<cg3::Point3d, cg3::Point3d>>& newEdgesCoordinates,
         const std::vector<cg3::Vec3>& directions,
         std::vector<int>& association,
         cg3::Array2D<int>& visibility)
@@ -383,8 +383,8 @@ void reassignLabelsAfterLineSmoothing(
 
             visited[fId] = true;
 
-            cg3::Pointi face = mesh.face(fId);
-            std::set<cg3::Pointd> faceCoords;
+            cg3::Point3i face = mesh.face(fId);
+            std::set<cg3::Point3d> faceCoords;
             faceCoords.insert(mesh.vertex(face.x()));
             faceCoords.insert(mesh.vertex(face.y()));
             faceCoords.insert(mesh.vertex(face.z()));
@@ -392,17 +392,17 @@ void reassignLabelsAfterLineSmoothing(
             std::vector<int>& adjacentFaces = ffAdj[fId];
             for (int adjId : adjacentFaces) {
 
-                cg3::Pointi adjFace = mesh.face(adjId);
-                std::set<cg3::Pointd> adjFaceCoords;
+                cg3::Point3i adjFace = mesh.face(adjId);
+                std::set<cg3::Point3d> adjFaceCoords;
                 adjFaceCoords.insert(mesh.vertex(adjFace.x()));
                 adjFaceCoords.insert(mesh.vertex(adjFace.y()));
                 adjFaceCoords.insert(mesh.vertex(adjFace.z()));
 
-                std::vector<cg3::Pointd> intersection;
+                std::vector<cg3::Point3d> intersection;
                 std::set_intersection(faceCoords.begin(), faceCoords.end(), adjFaceCoords.begin(), adjFaceCoords.end(), std::back_inserter(intersection));
 
                 assert(intersection.size() == 2);
-                std::pair<cg3::Pointd, cg3::Pointd> edge;
+                std::pair<cg3::Point3d, cg3::Point3d> edge;
                 edge.first = intersection[0];
                 edge.second = intersection[1];
                 if (edge.first < edge.second)

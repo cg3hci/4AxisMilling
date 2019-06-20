@@ -11,7 +11,7 @@ ViewRenderer::ViewRenderer(const cg3::SimpleEigenMesh& m, int resolution) :
 
 ViewRenderer::ViewRenderer(
         const cg3::SimpleEigenMesh& m,
-        const cg3::BoundingBox& bb,
+        const cg3::BoundingBox3& bb,
         int resolution) :
     mesh(m)
 {
@@ -264,7 +264,7 @@ void ViewRenderer::initVertAndIndices()
     faceIndicesArray.resize(mesh.numberFaces() * 3);
     int k = 0, j = 0;
     for (unsigned int fi = 0; fi < mesh.numberFaces(); fi++){
-        cg3::Pointi f = mesh.face(fi);
+        cg3::Point3i f = mesh.face(fi);
         for (unsigned int vi = 0; vi < 3; vi++){
             //jth vertex...
             verticesArray[k++] = (GLfloat) mesh.vertex(f[vi]).x();
