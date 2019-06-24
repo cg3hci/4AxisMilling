@@ -290,14 +290,14 @@ void FourAxisFabricationManager::optimalOrientation() {
 
         if (res) {
             data.isMeshOriented = true;
+
+            updateDrawableMesh();
+            updateDrawableSmoothedMesh();
         }
         else {
             QMessageBox::warning(this, tr("Warning"), tr("Model cannot fit!"));
-            emit on_reloadMeshButton_clicked();
+            on_reloadMeshButton_clicked();
         }
-
-        updateDrawableMesh();
-        updateDrawableSmoothedMesh();
     }
 }
 
