@@ -41,9 +41,9 @@ void scaleAndStock(
         const double stockLength,
         const double stockDiameter)
 {
-    if (scaleModel) {
-        cg3::EigenMesh& mesh = data.mesh;
+    cg3::EigenMesh& mesh = data.mesh;
 
+    if (scaleModel) {
         //Get the scale factor
         cg3::BoundingBox3 bb = mesh.boundingBox();
         double minX = bb.minX();
@@ -59,13 +59,12 @@ void scaleAndStock(
         mesh.scale(scaleVec);
 
         mesh.updateBoundingBox();
-
-        //Center meshes
-        cg3::Vec3 translateVec = -mesh.boundingBox().center();
-        mesh.translate(translateVec);
-
-        mesh.updateBoundingBox();
     }
+
+    //Center mesh
+    cg3::Vec3 translateVec = -mesh.boundingBox().center();
+    mesh.translate(translateVec);
+    mesh.updateBoundingBox();
 
     cg3::EigenMesh& stock = data.stock;
 

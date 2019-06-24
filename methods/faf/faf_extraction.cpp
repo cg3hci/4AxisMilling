@@ -5,6 +5,8 @@
 #include "faf_extraction.h"
 #include "faf_charts.h"
 
+#include <cg3/utilities/utils.h>
+
 #include <cg3/geometry/transformations3.h>
 #include <cg3/geometry/point2.h>
 
@@ -293,7 +295,7 @@ void extractResults(
 
 
 
-        std::unordered_map<size_t, size_t>& resultFaceToMeshFacesMap = resultFacesToMeshFaces.at(rId);
+//        std::unordered_map<size_t, size_t>& resultFaceToMeshFacesMap = resultFacesToMeshFaces.at(rId);
 
         //Compute minZ and save projected points
         double minZ = std::numeric_limits<double>::max();
@@ -314,8 +316,6 @@ void extractResults(
             projectedPoints2DMap.insert(std::make_pair(p2D, vId));
 
             minZ = std::min(minZ, p.z());
-
-            const cg3::Array2D<int>& fourAxisVisibility = data.fourAxisVisibility;
         }
 
         // VF adjacencies
@@ -1074,7 +1074,7 @@ void getFabricationOrder(
 
     //Useful variables
     size_t minCostIndex;
-    int minCost;
+    double minCost;
 
     do {
         minCostIndex = 0;
@@ -1084,7 +1084,7 @@ void getFabricationOrder(
                 bool isExtremes = association[i] == minLabel || association[i] == maxLabel;
 
                 if (extremeResults == isExtremes) {
-                    if (cost[i] < minCost || (cost[i] == minCost && gain[i] > gain[minCostIndex])) {
+                    if (cost[i] < minCost || (cg3::epsilonEqual(cost[i], minCost) && gain[i] > gain[minCostIndex])) {
                         minCostIndex = i;
                         minCost = cost[i];
                     }
