@@ -7,7 +7,7 @@
 
 namespace FourAxisFabrication {
 
-void taubinSmoothing(
+void smoothing(
         Data& data,
         const int iterations,
         const float lambda,

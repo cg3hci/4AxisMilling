@@ -2,11 +2,13 @@
  * @author Stefano Nuvoli
  * @author Alessandro Muntoni
  */
-#include "faf_cutting.h"
+#include "faf_various.h"
 
 #include <cg3/libigl/booleans.h>
 
 #include <cg3/meshes/eigenmesh/algorithms/eigenmesh_algorithms.h>
+
+#define CYLINDER_SUBD 100
 
 namespace FourAxisFabrication {
 
@@ -15,7 +17,7 @@ namespace FourAxisFabrication {
 
 namespace internal {
 
-void resetFourAxisFabricationData(
+void resetDataAfterCutting(
         const cg3::libigl::CSGTree& csgMesh,
         const cg3::libigl::CSGTree& csgResult,
         const std::vector<int>& meshAssociation,
@@ -23,6 +25,56 @@ void resetFourAxisFabricationData(
         const cg3::Array2D<int>& meshVisibility,
         cg3::Array2D<int>& resultVisibility,
         const int secondMeshLabel);
+}
+
+
+
+/**
+ * @brief Scale mesh and stock generation
+ * @param data Four axis fabrication data
+ * @param modelLength Lenght of the model
+ */
+void scaleAndStock(
+        Data &data,
+        const bool scaleModel,
+        const double modelLength,
+        const double stockLength,
+        const double stockDiameter)
+{
+    if (scaleModel) {
+        cg3::EigenMesh& mesh = data.mesh;
+
+        //Get the scale factor
+        cg3::BoundingBox3 bb = mesh.boundingBox();
+        double minX = bb.minX();
+        double maxX = bb.maxX();
+        double minY = bb.minY();
+        double maxY = bb.maxY();
+        double minZ = bb.minZ();
+        double maxZ = bb.maxZ();
+        const double scaleFactor = modelLength / std::max(std::max(maxX - minX, maxY - minY), maxZ - minZ);
+
+        //Scale meshes
+        const cg3::Vec3 scaleVec(scaleFactor, scaleFactor, scaleFactor);
+        mesh.scale(scaleVec);
+
+        mesh.updateBoundingBox();
+
+        //Center meshes
+        cg3::Vec3 translateVec = -mesh.boundingBox().center();
+        mesh.translate(translateVec);
+
+        mesh.updateBoundingBox();
+    }
+
+    cg3::EigenMesh& stock = data.stock;
+
+    double stockRadius = stockDiameter/2;
+    double stockHalfLength = stockLength/2;
+
+    stock = cg3::EigenMesh(cg3::EigenMeshAlgorithms::makeCylinder(cg3::Point3d(-stockHalfLength,0,0), cg3::Point3d(+stockHalfLength,0,0), static_cast<float>(stockRadius), CYLINDER_SUBD));
+    stock.updateBoundingBox();
+    stock.updateFacesAndVerticesNormals();
 }
 
 /**
@@ -117,7 +169,7 @@ void cutComponents(
 
         //Min difference
         csgFourAxisResult = cg3::libigl::difference(csgMesh, csgMinBB);
-        internal::resetFourAxisFabricationData(csgMesh, csgFourAxisResult, currentAssociation, fourAxisAssociation, currentVisibility, fourAxisVisibility, minLabel);
+        internal::resetDataAfterCutting(csgMesh, csgFourAxisResult, currentAssociation, fourAxisAssociation, currentVisibility, fourAxisVisibility, minLabel);
 
         //Max difference
         csgMesh = cg3::libigl::eigenMeshToCSGTree(cg3::libigl::CSGTreeToEigenMesh(csgFourAxisResult));
@@ -125,7 +177,7 @@ void cutComponents(
         currentVisibility = fourAxisVisibility;
 
         csgFourAxisResult = cg3::libigl::difference(csgMesh, csgMaxBB);
-        internal::resetFourAxisFabricationData(csgMesh, csgFourAxisResult, currentAssociation, fourAxisAssociation, currentVisibility, fourAxisVisibility, maxLabel);
+        internal::resetDataAfterCutting(csgMesh, csgFourAxisResult, currentAssociation, fourAxisAssociation, currentVisibility, fourAxisVisibility, maxLabel);
 
 
 
@@ -180,7 +232,7 @@ namespace internal {
  * @param[out] resultVisibility Resulting visibility
  * @param[in] secondMeshLabel Label to be assigned if the birth face is in the second mesh
  */
-void resetFourAxisFabricationData(
+void resetDataAfterCutting(
         const cg3::libigl::CSGTree& csgMesh,
         const cg3::libigl::CSGTree& csgResult,
         const std::vector<int>& meshAssociation,

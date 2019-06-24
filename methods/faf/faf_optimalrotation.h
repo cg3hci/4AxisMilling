@@ -9,9 +9,11 @@ namespace FourAxisFabrication {
 
 /* Optimal rotation */
 
-void rotateToOptimalOrientation(
+bool rotateToOptimalOrientation(
         cg3::EigenMesh& mesh,
         cg3::EigenMesh& smoothedMesh,
+        const double stockLength,
+        const double stockDiameter,
         const unsigned int nDirs,
         const double extremeWeight,
         const double BBweight,

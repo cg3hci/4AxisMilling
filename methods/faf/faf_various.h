@@ -13,6 +13,13 @@
 
 namespace FourAxisFabrication {
 
+void scaleAndStock(
+        Data& data,
+        const bool scaleModel,
+        const double modelLength,
+        const double stockLength,
+        const double stockDiameter);
+
 void cutComponents(
         Data& data,
         const bool cutComponents);

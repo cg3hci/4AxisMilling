@@ -77,7 +77,16 @@ void FourAxisFabricationManager::updateUI() {
     // ----- Four axis fabrication -----
     ui->fourAxisFabricationGroup->setEnabled(data.isMeshLoaded);
 
-    //Optimal orientation
+    //Scale and stock generation
+    ui->scaleStockButton->setEnabled(!data.isMeshScaledAndStockGenerated);
+    ui->stockLengthLabel->setEnabled(!data.isMeshScaledAndStockGenerated);
+    ui->stockLengthSpinBox->setEnabled(!data.isMeshScaledAndStockGenerated);
+    ui->stockDiameterLabel->setEnabled(!data.isMeshScaledAndStockGenerated);
+    ui->stockDiameterSpinBox->setEnabled(!data.isMeshScaledAndStockGenerated);
+    ui->modelScaleCheckBox->setEnabled(!data.isMeshScaledAndStockGenerated);
+    ui->modelLengthSpinBox->setEnabled(!data.isMeshScaledAndStockGenerated);
+
+    //Smoothing
     ui->smoothingButton->setEnabled(!data.isMeshSmoothed);
     ui->smoothingIterationsLabel->setEnabled(!data.isMeshSmoothed);
     ui->smoothingIterationsSpinBox->setEnabled(!data.isMeshSmoothed);
@@ -144,12 +153,6 @@ void FourAxisFabricationManager::updateUI() {
 
     //Extract results
     ui->extractResultsButton->setEnabled(!data.areResultsExtracted);
-    ui->extractResultsStockLengthLabel->setEnabled(!data.areResultsExtracted);
-    ui->extractResultsStockLengthSpinBox->setEnabled(!data.areResultsExtracted);
-    ui->extractResultsStockDiameterLabel->setEnabled(!data.areResultsExtracted);
-    ui->extractResultsStockDiameterSpinBox->setEnabled(!data.areResultsExtracted);
-    ui->extractResultsModelLengthLabel->setEnabled(!data.areResultsExtracted);
-    ui->extractResultsModelLengthSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsFirstLayerAngleLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsFirstLayerAngleSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsFirstLayerOffsetLabel->setEnabled(!data.areResultsExtracted);
@@ -193,11 +196,43 @@ void FourAxisFabricationManager::clearData() {
 /* ----- COMPUTING METHODS ------ */
 
 /**
+ * @brief Scale mesh and generate stock
+ */
+void FourAxisFabricationManager::scaleAndStock() {
+    if (!data.isMeshScaledAndStockGenerated) {
+        std::cout << std::endl << "#######################################################################" << std::endl << std::endl;
+
+        //Get UI data
+        bool scaleModel = ui->modelScaleCheckBox->isChecked();
+        double modelLength = ui->modelLengthSpinBox->value();
+        double stockLength = ui->stockLengthSpinBox->value();
+        double stockDiameter = ui->stockDiameterSpinBox->value();
+
+        cg3::Timer t(std::string("Scale and stock generation"));
+
+        //Scale mesh and get stock
+        FourAxisFabrication::scaleAndStock(
+                    data,
+                    scaleModel,
+                    modelLength,
+                    stockLength,
+                    stockDiameter);
+
+        t.stopAndPrint();
+
+        data.isMeshScaledAndStockGenerated = true;
+
+        addDrawableStock();
+        updateDrawableMesh();
+    }
+}
+
+/**
  * @brief Compute smoothing
  */
 void FourAxisFabricationManager::smoothing() {
     if (!data.isMeshSmoothed) {
-        std::cout << std::endl << "#######################################################################" << std::endl << std::endl;
+        scaleAndStock();
 
         //Get UI data
         int iterations = ui->smoothingIterationsSpinBox->value();
@@ -207,7 +242,7 @@ void FourAxisFabricationManager::smoothing() {
         cg3::Timer t(std::string("Smoothing"));
 
         //Get smoothed mesh
-        FourAxisFabrication::taubinSmoothing(
+        FourAxisFabrication::smoothing(
                     data,
                     iterations,
                     lambda,
@@ -230,6 +265,8 @@ void FourAxisFabricationManager::optimalOrientation() {
         smoothing();
 
         //Get UI data
+        double stockLength = ui->stockLengthSpinBox->value();
+        double stockDiameter = ui->stockDiameterSpinBox->value();
         unsigned int nOrientations = (unsigned int) ui->optimalOrientationOrientationsSpinBox->value();
         double extremeWeight = (double) ui->optimalOrientationExtremeWeightSpinBox->value();
         double BBWeight = (double) ui->optimalOrientationBBWeightSpinBox->value();
@@ -238,17 +275,26 @@ void FourAxisFabricationManager::optimalOrientation() {
         cg3::Timer t(std::string("Optimal orientation"));
 
         //Get optimal mesh orientation
-        FourAxisFabrication::rotateToOptimalOrientation(
+        bool res = FourAxisFabrication::rotateToOptimalOrientation(
                     data.mesh,
                     data.smoothedMesh,
+                    stockLength,
+                    stockDiameter,
                     nOrientations,
                     extremeWeight,
                     BBWeight,
                     deterministic);
 
+
         t.stopAndPrint();
 
-        data.isMeshOriented = true;
+        if (res) {
+            data.isMeshOriented = true;
+        }
+        else {
+            QMessageBox::warning(this, tr("Warning"), tr("Model cannot fit!"));
+            emit on_reloadMeshButton_clicked();
+        }
 
         updateDrawableMesh();
         updateDrawableSmoothedMesh();
@@ -491,9 +537,8 @@ void FourAxisFabricationManager::extractResults() {
 
         //Get UI data
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
-        double modelLength = ui->extractResultsModelLengthSpinBox->value();
-        double stockLength = ui->extractResultsStockLengthSpinBox->value();
-        double stockDiameter = ui->extractResultsStockDiameterSpinBox->value();
+        double stockLength = ui->stockLengthSpinBox->value();
+        double stockDiameter = ui->stockDiameterSpinBox->value();
         double firstLayerAngle = ui->extractResultsFirstLayerAngleSpinBox->value() / 180.0 * M_PI;
         double firstLayerOffset = ui->extractResultsFirstLayerOffsetSpinBox->value();
         double secondLayerStepWidth = ui->extractResultsSecondLayerStepWidthSpinBox->value();
@@ -505,7 +550,7 @@ void FourAxisFabricationManager::extractResults() {
 
 
         //Extract results
-        FourAxisFabrication::extractResults(data, modelLength, stockLength, stockDiameter, firstLayerAngle, firstLayerOffset, secondLayerStepWidth, secondLayerStepHeight, heightfieldAngle, xDirectionsAfter, rotateResults);
+        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, firstLayerAngle, firstLayerOffset, secondLayerStepWidth, secondLayerStepHeight, heightfieldAngle, xDirectionsAfter, rotateResults);
 
         t.stopAndPrint();
 
@@ -543,6 +588,17 @@ void FourAxisFabricationManager::addDrawableSmoothedMesh() {
     mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
 }
 
+/**
+ * @brief Add drawable stock
+ */
+void FourAxisFabricationManager::addDrawableStock() {
+    drawableStock = cg3::DrawableEigenMesh(data.stock);
+    drawableStock.setFlatShading();
+
+    mainWindow.pushDrawableObject(&drawableStock, "Stock");
+
+    mainWindow.setDrawableObjectVisibility(&drawableStock, false);
+}
 
 /**
  * @brief Add drawable restored mesh to the canvas
@@ -691,6 +747,7 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
         //Delete meshes
         mainWindow.deleteDrawableObject(&drawableOriginalMesh);
         mainWindow.deleteDrawableObject(&drawableSmoothedMesh);
+        mainWindow.deleteDrawableObject(&drawableStock);
 
         drawableOriginalMesh.clear();
         drawableSmoothedMesh.clear();
@@ -1317,6 +1374,10 @@ void FourAxisFabricationManager::on_loadDataButton_clicked()
         ui->meshRadio->setChecked(true);
     }
 
+    if (data.isMeshScaledAndStockGenerated) {
+        addDrawableStock();
+    }
+
     if (data.isMeshSmoothed) {
         addDrawableSmoothedMesh();
 
@@ -1375,6 +1436,24 @@ void FourAxisFabricationManager::on_saveDataButton_clicked()
 }
 
 /* ----- UI SLOTS FOUR AXIS FABRICATION ------ */
+
+
+void FourAxisFabricationManager::on_scaleStockButton_clicked()
+{
+    //Scale and stock generation
+    scaleAndStock();
+
+    //Update canvas and fit the scene
+    mainWindow.canvas.update();
+    mainWindow.canvas.fitScene();
+
+    //Visualize mesh
+    ui->meshRadio->setChecked(true);
+    initializeVisualizationSlider();
+
+    updateUI();
+}
+
 
 void FourAxisFabricationManager::on_smoothingButton_clicked() {
     //Get optimal mesh orientation

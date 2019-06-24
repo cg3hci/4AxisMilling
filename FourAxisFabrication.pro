@@ -68,14 +68,14 @@ HEADERS += \
     methods/faf/faf_extremes.h \
     methods/faf/faf_visibilitycheck.h \
     methods/faf/faf_frequencies.h \
-    methods/faf/faf_cutting.h \
     methods/faf/faf_extraction.h \
     methods/faf/faf_charts.h \
     methods/faf/faf_association.h \
     methods/faf/includes/view_renderer.h \
     GUI/managers/fouraxisfabricationmanager.h \
     methods/faf/faf_optimization.h \
-    methods/faf/faf_smoothing.h
+    methods/faf/faf_smoothing.h \
+    methods/faf/faf_various.h
 
 SOURCES += \
     main.cpp \
@@ -84,14 +84,14 @@ SOURCES += \
     methods/faf/faf_extremes.cpp \
     methods/faf/faf_visibilitycheck.cpp \
     methods/faf/faf_frequencies.cpp \
-    methods/faf/faf_cutting.cpp \
     methods/faf/faf_extraction.cpp \
     methods/faf/faf_charts.cpp \
     methods/faf/faf_association.cpp \
     methods/faf/includes/view_renderer.cpp \
     GUI/managers/fouraxisfabricationmanager.cpp \
     methods/faf/faf_optimization.cpp \
-    methods/faf/faf_smoothing.cpp
+    methods/faf/faf_smoothing.cpp \
+    methods/faf/faf_various.cpp
 
 
 FORMS += \

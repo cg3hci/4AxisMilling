@@ -14,6 +14,7 @@ Data::Data() {
 
 void Data::clear() {
     isMeshLoaded = false;
+    isMeshScaledAndStockGenerated = false;
     isMeshSmoothed = false;
     isMeshOriented = false;
     areExtremesSelected = false;
@@ -30,6 +31,7 @@ void Data::clear() {
 
     mesh.clear();
     smoothedMesh.clear();
+    stock.clear();
 
     minExtremes.clear();
     maxExtremes.clear();
@@ -77,6 +79,7 @@ void Data::serialize(std::ofstream &binaryFile) const
                 "faf_data",
                 binaryFile,
                 isMeshLoaded,
+                isMeshScaledAndStockGenerated,
                 isMeshSmoothed,
                 isMeshOriented,
                 areExtremesSelected,
@@ -91,6 +94,7 @@ void Data::serialize(std::ofstream &binaryFile) const
                 originalSmoothedMesh,
                 mesh,
                 smoothedMesh,
+                stock,
                 minExtremes,
                 maxExtremes,
                 directions,
@@ -126,6 +130,7 @@ void Data::deserialize(std::ifstream &binaryFile)
                 "faf_data",
                 binaryFile,
                 isMeshLoaded,
+                isMeshScaledAndStockGenerated,
                 isMeshSmoothed,
                 isMeshOriented,
                 areExtremesSelected,
@@ -140,6 +145,7 @@ void Data::deserialize(std::ifstream &binaryFile)
                 originalSmoothedMesh,
                 mesh,
                 smoothedMesh,
+                stock,
                 minExtremes,
                 maxExtremes,
                 directions,

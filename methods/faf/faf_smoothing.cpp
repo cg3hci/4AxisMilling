@@ -4,12 +4,13 @@
 
 namespace FourAxisFabrication {
 
-void taubinSmoothing(
+void smoothing(
         Data& data,
         const int iterations,
         const float lambda,
         const float mu)
 {
+    //Smooth mesh
     data.smoothedMesh = cg3::vcglib::taubinSmoothing(data.mesh, iterations, lambda, mu);
 }
 

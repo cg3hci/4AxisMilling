@@ -5,6 +5,8 @@
 #include <cg3/geometry/transformations3.h>
 #include <cg3/algorithms/sphere_coverage.h>
 #include <cg3/libigl/mesh_adjacencies.h>
+#include <cg3/utilities/utils.h>
+
 
 #include <Eigen/Dense>
 
@@ -50,12 +52,16 @@ void rotateToPrincipalComponents(
  *
  * @param[out] mesh Original mesh
  * @param[out] smoothedMesh Smoothed mesh
- * @param[in] nDirections Number of directions to check
+ * @param[in] nDirs Number of directions to check
+ * @param[in] extremeWeight Weight for the extremes
+ * @param[in] BBweight Weight for the BB box
  * @param[in] deterministic Deterministic approach (if false it is randomized)
  */
-void rotateToOptimalOrientation(
+bool rotateToOptimalOrientation(
         cg3::EigenMesh& mesh,
         cg3::EigenMesh& smoothedMesh,
+        const double stockLength,
+        const double stockDiameter,
         const unsigned int nDirs,
         const double extremeWeight,
         const double BBweight,
@@ -68,11 +74,9 @@ void rotateToOptimalOrientation(
     const double heightFieldAngle = M_PI/2;
 
     //Translate mesh on the centre
-    cg3::Point3d bbCenter = smoothedMesh.boundingBox().center();
+    cg3::Point3d bbCenter = mesh.boundingBox().center();
     mesh.translate(-bbCenter);
     smoothedMesh.translate(-bbCenter);
-
-
 
 //    //Rotate to the longest side of the bounding box
 //    smoothedMesh.updateBoundingBox();
@@ -127,6 +131,7 @@ void rotateToOptimalOrientation(
     std::vector<double> normalScores(candidateDirs.size(), 0.0);
     std::vector<double> extremeScores(candidateDirs.size(), 0.0);
     std::vector<double> BBScores(candidateDirs.size(), 0.0);
+    std::vector<bool> isFitting(candidateDirs.size(), false);
 
     double maxNormalScore = -std::numeric_limits<double>::max();
     double maxBBScore = -std::numeric_limits<double>::max();
@@ -144,67 +149,98 @@ void rotateToOptimalOrientation(
         assert(!std::isnan(angle));
         Eigen::Matrix3d rot = cg3::rotationMatrix(rotationAxis, angle);
 
-        cg3::EigenMesh copyMesh = smoothedMesh;
-        copyMesh.rotate(rot);
-        copyMesh.updateBoundingBox();
-        copyMesh.updateFaceNormals();
-        cg3::BoundingBox3 copyBB = copyMesh.boundingBox();
+        //Rotate mesh
+        cg3::EigenMesh copyOriginalMesh = mesh;
+        copyOriginalMesh.rotate(rot);
+        copyOriginalMesh.updateBoundingBox();
+        cg3::Point3d meshCenter = copyOriginalMesh.boundingBox().center();
 
-        BBScores[i] = copyBB.lengthX();
+        //Check if it fits
+        isFitting[i] = true;
+        for(unsigned int vId = 0; vId < copyOriginalMesh.numberVertices(); vId++) {
+            cg3::Point3d p = copyOriginalMesh.vertex(vId);
+            cg3::Vec3 vec = p - meshCenter;
 
-        std::vector<unsigned int> minExtremes;
-        std::vector<unsigned int> maxExtremes;
-        double levelSetMinX;
-        double levelSetMaxX;
-        selectExtremesOnXAxis(copyMesh, heightFieldAngle, ffAdj, minExtremes, maxExtremes, levelSetMinX, levelSetMaxX);
+            double length = vec.x();
+            double radius = sqrt(p.y()*p.y() + p.z()*p.z());
 
-        std::set<unsigned int> extremesSet;
-        extremesSet.insert(minExtremes.begin(), minExtremes.end());
-        extremesSet.insert(maxExtremes.begin(), maxExtremes.end());
-
-        double totalArea = 0;
-        double minArea = 0;
-        double maxArea = 0;
-
-        //Get normal scores
-        for (size_t fId = 0; fId < minExtremes.size(); fId++) {
-            cg3::Vec3 n = copyMesh.faceNormal(minExtremes[fId]);
-            double a = copyMesh.faceArea(fId);
-            normalScores[i] += a * n.dot(-xAxis);
-            minArea += a;
-            totalArea += a;
-        }
-        for (size_t fId = 0; fId < maxExtremes.size(); fId++) {
-            cg3::Vec3 n = copyMesh.faceNormal(maxExtremes[fId]);
-            double a = copyMesh.faceArea(fId);
-            normalScores[i] += a * n.dot(xAxis);
-            maxArea += a;
-            totalArea += a;
-        }
-        for(unsigned int fId = 0; fId < copyMesh.numberFaces(); fId++) {
-            if (extremesSet.find(fId) == extremesSet.end()) {
-                cg3::Vec3 n = copyMesh.faceNormal(fId);
-                double a = copyMesh.faceArea(fId);
-                normalScores[i] += a * (1 - std::fabs(n.dot(xAxis)));                
-                totalArea += a;
+            if (radius * 2 >= stockDiameter || length * 2 >= stockLength) {
+                isFitting[i] = false;
             }
         }
 
-        //Flatness
-        extremeScores[i] = (minArea + maxArea) / totalArea;
+        //If it fits in the stock
+        if (isFitting[i]) {
+            //Rotate smoothed mesh
+            cg3::EigenMesh copySmoothedMesh = smoothedMesh;
+            copySmoothedMesh.rotate(rot);
+            copySmoothedMesh.updateBoundingBox();
+            copySmoothedMesh.updateFaceNormals();
+            cg3::BoundingBox3 copyBB = copySmoothedMesh.boundingBox();
 
+            //Length of the x dimension
+            BBScores[i] = copyBB.lengthX();
 
-        //Get the maximum normal score
-        maxNormalScore = std::max(normalScores[i], maxNormalScore);
-        maxBBScore = std::max(BBScores[i], maxBBScore);
-        maxExtremeScore = std::max(extremeScores[i], maxExtremeScore);
+            //Get extremes
+            std::vector<unsigned int> minExtremes;
+            std::vector<unsigned int> maxExtremes;
+            double levelSetMinX;
+            double levelSetMaxX;
+            selectExtremesOnXAxis(copySmoothedMesh, heightFieldAngle, ffAdj, minExtremes, maxExtremes, levelSetMinX, levelSetMaxX);
+
+            std::set<unsigned int> extremesSet;
+            extremesSet.insert(minExtremes.begin(), minExtremes.end());
+            extremesSet.insert(maxExtremes.begin(), maxExtremes.end());
+
+            double totalArea = 0;
+            double minArea = 0;
+            double maxArea = 0;
+
+            //Get normal scores
+            for (size_t fId = 0; fId < minExtremes.size(); fId++) {
+                cg3::Vec3 n = copySmoothedMesh.faceNormal(minExtremes[fId]);
+                double a = copySmoothedMesh.faceArea(fId);
+                normalScores[i] += a * n.dot(-xAxis);
+
+                minArea += a;
+                totalArea += a;
+            }
+            for (size_t fId = 0; fId < maxExtremes.size(); fId++) {
+                cg3::Vec3 n = copySmoothedMesh.faceNormal(maxExtremes[fId]);
+                double a = copySmoothedMesh.faceArea(fId);
+                normalScores[i] += a * n.dot(xAxis);
+
+                maxArea += a;
+                totalArea += a;
+            }
+            for(unsigned int fId = 0; fId < copySmoothedMesh.numberFaces(); fId++) {
+                if (extremesSet.find(fId) == extremesSet.end()) {
+                    cg3::Vec3 n = copySmoothedMesh.faceNormal(fId);
+                    double a = copySmoothedMesh.faceArea(fId);
+                    normalScores[i] += a * (1 - std::fabs(n.dot(xAxis)));
+
+                    totalArea += a;
+                }
+            }
+
+            //Deepness
+            extremeScores[i] = (minArea + maxArea) / totalArea;
+
+            //Get the maximum normal score
+            maxNormalScore = std::max(normalScores[i], maxNormalScore);
+            maxBBScore = std::max(BBScores[i], maxBBScore);
+            maxExtremeScore = std::max(extremeScores[i], maxExtremeScore);
+
+        }
     }
 
     //Normalize scores
     for (size_t i = 0; i < candidateDirs.size(); i++) {
-        normalScores[i] = normalScores[i] / maxNormalScore;
-        BBScores[i] = BBScores[i]/ maxBBScore;
-        extremeScores[i] = extremeScores[i]/ maxExtremeScore;
+        if (isFitting[i]) {
+            normalScores[i] = normalScores[i] / maxNormalScore;
+            BBScores[i] = BBScores[i]/ maxBBScore;
+            extremeScores[i] = extremeScores[i]/ maxExtremeScore;
+        }
     }
 
     //Compute the best orientation
@@ -214,18 +250,23 @@ void rotateToOptimalOrientation(
     for (size_t i = 0; i < candidateDirs.size(); i++) {
         const cg3::Vec3& dir = candidateDirs[i];
 
-        //Get the score
-        double score =
-                normalWeight * normalScores[i] +
-                BBweight * BBScores[i] +
-                extremeWeight * extremeScores[i];
+        if (isFitting[i]) {
+            //Get the score
+            double score =
+                    normalWeight * normalScores[i] +
+                    BBweight * BBScores[i] +
+                    extremeWeight * extremeScores[i];
 
-        //Select the best orientation
-        if (score >= bestScore) {
-            bestOrientation = dir;
-            bestScore = score;
+            //Select the best orientation
+            if (score >= bestScore) {
+                bestOrientation = dir;
+                bestScore = score;
+            }
         }
     }
+
+    if (cg3::epsilonEqual(bestScore, -std::numeric_limits<double>::max()))
+        return false;
 
     cg3::Vec3 rotationAxis;
     double angle;
@@ -246,6 +287,7 @@ void rotateToOptimalOrientation(
     mesh.updateFacesAndVerticesNormals();
     smoothedMesh.updateFacesAndVerticesNormals();
 
+    return true;
 }
 
 ///**

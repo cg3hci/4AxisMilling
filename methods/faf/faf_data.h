@@ -33,6 +33,7 @@ public:
 
     /* Flags */
     bool isMeshLoaded;
+    bool isMeshScaledAndStockGenerated;
     bool isMeshSmoothed;
     bool isMeshOriented;
     bool areExtremesSelected;
@@ -51,6 +52,7 @@ public:
     /* Mesh and smoothed mesh to be processed */
     cg3::EigenMesh mesh;
     cg3::EigenMesh smoothedMesh;
+    cg3::EigenMesh stock;
 
     /* Min/max extremes */
 

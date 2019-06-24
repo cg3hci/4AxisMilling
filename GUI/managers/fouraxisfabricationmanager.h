@@ -50,6 +50,7 @@ private:
 
     cg3::DrawableEigenMesh drawableOriginalMesh;
     cg3::DrawableEigenMesh drawableSmoothedMesh;
+    cg3::DrawableEigenMesh drawableStock;
 
     cg3::DrawableEigenMesh drawableRestoredMesh;
 
@@ -85,6 +86,7 @@ private:
 
     /* Computing methods */
 
+    void scaleAndStock();
     void smoothing();
     void optimalOrientation();
     void selectExtremes();
@@ -101,6 +103,7 @@ private:
 
     void addDrawableMesh();
     void addDrawableSmoothedMesh();
+    void addDrawableStock();
     void addDrawableRestoredMesh();
     void addDrawableCutComponents();
     void addDrawableResults();
@@ -189,6 +192,7 @@ private slots:
     void on_showNonVisibleCheck_clicked();
     void on_resetCameraButton_clicked();
     void on_visualizationSlider_valueChanged(int value);
+    void on_scaleStockButton_clicked();
 };
 
 #endif // FOURAXISFABRICATIONMANAGER_H
