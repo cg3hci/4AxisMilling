@@ -82,7 +82,7 @@ void extractResults(
 
     const std::vector<double>& angles = data.angles;
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
-    const std::vector<cg3::Vec3>& directions = data.directions;
+    const std::vector<cg3::Vec3d>& directions = data.directions;
 
     const cg3::EigenMesh& minComponent = data.minComponent;
     const cg3::EigenMesh& maxComponent = data.maxComponent;
@@ -106,8 +106,8 @@ void extractResults(
     unsigned int minLabel = data.targetDirections[targetDirections.size()-2];
     unsigned int maxLabel = data.targetDirections[targetDirections.size()-1];
 
-    const cg3::Vec3 xAxis(1,0,0);
-    const cg3::Vec3 yAxis(0,1,0);
+    const cg3::Vec3d xAxis(1,0,0);
+    const cg3::Vec3d yAxis(0,1,0);
 
 
 
@@ -356,7 +356,7 @@ void extractResults(
         size_t nFirstLayerVertices = currentFirstLayerPoints2D.size();
         double minLength = std::numeric_limits<double>::max();
         for (size_t i = 0; i < nFirstLayerVertices; i++) {
-            cg3::Vec2 edgeVec = currentFirstLayerPoints2D[(i+1) % nFirstLayerVertices] - currentFirstLayerPoints2D[i];
+            cg3::Vec2d edgeVec = currentFirstLayerPoints2D[(i+1) % nFirstLayerVertices] - currentFirstLayerPoints2D[i];
             minLength = std::min(edgeVec.length(), minLength);
         }
 

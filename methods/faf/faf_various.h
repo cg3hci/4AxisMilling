@@ -13,10 +13,18 @@
 
 namespace FourAxisFabrication {
 
-void scaleAndStock(
+void centerAndScale(
         Data& data,
         const bool scaleModel,
-        const double modelLength,
+        const double modelLength);
+
+void centerAndScale(
+        cg3::EigenMesh& mesh,
+        const bool scaleModel,
+        const double modelLength);
+
+void generateStock(
+        Data& data,
         const double stockLength,
         const double stockDiameter);
 

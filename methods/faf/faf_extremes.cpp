@@ -85,8 +85,8 @@ void selectExtremesOnXAxis(
 
     //Remember that the milling direction is the opposite if we want to
     //check the dot product. So (1,0,0) is the min, (-1,0,0) is the max.
-    const cg3::Vec3 minDirection(-1,0,0);
-    const cg3::Vec3 maxDirection(1,0,0);
+    const cg3::Vec3d minDirection(-1,0,0);
+    const cg3::Vec3d maxDirection(1,0,0);
 
     //Height-field on the extremes
     std::set<unsigned int> minHeightFieldSet;

@@ -31,18 +31,14 @@ void resetDataAfterCutting(
 
 /**
  * @brief Scale mesh and stock generation
- * @param data Four axis fabrication data
+ * @param mesh Model
  * @param modelLength Lenght of the model
  */
-void scaleAndStock(
-        Data &data,
+void centerAndScale(
+        cg3::EigenMesh& mesh,
         const bool scaleModel,
-        const double modelLength,
-        const double stockLength,
-        const double stockDiameter)
+        const double modelLength)
 {
-    cg3::EigenMesh& mesh = data.mesh;
-
     if (scaleModel) {
         //Get the scale factor
         cg3::BoundingBox3 bb = mesh.boundingBox();
@@ -55,17 +51,38 @@ void scaleAndStock(
         const double scaleFactor = modelLength / std::max(std::max(maxX - minX, maxY - minY), maxZ - minZ);
 
         //Scale meshes
-        const cg3::Vec3 scaleVec(scaleFactor, scaleFactor, scaleFactor);
+        const cg3::Vec3d scaleVec(scaleFactor, scaleFactor, scaleFactor);
         mesh.scale(scaleVec);
 
         mesh.updateBoundingBox();
     }
 
     //Center mesh
-    cg3::Vec3 translateVec = -mesh.boundingBox().center();
+    cg3::Vec3d translateVec = -mesh.boundingBox().center();
     mesh.translate(translateVec);
     mesh.updateBoundingBox();
+}
 
+/**
+ * @brief Scale mesh and stock generation
+ * @param data Four axis fabrication data
+ * @param modelLength Lenght of the model
+ */
+void centerAndScale(
+        Data &data,
+        const bool scaleModel,
+        const double modelLength)
+{
+    cg3::EigenMesh& mesh = data.mesh;
+
+    centerAndScale(mesh, scaleModel, modelLength);
+}
+
+void generateStock(
+        Data& data,
+        const double stockLength,
+        const double stockDiameter)
+{
     cg3::EigenMesh& stock = data.stock;
 
     double stockRadius = stockDiameter/2;

@@ -9,7 +9,8 @@
 
 #include <cg3/viewer/managers/booleans_manager.h>
 #include <cg3/viewer/managers/eigenmesh_manager.h>
-#include <GUI/managers/fouraxisfabricationmanager.h>
+#include <GUI/managers/fafmanager.h>
+#include <GUI/managers/fafsegmentationmanager.h>
 
 using namespace cg3;
 
@@ -19,19 +20,14 @@ int main(int argc, char *argv[]) {
     cg3::viewer::MainWindow gui;
 
     //Add four-axis-fabrication manager
-    FourAxisFabricationManager fm(&gui);
+    FAFManager fm(&gui);
     const int fmId = gui.addManager(&fm, "Four Axis Fabrication Manager");
     CG3_SUPPRESS_WARNING(fmId);
 
-    //Add boolean manager manager
-    cg3::viewer::BooleansManager bm(&gui);
-    const int bmId = gui.addManager(&bm, "Booleans Manager");
-    CG3_SUPPRESS_WARNING(bmId);
-
-    //Add eigen mesh manager
-    cg3::viewer::EigenMeshManager em(&gui);
-    const int emId = gui.addManager(&em, "EigenMesh Manager");
-    CG3_SUPPRESS_WARNING(emId);
+    //Add four-axis-fabrication manager
+    FAFSegmentationManager fsm(&gui);
+    const int fsmId = gui.addManager(&fsm, "Segmentation Manager");
+    CG3_SUPPRESS_WARNING(fsmId);
 
     //Open four-axis fabrication manager as default manager
     gui.setCurrentManager(fmId);

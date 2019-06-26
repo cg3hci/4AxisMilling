@@ -72,10 +72,12 @@ HEADERS += \
     methods/faf/faf_charts.h \
     methods/faf/faf_association.h \
     methods/faf/includes/view_renderer.h \
-    GUI/managers/fouraxisfabricationmanager.h \
     methods/faf/faf_optimization.h \
     methods/faf/faf_smoothing.h \
-    methods/faf/faf_various.h
+    methods/faf/faf_various.h \
+    GUI/managers/fafmanager.h \
+    GUI/managers/fafsegmentationmanager.h \
+    methods/faf/faf_split.h
 
 SOURCES += \
     main.cpp \
@@ -88,14 +90,17 @@ SOURCES += \
     methods/faf/faf_charts.cpp \
     methods/faf/faf_association.cpp \
     methods/faf/includes/view_renderer.cpp \
-    GUI/managers/fouraxisfabricationmanager.cpp \
     methods/faf/faf_optimization.cpp \
     methods/faf/faf_smoothing.cpp \
-    methods/faf/faf_various.cpp
+    methods/faf/faf_various.cpp \
+    GUI/managers/fafmanager.cpp \
+    GUI/managers/fafsegmentationmanager.cpp \
+    methods/faf/faf_split.cpp
 
 
 FORMS += \
-    GUI/managers/fouraxisfabricationmanager.ui
+    GUI/managers/fafmanager.ui \
+    GUI/managers/fafsegmentationmanager.ui
 
 DISTFILES += \
     README.txt

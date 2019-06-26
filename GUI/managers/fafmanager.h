@@ -2,8 +2,8 @@
  * @author Stefano Nuvoli
  * @author Alessandro Muntoni
  */
-#ifndef FOURAXISFABRICATIONMANAGER_H
-#define FOURAXISFABRICATIONMANAGER_H
+#ifndef FAFMANAGER_H
+#define FAFMANAGER_H
 
 
 #include <cg3/viewer/mainwindow.h>
@@ -24,10 +24,10 @@
 #include "methods/fouraxisfabrication.h"
 
 namespace Ui {
-class FourAxisFabricationManager;
+class FAFManager;
 }
 
-class FourAxisFabricationManager : public QFrame
+class FAFManager : public QFrame
 {
     Q_OBJECT
 
@@ -35,8 +35,8 @@ public:
 
     /* Constructor/Destructors */
 
-    explicit FourAxisFabricationManager(QWidget *parent = nullptr);
-    ~FourAxisFabricationManager();
+    explicit FAFManager(QWidget *parent = nullptr);
+    ~FAFManager();
 
 
 private:    
@@ -71,7 +71,7 @@ private:
 
     /* UI Fields */
 
-    Ui::FourAxisFabricationManager* ui;
+    Ui::FAFManager* ui;
     cg3::viewer::MainWindow& mainWindow;
 
     cg3::viewer::LoaderSaver loaderSaverObj;
@@ -114,7 +114,7 @@ private:
     void deleteDrawableObjects();
 
     void resetCameraDirection();
-    void setCameraDirection(const cg3::Vec3& dir);
+    void setCameraDirection(const cg3::Vec3d& dir);
 
     void initializeVisualizationSlider();
     void updateVisualization();
@@ -195,4 +195,4 @@ private slots:
     void on_scaleStockButton_clicked();
 };
 
-#endif // FOURAXISFABRICATIONMANAGER_H
+#endif // FAFMANAGER_H

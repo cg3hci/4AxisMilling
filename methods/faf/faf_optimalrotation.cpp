@@ -67,7 +67,7 @@ bool rotateToOptimalOrientation(
         const double BBweight,
         const bool deterministic)
 {
-    cg3::Vec3 xAxis(1,0,0);
+    cg3::Vec3d xAxis(1,0,0);
 
     const double normalWeight = 1 - extremeWeight - BBweight;
 
@@ -101,7 +101,7 @@ bool rotateToOptimalOrientation(
 
 
     //Get the direction pool (sphere coverage, fibonacci sampling)l
-    std::vector<cg3::Vec3> dirPool = cg3::sphereCoverage(nDirs, deterministic);
+    std::vector<cg3::Vec3d> dirPool = cg3::sphereCoverage(nDirs, deterministic);
 
 //    internal::rotateToPrincipalComponents(mesh, smoothedMesh);
 
@@ -119,8 +119,8 @@ bool rotateToOptimalOrientation(
 
 
     //Get candidate rotation dirs
-    std::vector<cg3::Vec3> candidateDirs;
-    for (cg3::Vec3& dir : dirPool) {
+    std::vector<cg3::Vec3d> candidateDirs;
+    for (cg3::Vec3d& dir : dirPool) {
         dir.normalize();
         candidateDirs.push_back(dir);
     }
@@ -138,8 +138,8 @@ bool rotateToOptimalOrientation(
     double maxExtremeScore = -std::numeric_limits<double>::max();
 
     for (size_t i = 0; i < candidateDirs.size(); i++) {
-        const cg3::Vec3& dir = candidateDirs[i];
-        cg3::Vec3 rotationAxis;
+        const cg3::Vec3d& dir = candidateDirs[i];
+        cg3::Vec3d rotationAxis;
         double angle;
 
         rotationAxis = dir.cross(xAxis);
@@ -159,7 +159,7 @@ bool rotateToOptimalOrientation(
         isFitting[i] = true;
         for(unsigned int vId = 0; vId < copyOriginalMesh.numberVertices(); vId++) {
             cg3::Point3d p = copyOriginalMesh.vertex(vId);
-            cg3::Vec3 vec = p - meshCenter;
+            cg3::Vec3d vec = p - meshCenter;
 
             double length = vec.x();
             double radius = sqrt(p.y()*p.y() + p.z()*p.z());
@@ -198,7 +198,7 @@ bool rotateToOptimalOrientation(
 
             //Get normal scores
             for (size_t fId = 0; fId < minExtremes.size(); fId++) {
-                cg3::Vec3 n = copySmoothedMesh.faceNormal(minExtremes[fId]);
+                cg3::Vec3d n = copySmoothedMesh.faceNormal(minExtremes[fId]);
                 double a = copySmoothedMesh.faceArea(fId);
                 normalScores[i] += a * n.dot(-xAxis);
 
@@ -206,7 +206,7 @@ bool rotateToOptimalOrientation(
                 totalArea += a;
             }
             for (size_t fId = 0; fId < maxExtremes.size(); fId++) {
-                cg3::Vec3 n = copySmoothedMesh.faceNormal(maxExtremes[fId]);
+                cg3::Vec3d n = copySmoothedMesh.faceNormal(maxExtremes[fId]);
                 double a = copySmoothedMesh.faceArea(fId);
                 normalScores[i] += a * n.dot(xAxis);
 
@@ -215,7 +215,7 @@ bool rotateToOptimalOrientation(
             }
             for(unsigned int fId = 0; fId < copySmoothedMesh.numberFaces(); fId++) {
                 if (extremesSet.find(fId) == extremesSet.end()) {
-                    cg3::Vec3 n = copySmoothedMesh.faceNormal(fId);
+                    cg3::Vec3d n = copySmoothedMesh.faceNormal(fId);
                     double a = copySmoothedMesh.faceArea(fId);
                     normalScores[i] += a * (1 - std::fabs(n.dot(xAxis)));
 
@@ -245,10 +245,10 @@ bool rotateToOptimalOrientation(
 
     //Compute the best orientation
     double bestScore = -std::numeric_limits<double>::max();
-    cg3::Vec3 bestOrientation;
+    cg3::Vec3d bestOrientation;
 
     for (size_t i = 0; i < candidateDirs.size(); i++) {
-        const cg3::Vec3& dir = candidateDirs[i];
+        const cg3::Vec3d& dir = candidateDirs[i];
 
         if (isFitting[i]) {
             //Get the score
@@ -268,7 +268,7 @@ bool rotateToOptimalOrientation(
     if (cg3::epsilonEqual(bestScore, -std::numeric_limits<double>::max()))
         return false;
 
-    cg3::Vec3 rotationAxis;
+    cg3::Vec3d rotationAxis;
     double angle;
 
     rotationAxis = bestOrientation.cross(xAxis);

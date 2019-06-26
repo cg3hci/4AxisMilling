@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>FourAxisFabricationManager</class>
- <widget class="QFrame" name="FourAxisFabricationManager">
+ <class>FAFManager</class>
+ <widget class="QFrame" name="FAFManager">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>609</width>
+    <width>613</width>
     <height>1318</height>
    </rect>
   </property>
@@ -665,7 +665,7 @@
          <double>1000.000000000000000</double>
         </property>
         <property name="value">
-         <double>12.000000000000000</double>
+         <double>40.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -1116,7 +1116,7 @@
          <double>0.500000000000000</double>
         </property>
         <property name="value">
-         <double>2.000000000000000</double>
+         <double>1.000000000000000</double>
         </property>
        </widget>
       </item>

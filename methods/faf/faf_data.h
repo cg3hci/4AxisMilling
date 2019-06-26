@@ -61,7 +61,7 @@ public:
 
     /* Directions */
 
-    std::vector<cg3::Vec3> directions;
+    std::vector<cg3::Vec3d> directions;
     std::vector<double> angles;
 
     /* Visibility */

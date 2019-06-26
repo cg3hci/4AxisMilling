@@ -34,7 +34,7 @@ ViewRenderer::~ViewRenderer()
     openglContext.doneCurrent();
 }
 
-std::vector<bool> ViewRenderer::renderVisibility(const cg3::Vec3 &dir, bool exact, bool saveImg)
+std::vector<bool> ViewRenderer::renderVisibility(const cg3::Vec3d &dir, bool exact, bool saveImg)
 {
     QQuaternion q = QQuaternion::rotationTo(QVector3D(dir[0], dir[1], dir[2]), QVector3D(0,0,1));
     QMatrix4x4 mv(q.toRotationMatrix());
@@ -378,7 +378,7 @@ void ViewRenderer::removePartiallyOccludedFacets(std::vector<bool>& visible, con
     openglf->glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void ViewRenderer::saveImage(const cg3::Vec3 &dir)
+void ViewRenderer::saveImage(const cg3::Vec3d &dir)
 {
     openglf->glBindTexture(GL_TEXTURE_2D, m_indexAtt);
 

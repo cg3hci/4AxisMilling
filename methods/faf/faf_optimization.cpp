@@ -19,7 +19,7 @@ namespace internal {
 void reassignLabelsAfterLineSmoothing(
         const cg3::EigenMesh& mesh,
         const std::set<std::pair<cg3::Point3d, cg3::Point3d>>& newEdgesCoordinates,
-        const std::vector<cg3::Vec3>& directions,
+        const std::vector<cg3::Vec3d>& directions,
         std::vector<int>& association,
         cg3::Array2D<int>& visibility);
 }
@@ -42,7 +42,7 @@ void optimization(
         Data& data)
 {
     //Get fabrication data    
-    const std::vector<cg3::Vec3>& directions = data.directions;
+    const std::vector<cg3::Vec3d>& directions = data.directions;
     cg3::Array2D<int>& visibility = data.visibility;
     std::vector<unsigned int>& minExtremes = data.minExtremes;
     std::vector<unsigned int>& maxExtremes = data.maxExtremes;
@@ -195,7 +195,7 @@ void optimization(
                                 queue.push(adjId);
                         }
                         else {
-                            cg3::Vec3 normal = mesh.faceNormal(fId);
+                            cg3::Vec3d normal = mesh.faceNormal(fId);
                             double dot = normal.dot(directions[adjLabel]);
 
                             if (dot >= maxDot) {
@@ -356,7 +356,7 @@ namespace internal {
 void reassignLabelsAfterLineSmoothing(
         const cg3::EigenMesh& mesh,
         const std::set<std::pair<cg3::Point3d, cg3::Point3d>>& newEdgesCoordinates,
-        const std::vector<cg3::Vec3>& directions,
+        const std::vector<cg3::Vec3d>& directions,
         std::vector<int>& association,
         cg3::Array2D<int>& visibility)
 {

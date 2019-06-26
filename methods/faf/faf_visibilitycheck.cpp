@@ -35,15 +35,15 @@ void computeVisibilityGL(
         const bool includeXDirections,
         const std::vector<unsigned int>& minExtremes,
         const std::vector<unsigned int>& maxExtremes,
-        std::vector<cg3::Vec3>& directions,
+        std::vector<cg3::Vec3d>& directions,
         std::vector<double>& directionsAngle,
         cg3::Array2D<int>& visibility);
 
 void computeVisibilityGL(
         ViewRenderer& vr,
         const unsigned int dirIndex,
-        const std::vector<cg3::Vec3>& directions,
-        const std::vector<cg3::Vec3>& faceNormals,
+        const std::vector<cg3::Vec3d>& directions,
+        const std::vector<cg3::Vec3d>& faceNormals,
         const double heightfieldAngle,
         cg3::Array2D<int>& visibility);
 
@@ -57,7 +57,7 @@ void computeVisibilityProjectionRay(
         const bool includeXDirections,
         const std::vector<unsigned int>& minExtremes,
         const std::vector<unsigned int>& maxExtremes,
-        std::vector<cg3::Vec3>& directions,
+        std::vector<cg3::Vec3d>& directions,
         std::vector<double>& directionsAngle,
         cg3::Array2D<int>& visibility,
         const CheckMode checkMode);
@@ -77,7 +77,7 @@ void getVisibilityRayShootingOnZ(
         const cg3::EigenMesh& mesh,
         const unsigned int faceId,
         const unsigned int directionIndex,
-        const cg3::Vec3& direction,
+        const cg3::Vec3d& direction,
         cg3::cgal::AABBTree3& aabbTree,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle);
@@ -98,7 +98,7 @@ void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
         const unsigned int faceId,
         const unsigned int directionIndex,
-        const cg3::Vec3& direction,
+        const cg3::Vec3d& direction,
         cg3::AABBTree<2, cg3::Triangle2d>& aabbTree,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle);
@@ -199,7 +199,7 @@ void computeVisibilityGL(
         const bool includeXDirections,
         const std::vector<unsigned int>& minExtremes,
         const std::vector<unsigned int>& maxExtremes,
-        std::vector<cg3::Vec3>& directions,
+        std::vector<cg3::Vec3d>& directions,
         std::vector<double>& angles,
         cg3::Array2D<int>& visibility)
 {
@@ -229,7 +229,7 @@ void computeVisibilityGL(
     }
 
     //Compute normals
-    std::vector<cg3::Vec3> faceNormals(mesh.numberFaces());
+    std::vector<cg3::Vec3d> faceNormals(mesh.numberFaces());
     for (unsigned int fId = 0; fId < mesh.numberFaces(); fId++) {
         faceNormals[fId] = mesh.faceNormal(fId);
     }
@@ -243,12 +243,12 @@ void computeVisibilityGL(
     const unsigned int maxIndex = nDirections + 1;
 
     //Get rotation matrix around the x-axis
-    const cg3::Vec3 xAxis(1,0,0);
+    const cg3::Vec3d xAxis(1,0,0);
     Eigen::Matrix3d rot;
     cg3::rotationMatrix(xAxis, stepAngle, rot);
 
     //Set angles and directions
-    cg3::Vec3 dir(0,0,1);
+    cg3::Vec3d dir(0,0,1);
     double sum = 0;
     for(unsigned int i = 0; i < nDirections; i++) {
         angles[i] = sum;
@@ -264,8 +264,8 @@ void computeVisibilityGL(
     }
 
     //Add min and max extremes directions
-    directions[minIndex] = cg3::Vec3(-1,0,0);
-    directions[maxIndex] = cg3::Vec3(1,0,0);
+    directions[minIndex] = cg3::Vec3d(-1,0,0);
+    directions[maxIndex] = cg3::Vec3d(1,0,0);
 
     if (includeXDirections) {
         //Compute -x and +x visibility        
@@ -301,12 +301,12 @@ void computeVisibilityGL(
 void computeVisibilityGL(
         ViewRenderer& vr,
         const unsigned int dirIndex,
-        const std::vector<cg3::Vec3>& directions,
-        const std::vector<cg3::Vec3>& faceNormals,
+        const std::vector<cg3::Vec3d>& directions,
+        const std::vector<cg3::Vec3d>& faceNormals,
         const double heightFieldLimit,
         cg3::Array2D<int>& visibility)
 {
-    const cg3::Vec3& dir = directions[dirIndex];
+    const cg3::Vec3d& dir = directions[dirIndex];
 
     //Compute visibility from the direction
     std::vector<bool> faceVisibility = vr.renderVisibility(dir, true, false);
@@ -378,7 +378,7 @@ void computeVisibilityProjectionRay(
         const bool includeXDirections,
         const std::vector<unsigned int>& minExtremes,
         const std::vector<unsigned int>& maxExtremes,
-        std::vector<cg3::Vec3>& directions,
+        std::vector<cg3::Vec3d>& directions,
         std::vector<double>& angles,
         cg3::Array2D<int>& visibility,
         const CheckMode checkMode)
@@ -411,8 +411,8 @@ void computeVisibilityProjectionRay(
     //Step angle for getting all the directions (on 180 degrees)
     double stepAngle = M_PI / halfNDirections;
 
-    const cg3::Vec3 xAxis(1,0,0);
-    const cg3::Vec3 yAxis(0,1,0);
+    const cg3::Vec3d xAxis(1,0,0);
+    const cg3::Vec3d yAxis(0,1,0);
 
     //Get rotation matrix
     Eigen::Matrix3d rotationMatrix;
@@ -421,7 +421,7 @@ void computeVisibilityProjectionRay(
     cg3::rotationMatrix(xAxis, -stepAngle, inverseRotationMatrix);
 
     //Vector that is opposite to the milling direction
-    cg3::Vec3 dir(0,0,1);
+    cg3::Vec3d dir(0,0,1);
 
     //Set angles
     angles.resize(halfNDirections*2);
@@ -456,8 +456,8 @@ void computeVisibilityProjectionRay(
     unsigned int maxIndex = halfNDirections*2 + 1;
 
     //Add min and max extremes directions
-    directions[minIndex] = cg3::Vec3(-1,0,0);
-    directions[maxIndex] = cg3::Vec3(1,0,0);
+    directions[minIndex] = cg3::Vec3d(-1,0,0);
+    directions[maxIndex] = cg3::Vec3d(1,0,0);
 
     if (includeXDirections) {
         //Compute -x and +x visibility
@@ -525,8 +525,8 @@ void getVisibilityProjectionOnZ(
     std::sort(orderedZFaces.begin(), orderedZFaces.end(), internal::TriangleZComparator(mesh));
 
     //Directions to be checked
-    cg3::Vec3 zDirMax(0,0,1);
-    cg3::Vec3 zDirMin(0,0,-1);
+    cg3::Vec3d zDirMax(0,0,1);
+    cg3::Vec3d zDirMin(0,0,-1);
 
     //Start from the max z-coordinate face
     for (int i = orderedZFaces.size()-1; i >= 0; i--) {
@@ -564,7 +564,7 @@ void getVisibilityProjectionOnZ(
         const cg3::EigenMesh& mesh,
         const unsigned int faceId,
         const unsigned int directionIndex,
-        const cg3::Vec3& direction,
+        const cg3::Vec3d& direction,
         cg3::AABBTree<2, cg3::Triangle2d>& aabbTree,
         cg3::Array2D<int>& visibility,
         const double heightfieldAngle)
@@ -708,9 +708,9 @@ void getVisibilityRayShootingOnZ(
     for(unsigned int faceIndex : faces){
         //Get the face data
         cg3::Point3i f = mesh.face(faceIndex);
-        cg3::Vec3 v1 = mesh.vertex(f.x());
-        cg3::Vec3 v2 = mesh.vertex(f.y());
-        cg3::Vec3 v3 = mesh.vertex(f.z());
+        cg3::Vec3d v1 = mesh.vertex(f.x());
+        cg3::Vec3d v2 = mesh.vertex(f.y());
+        cg3::Vec3d v3 = mesh.vertex(f.z());
 
         //Barycenter of the face
         cg3::Point3d bar((v1 + v2 + v3) / 3);
@@ -733,8 +733,8 @@ void getVisibilityRayShootingOnZ(
 #endif
 
         //Directions to be checked
-        cg3::Vec3 zDirMax(0,0,1);
-        cg3::Vec3 zDirMin(0,0,-1);
+        cg3::Vec3d zDirMax(0,0,1);
+        cg3::Vec3d zDirMin(0,0,-1);
 
         //Set the visibility of the face which has
         //the highest z-coordinate barycenter

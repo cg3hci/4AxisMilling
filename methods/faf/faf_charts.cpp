@@ -204,7 +204,7 @@ ChartData getChartData(
                 remainingVertices.insert(fromId);
 
                 //Get furthest point from center: it is certainly part of the external borders
-                const cg3::Vec3 vec = fromV->coordinate() - chartCenter;
+                const cg3::Vec3d vec = fromV->coordinate() - chartCenter;
                 double distance = vec.length();
                 if (distance >= maxDistance) {
                     maxDistance = distance;

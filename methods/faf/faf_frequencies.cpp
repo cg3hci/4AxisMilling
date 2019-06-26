@@ -33,18 +33,18 @@ namespace internal {
 
 bool restoreFrequenciesValidHeightfields(
         cg3::EigenMesh& mesh,
-        const std::vector<cg3::Vec3>& differentialCoordinates,
+        const std::vector<cg3::Vec3d>& differentialCoordinates,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies,
         const std::vector<std::vector<int>>& vertexFaceAdjacencies,
         const Data& data,
         const double heightfieldAngle);
 
-std::vector<cg3::Vec3> computeDifferentialCoordinates(
+std::vector<cg3::Vec3d> computeDifferentialCoordinates(
         const cg3::EigenMesh& mesh,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies);
 
 cg3::Point3d getTargetPoint(const cg3::EigenMesh& mesh,
-        const std::vector<cg3::Vec3>& differentialCoordinates,
+        const std::vector<cg3::Vec3d>& differentialCoordinates,
         const unsigned int vId,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies);
 
@@ -88,14 +88,14 @@ void restoreFrequencies(
     assert(vvAdjSmoothed.size() == smoothedMesh.numberVertices());
 
     //Get differential coordinates
-    const std::vector<cg3::Vec3> differentialCoordinatesOriginal =
+    const std::vector<cg3::Vec3d> differentialCoordinatesOriginal =
             internal::computeDifferentialCoordinates(originalMesh, vvAdjOriginal);
-    const std::vector<cg3::Vec3> differentialCoordinatesSmoothed =
+    const std::vector<cg3::Vec3d> differentialCoordinatesSmoothed =
             internal::computeDifferentialCoordinates(smoothedMesh, vvAdjSmoothed);
 
 
     //Update differential coordinates with the new faces and vertices
-    std::vector<cg3::Vec3> differentialCoordinates(smoothedMesh.numberVertices());
+    std::vector<cg3::Vec3d> differentialCoordinates(smoothedMesh.numberVertices());
     std::vector<std::vector<int>> vvAdj(smoothedMesh.numberVertices());
 
     for (size_t i = 0; i < smoothedMesh.numberVertices(); i++) {
@@ -163,7 +163,7 @@ void recheckVisibilityAfterRestore(
 {
     const cg3::EigenMesh& restoredMesh = data.restoredMesh;
 
-    const std::vector<cg3::Vec3>& directions = data.directions;
+    const std::vector<cg3::Vec3d>& directions = data.directions;
 
     const std::vector<unsigned int>& minExtremes = data.minExtremes;
     const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
@@ -210,7 +210,7 @@ void recheckVisibilityAfterRestore(
                 done = true;
 
                 for (unsigned int fId : restoredMeshNonVisibleFaces) {
-                    cg3::Vec3 normal = restoredMesh.faceNormal(fId);
+                    cg3::Vec3d normal = restoredMesh.faceNormal(fId);
                     const std::vector<int>& adjacentFaces = ffAdj.at(fId);
 
                     //The best label for the face is one among the adjacent
@@ -277,7 +277,7 @@ namespace internal {
  */
 bool restoreFrequenciesValidHeightfields(
         cg3::EigenMesh& targetMesh,
-        const std::vector<cg3::Vec3>& differentialCoordinates,
+        const std::vector<cg3::Vec3d>& differentialCoordinates,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies,
         const std::vector<std::vector<int>>& vertexFaceAdjacencies,
         const Data& data,
@@ -318,19 +318,19 @@ bool restoreFrequenciesValidHeightfields(
  * @param[in] vertexVertexAdjacencies Vertex-vertex adjacencies
  * @return differentialCoordinates Vector of differential coordinates for each vertex
  */
-std::vector<cg3::Vec3> computeDifferentialCoordinates(
+std::vector<cg3::Vec3d> computeDifferentialCoordinates(
         const cg3::EigenMesh& mesh,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies)
 {
     //Resulting vector
-    std::vector<cg3::Vec3> differentialCoordinates;
+    std::vector<cg3::Vec3d> differentialCoordinates;
     differentialCoordinates.resize(mesh.numberVertices());
 
     #pragma omp parallel for
     for(unsigned int vId = 0; vId < mesh.numberVertices(); ++vId) {
         //Calculate differential coordinates for each point
         cg3::Point3d currentPoint = mesh.vertex(vId);
-        cg3::Vec3 delta(0,0,0);
+        cg3::Vec3d delta(0,0,0);
 
         const std::vector<int>& neighbors = vertexVertexAdjacencies.at(vId);
         for(const int& neighborId : neighbors) {
@@ -356,7 +356,7 @@ std::vector<cg3::Vec3> computeDifferentialCoordinates(
  */
 cg3::Point3d getTargetPoint(
         const cg3::EigenMesh& targetMesh,
-        const std::vector<cg3::Vec3>& differentialCoordinates,
+        const std::vector<cg3::Vec3d>& differentialCoordinates,
         const unsigned int vId,
         const std::vector<std::vector<int>>& vertexVertexAdjacencies)
 {
@@ -401,7 +401,7 @@ bool isMoveValid(
     const std::vector<int>& faces = vertexFaceAdjacencies.at(vId);
     for (const int& fId : faces) {
         const cg3::Point3i face = targetMesh.face(fId);
-        const cg3::Vec3 faceNormal = targetMesh.faceNormal(fId);
+        const cg3::Vec3d faceNormal = targetMesh.faceNormal(fId);
 
         cg3::Point3d p1, p2, p3;
 
@@ -424,14 +424,14 @@ bool isMoveValid(
         }
         cg3::Triangle3d triangle(p1, p2, p3);
 
-        cg3::Vec3 newNormal = triangle.normal();
+        cg3::Vec3d newNormal = triangle.normal();
 
         //Check if normal has not changed too much
         if (newNormal.dot(faceNormal) < normalAngleLimit)
             return false;
 
         //Check if the triangle normal has an angle less than 90° with the given direction
-        const cg3::Vec3& associatedDirection = data.directions[data.association[fId]];
+        const cg3::Vec3d& associatedDirection = data.directions[data.association[fId]];
         if (newNormal.dot(associatedDirection) <= heightfieldLimit)
             return false;
     }

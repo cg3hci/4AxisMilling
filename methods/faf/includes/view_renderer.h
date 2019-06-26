@@ -22,7 +22,7 @@ public:
     ViewRenderer(const cg3::SimpleEigenMesh& mesh, const cg3::BoundingBox3& bb, int resolution = 2048);
     ~ViewRenderer();
 
-    std::vector<bool> renderVisibility(const cg3::Vec3& dir, bool exact = true, bool saveImg = false);
+    std::vector<bool> renderVisibility(const cg3::Vec3d& dir, bool exact = true, bool saveImg = false);
     void resetFaces();
     void addFaces(const std::vector<unsigned int>& faces);
     void removeLastFaces(unsigned int n);
@@ -63,7 +63,7 @@ private:
     QMatrix4x4 computeOrtho();
     std::vector<bool> computeVisibleFacets(const QMatrix4x4& mvp);
     void removePartiallyOccludedFacets(std::vector<bool>& visible, const QMatrix4x4& mvp);
-    void saveImage(const cg3::Vec3& dir);
+    void saveImage(const cg3::Vec3d& dir);
 };
 
 #endif // VIEWRENDERER_H

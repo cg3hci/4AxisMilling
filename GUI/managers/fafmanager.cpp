@@ -2,8 +2,8 @@
  * @author Stefano Nuvoli
  * @author Alessandro Muntoni
  */
-#include "fouraxisfabricationmanager.h"
-#include "ui_fouraxisfabricationmanager.h"
+#include "fafmanager.h"
+#include "ui_fafmanager.h"
 
 #include <sstream>
 #include <string>
@@ -24,9 +24,9 @@
  * @brief Default constructor
  * @param parent Parent widget
  */
-FourAxisFabricationManager::FourAxisFabricationManager(QWidget *parent) :
+FAFManager::FAFManager(QWidget *parent) :
     QFrame(parent),
-    ui(new Ui::FourAxisFabricationManager),
+    ui(new Ui::FAFManager),
     mainWindow((cg3::viewer::MainWindow&)*parent)
 {
     ui->setupUi(this);
@@ -38,7 +38,7 @@ FourAxisFabricationManager::FourAxisFabricationManager(QWidget *parent) :
 /**
  * @brief Destructor
  */
-FourAxisFabricationManager::~FourAxisFabricationManager(){
+FAFManager::~FAFManager(){
     delete ui;
 }
 
@@ -50,7 +50,7 @@ FourAxisFabricationManager::~FourAxisFabricationManager(){
 /**
  * @brief Initialization of the manager
  */
-void FourAxisFabricationManager::initialize() {
+void FAFManager::initialize() {
     loaderSaverObj.addSupportedExtension("obj");
     loaderSaverData.addSupportedExtension("faf");
 
@@ -64,7 +64,7 @@ void FourAxisFabricationManager::initialize() {
 /**
  * @brief Update UI depending on the current state
  */
-void FourAxisFabricationManager::updateUI() {
+void FAFManager::updateUI() {
     // ----- Mesh loading -----
     ui->loadMeshButton->setEnabled(!data.isMeshLoaded);
     ui->clearMeshButton->setEnabled(data.isMeshLoaded);
@@ -186,7 +186,7 @@ void FourAxisFabricationManager::updateUI() {
 /**
  * @brief Clear data of four axis fabrication
  */
-void FourAxisFabricationManager::clearData() {
+void FAFManager::clearData() {
     data.clear();
 }
 
@@ -198,7 +198,7 @@ void FourAxisFabricationManager::clearData() {
 /**
  * @brief Scale mesh and generate stock
  */
-void FourAxisFabricationManager::scaleAndStock() {
+void FAFManager::scaleAndStock() {
     if (!data.isMeshScaledAndStockGenerated) {
         std::cout << std::endl << "#######################################################################" << std::endl << std::endl;
 
@@ -211,10 +211,15 @@ void FourAxisFabricationManager::scaleAndStock() {
         cg3::Timer t(std::string("Scale and stock generation"));
 
         //Scale mesh and get stock
-        FourAxisFabrication::scaleAndStock(
+        FourAxisFabrication::centerAndScale(
                     data,
                     scaleModel,
-                    modelLength,
+                    modelLength);
+
+
+        //Scale mesh and get stock
+        FourAxisFabrication::generateStock(
+                    data,
                     stockLength,
                     stockDiameter);
 
@@ -230,7 +235,7 @@ void FourAxisFabricationManager::scaleAndStock() {
 /**
  * @brief Compute smoothing
  */
-void FourAxisFabricationManager::smoothing() {
+void FAFManager::smoothing() {
     if (!data.isMeshSmoothed) {
         scaleAndStock();
 
@@ -260,7 +265,7 @@ void FourAxisFabricationManager::smoothing() {
 /**
  * @brief Compute optimal orientation
  */
-void FourAxisFabricationManager::optimalOrientation() {
+void FAFManager::optimalOrientation() {
     if (!data.isMeshOriented) {
         smoothing();
 
@@ -304,7 +309,7 @@ void FourAxisFabricationManager::optimalOrientation() {
 /**
  * @brief Select extremes
  */
-void FourAxisFabricationManager::selectExtremes() {
+void FAFManager::selectExtremes() {
     if (!data.areExtremesSelected) {
         optimalOrientation();
 
@@ -326,7 +331,7 @@ void FourAxisFabricationManager::selectExtremes() {
 /**
  * @brief Check visibility from various directions
  */
-void FourAxisFabricationManager::checkVisibility() {
+void FAFManager::checkVisibility() {
     if (!data.isVisibilityChecked) {
         selectExtremes();
 
@@ -365,7 +370,7 @@ void FourAxisFabricationManager::checkVisibility() {
 /**
  * @brief Get association
  */
-void FourAxisFabricationManager::getAssociation() {
+void FAFManager::getAssociation() {
     if (!data.isAssociationComputed) {
         checkVisibility();
 
@@ -396,7 +401,7 @@ void FourAxisFabricationManager::getAssociation() {
 /**
  * @brief Get optimized association
  */
-void FourAxisFabricationManager::optimizeAssociation() {
+void FAFManager::optimizeAssociation() {
     if (!data.isAssociationOptimized) {
         getAssociation();
 
@@ -431,7 +436,7 @@ void FourAxisFabricationManager::optimizeAssociation() {
 /**
  * @brief Restore frequencies
  */
-void FourAxisFabricationManager::restoreFrequencies() {
+void FAFManager::restoreFrequencies() {
     if (!data.areFrequenciesRestored) {
         optimizeAssociation();
 
@@ -468,7 +473,7 @@ void FourAxisFabricationManager::restoreFrequencies() {
 /**
  * @brief Recheck visibility after frequencies are restored
  */
-void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
+void FAFManager::recheckVisibilityAfterRestore() {
     if (!data.isVisibilityRecheckedAfterRestore) {
         restoreFrequencies();
 
@@ -506,7 +511,7 @@ void FourAxisFabricationManager::recheckVisibilityAfterRestore() {
 /**
  * @brief Cut components
  */
-void FourAxisFabricationManager::cutComponents() {
+void FAFManager::cutComponents() {
     if (!data.areComponentsCut) {
         recheckVisibilityAfterRestore();
 
@@ -531,7 +536,7 @@ void FourAxisFabricationManager::cutComponents() {
 /**
  * @brief Extract results
  */
-void FourAxisFabricationManager::extractResults() {
+void FAFManager::extractResults() {
     if (!data.areResultsExtracted) {
         cutComponents();
 
@@ -568,7 +573,7 @@ void FourAxisFabricationManager::extractResults() {
 /**
  * @brief Add drawable meshes
  */
-void FourAxisFabricationManager::addDrawableMesh() {
+void FAFManager::addDrawableMesh() {
     //Add drawable meshes to the canvas
     drawableOriginalMesh = cg3::DrawableEigenMesh(data.mesh);
     drawableOriginalMesh.setFlatShading();
@@ -579,7 +584,7 @@ void FourAxisFabricationManager::addDrawableMesh() {
 /**
  * @brief Add drawable smoothed mesh
  */
-void FourAxisFabricationManager::addDrawableSmoothedMesh() {
+void FAFManager::addDrawableSmoothedMesh() {
     drawableSmoothedMesh = cg3::DrawableEigenMesh(data.smoothedMesh);
     drawableSmoothedMesh.setFlatShading();
 
@@ -591,7 +596,7 @@ void FourAxisFabricationManager::addDrawableSmoothedMesh() {
 /**
  * @brief Add drawable stock
  */
-void FourAxisFabricationManager::addDrawableStock() {
+void FAFManager::addDrawableStock() {
     drawableStock = cg3::DrawableEigenMesh(data.stock);
     drawableStock.setFlatShading();
 
@@ -603,7 +608,7 @@ void FourAxisFabricationManager::addDrawableStock() {
 /**
  * @brief Add drawable restored mesh to the canvas
  */
-void FourAxisFabricationManager::addDrawableRestoredMesh() {
+void FAFManager::addDrawableRestoredMesh() {
     //Hide smoothed mesh
     mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
     mainWindow.setDrawableObjectVisibility(&drawableSmoothedMesh, false);
@@ -620,7 +625,7 @@ void FourAxisFabricationManager::addDrawableRestoredMesh() {
 /**
  * @brief Add drawable cut components to the canvas
  */
-void FourAxisFabricationManager::addDrawableCutComponents() {
+void FAFManager::addDrawableCutComponents() {
     //Hide restored mesh
     mainWindow.setDrawableObjectVisibility(&drawableRestoredMesh, false);
 
@@ -644,7 +649,7 @@ void FourAxisFabricationManager::addDrawableCutComponents() {
 /**
  * @brief Add drawable results
  */
-void FourAxisFabricationManager::addDrawableResults() {
+void FAFManager::addDrawableResults() {
     //Hide the cut components
     mainWindow.setDrawableObjectVisibility(&drawableMinComponent, false);
     mainWindow.setDrawableObjectVisibility(&drawableMaxComponent, false);
@@ -703,7 +708,7 @@ void FourAxisFabricationManager::addDrawableResults() {
 /**
  * @brief Update drawable meshes
  */
-void FourAxisFabricationManager::updateDrawableMesh() {
+void FAFManager::updateDrawableMesh() {
     //Update drawable meshes (already in the canvas)
     bool originalVisibility = drawableOriginalMesh.isVisible();
 
@@ -716,7 +721,7 @@ void FourAxisFabricationManager::updateDrawableMesh() {
 /**
  * @brief Update smoothed meshes
  */
-void FourAxisFabricationManager::updateDrawableSmoothedMesh() {
+void FAFManager::updateDrawableSmoothedMesh() {
     //Update drawable meshes (already in the canvas)
     bool smoothVisibility = drawableSmoothedMesh.isVisible();
 
@@ -729,7 +734,7 @@ void FourAxisFabricationManager::updateDrawableSmoothedMesh() {
 /**
  * @brief Update drawable meshes
  */
-void FourAxisFabricationManager::updateDrawableRestoredMesh() {
+void FAFManager::updateDrawableRestoredMesh() {
     //Update drawable meshes (already in the canvas)
     bool restoredVisibility = drawableRestoredMesh.isVisible();
 
@@ -742,7 +747,7 @@ void FourAxisFabricationManager::updateDrawableRestoredMesh() {
 /**
  * @brief Delte all drawable objects from the canvas
  */
-void FourAxisFabricationManager::deleteDrawableObjects() {
+void FAFManager::deleteDrawableObjects() {
     if (data.isMeshLoaded) {
         //Delete meshes
         mainWindow.deleteDrawableObject(&drawableOriginalMesh);
@@ -819,9 +824,9 @@ void FourAxisFabricationManager::deleteDrawableObjects() {
 /**
  * @brief Reset camera direction
  */
-void FourAxisFabricationManager::resetCameraDirection() {
-    mainWindow.canvas.setCameraDirection(cg3::Vec3(1,0,0));
-    mainWindow.canvas.setCameraDirection(cg3::Vec3(0,0,-1));
+void FAFManager::resetCameraDirection() {
+    mainWindow.canvas.setCameraDirection(cg3::Vec3d(1,0,0));
+    mainWindow.canvas.setCameraDirection(cg3::Vec3d(0,0,-1));
 
     mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
@@ -830,7 +835,7 @@ void FourAxisFabricationManager::resetCameraDirection() {
 /**
  * @brief Set camera direction
  */
-void FourAxisFabricationManager::setCameraDirection(const cg3::Vec3& dir) {
+void FAFManager::setCameraDirection(const cg3::Vec3d& dir) {
     mainWindow.canvas.setCameraDirection(dir);
 
     mainWindow.canvas.update();
@@ -841,7 +846,7 @@ void FourAxisFabricationManager::setCameraDirection(const cg3::Vec3& dir) {
 /**
  * @brief Initialize the slider depending on which radio button you have chosen
  */
-void FourAxisFabricationManager::initializeVisualizationSlider() {
+void FAFManager::initializeVisualizationSlider() {
     ui->descriptionLabel->setEnabled(!ui->meshRadio->isChecked());
     ui->visualizationSlider->setEnabled(!ui->meshRadio->isChecked());
     ui->moveCameraCheckBox->setEnabled(!ui->meshRadio->isChecked());
@@ -884,7 +889,7 @@ void FourAxisFabricationManager::initializeVisualizationSlider() {
 /**
  * @brief Colorize mesh depending on which radio button you have chosen
  */
-void FourAxisFabricationManager::updateVisualization() {
+void FAFManager::updateVisualization() {
     if (ui->meshRadio->isChecked()) {
         colorizeMesh();
     }
@@ -911,7 +916,7 @@ void FourAxisFabricationManager::updateVisualization() {
 /**
  * @brief Colorize mesh to the default color
  */
-void FourAxisFabricationManager::colorizeMesh() {
+void FAFManager::colorizeMesh() {
     //Set default color
     drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
     drawableRestoredMesh.setFaceColor(cg3::Color(128,128,128));
@@ -926,7 +931,7 @@ void FourAxisFabricationManager::colorizeMesh() {
 /**
  * @brief Colorize the min and max extremes
  */
-void FourAxisFabricationManager::colorizeExtremes() {
+void FAFManager::colorizeExtremes() {
     //Set default color
     drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
     drawableRestoredMesh.setFaceColor(cg3::Color(128,128,128));
@@ -946,8 +951,8 @@ void FourAxisFabricationManager::colorizeExtremes() {
     }
 
     //Description
-    cg3::Vec3 xAxis(1,0,0);
-    cg3::Vec3 xAxisOpposite(-1,0,0);
+    cg3::Vec3d xAxis(1,0,0);
+    cg3::Vec3d xAxisOpposite(-1,0,0);
 
     std::stringstream ss;
     switch (sliderValue) {
@@ -968,7 +973,7 @@ void FourAxisFabricationManager::colorizeExtremes() {
 /**
  * @brief Colorize face visibility from directions
  */
-void FourAxisFabricationManager::colorizeVisibility() {
+void FAFManager::colorizeVisibility() {
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
     unsigned int showNonVisible = (unsigned int) ui->showNonVisibleCheck->isChecked();
 
@@ -1024,7 +1029,7 @@ void FourAxisFabricationManager::colorizeVisibility() {
 /**
  * @brief Colorize association
  */
-void FourAxisFabricationManager::colorizeAssociation() {
+void FAFManager::colorizeAssociation() {
     //Coloring drawable mesh
     colorizeAssociation(drawableSmoothedMesh, data.association, data.targetDirections, data.associationNonVisibleFaces);
 
@@ -1067,7 +1072,7 @@ void FourAxisFabricationManager::colorizeAssociation() {
  * @param association Association of the target directions
  * @param targetDirections Target directions
  */
-void FourAxisFabricationManager::colorizeAssociation(
+void FAFManager::colorizeAssociation(
         cg3::DrawableEigenMesh& drawableMesh,
         const std::vector<int>& association,
         const std::vector<unsigned int>& targetDirections,
@@ -1120,7 +1125,7 @@ void FourAxisFabricationManager::colorizeAssociation(
 /**
  * @brief Colorize face visibility from the target directions
  */
-void FourAxisFabricationManager::showResults() {
+void FAFManager::showResults() {
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
 
     //Get index of the current direction
@@ -1140,7 +1145,7 @@ void FourAxisFabricationManager::showResults() {
 /**
  * @brief Show description of the current status
  */
-void FourAxisFabricationManager::showCurrentStatusDescription()
+void FAFManager::showCurrentStatusDescription()
 {
     if (data.isAssociationComputed) {
         std::stringstream ss;
@@ -1164,7 +1169,7 @@ void FourAxisFabricationManager::showCurrentStatusDescription()
 
 /* ----- UI SLOTS MESH ------ */
 
-void FourAxisFabricationManager::on_loadMeshButton_clicked()
+void FAFManager::on_loadMeshButton_clicked()
 {
     if (!data.isMeshLoaded) {
         std::string meshFile;
@@ -1210,7 +1215,7 @@ void FourAxisFabricationManager::on_loadMeshButton_clicked()
     }
 }
 
-void FourAxisFabricationManager::on_clearMeshButton_clicked()
+void FAFManager::on_clearMeshButton_clicked()
 {
     if (data.isMeshLoaded) {
         //Delete objects from the canvas
@@ -1232,7 +1237,7 @@ void FourAxisFabricationManager::on_clearMeshButton_clicked()
 
 }
 
-void FourAxisFabricationManager::on_reloadMeshButton_clicked()
+void FAFManager::on_reloadMeshButton_clicked()
 {
     if (data.isMeshLoaded) {
         //Delete drawable Objects
@@ -1268,7 +1273,7 @@ void FourAxisFabricationManager::on_reloadMeshButton_clicked()
     }
 }
 
-void FourAxisFabricationManager::on_saveResultsButton_clicked() {
+void FAFManager::on_saveResultsButton_clicked() {
     //Get saving dialog
     std::string selectedExtension;
     std::string saveFileName = loaderSaverObj.saveDialog("Save mesh", selectedExtension);
@@ -1357,7 +1362,7 @@ void FourAxisFabricationManager::on_saveResultsButton_clicked() {
 
 /* ----- LOAD/SAVE DATA SLOTS ------ */
 
-void FourAxisFabricationManager::on_loadDataButton_clicked()
+void FAFManager::on_loadDataButton_clicked()
 {
     //Get loading dialog
     std::string dataFile = loaderSaverData.loadDialog("Load data");
@@ -1423,7 +1428,7 @@ void FourAxisFabricationManager::on_loadDataButton_clicked()
     mainWindow.canvas.fitScene();
 }
 
-void FourAxisFabricationManager::on_saveDataButton_clicked()
+void FAFManager::on_saveDataButton_clicked()
 {
     //Get saving dialog
     std::string selectedExtension;
@@ -1438,7 +1443,7 @@ void FourAxisFabricationManager::on_saveDataButton_clicked()
 /* ----- UI SLOTS FOUR AXIS FABRICATION ------ */
 
 
-void FourAxisFabricationManager::on_scaleStockButton_clicked()
+void FAFManager::on_scaleStockButton_clicked()
 {
     //Scale and stock generation
     scaleAndStock();
@@ -1455,7 +1460,7 @@ void FourAxisFabricationManager::on_scaleStockButton_clicked()
 }
 
 
-void FourAxisFabricationManager::on_smoothingButton_clicked() {
+void FAFManager::on_smoothingButton_clicked() {
     //Get optimal mesh orientation
     smoothing();
 
@@ -1470,7 +1475,7 @@ void FourAxisFabricationManager::on_smoothingButton_clicked() {
     updateUI();
 }
 
-void FourAxisFabricationManager::on_optimalOrientationButton_clicked() {
+void FAFManager::on_optimalOrientationButton_clicked() {
     //Get optimal mesh orientation
     optimalOrientation();
 
@@ -1485,7 +1490,7 @@ void FourAxisFabricationManager::on_optimalOrientationButton_clicked() {
     updateUI();
 }
 
-void FourAxisFabricationManager::on_selectExtremesButton_clicked()
+void FAFManager::on_selectExtremesButton_clicked()
 {
     //Get extremes on x-axis to be selected
     selectExtremes();
@@ -1501,7 +1506,7 @@ void FourAxisFabricationManager::on_selectExtremesButton_clicked()
     updateUI();
 }
 
-void FourAxisFabricationManager::on_checkVisibilityButton_clicked()
+void FAFManager::on_checkVisibilityButton_clicked()
 {
     //Check visibility by the chosen directions
     checkVisibility();
@@ -1517,7 +1522,7 @@ void FourAxisFabricationManager::on_checkVisibilityButton_clicked()
     updateUI();
 }
 
-void FourAxisFabricationManager::on_getAssociationButton_clicked()
+void FAFManager::on_getAssociationButton_clicked()
 {
     //Check visibility by the chosen directions
     getAssociation();
@@ -1533,7 +1538,7 @@ void FourAxisFabricationManager::on_getAssociationButton_clicked()
     updateUI();
 }
 
-void FourAxisFabricationManager::on_optimizationButton_clicked()
+void FAFManager::on_optimizationButton_clicked()
 {
     //Optimization
     optimizeAssociation();
@@ -1549,7 +1554,7 @@ void FourAxisFabricationManager::on_optimizationButton_clicked()
     updateUI();
 }
 
-void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
+void FAFManager::on_restoreFrequenciesButton_clicked() {
     //Restore frequencies
     restoreFrequencies();
 
@@ -1564,7 +1569,7 @@ void FourAxisFabricationManager::on_restoreFrequenciesButton_clicked() {
     updateUI();
 }
 
-void FourAxisFabricationManager::on_recheckVisibilityButton_clicked()
+void FAFManager::on_recheckVisibilityButton_clicked()
 {
     //Recheck visibility
     recheckVisibilityAfterRestore();
@@ -1580,7 +1585,7 @@ void FourAxisFabricationManager::on_recheckVisibilityButton_clicked()
     updateUI();
 }
 
-void FourAxisFabricationManager::on_cutComponentsButton_clicked() {
+void FAFManager::on_cutComponentsButton_clicked() {
     //Cut components
     cutComponents();
 
@@ -1596,7 +1601,7 @@ void FourAxisFabricationManager::on_cutComponentsButton_clicked() {
 }
 
 
-void FourAxisFabricationManager::on_extractResultsButton_clicked() {
+void FAFManager::on_extractResultsButton_clicked() {
     //Extract results
     extractResults();
 
@@ -1614,7 +1619,7 @@ void FourAxisFabricationManager::on_extractResultsButton_clicked() {
 /* ----- UI SLOTS TRANSFORMATIONS ------ */
 
 
-void FourAxisFabricationManager::on_centerOnOriginButton_clicked() {
+void FAFManager::on_centerOnOriginButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
         data.mesh.translate(-data.mesh.boundingBox().center());
@@ -1625,7 +1630,7 @@ void FourAxisFabricationManager::on_centerOnOriginButton_clicked() {
     }
 }
 
-void FourAxisFabricationManager::on_plusXButton_clicked() {
+void FAFManager::on_plusXButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
         data.mesh.translate(cg3::Point3d(ui->stepSpinBox->value(), 0, 0));
@@ -1636,7 +1641,7 @@ void FourAxisFabricationManager::on_plusXButton_clicked() {
     }
 }
 
-void FourAxisFabricationManager::on_minusXButton_clicked() {
+void FAFManager::on_minusXButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
         data.mesh.translate(cg3::Point3d(-ui->stepSpinBox->value(), 0, 0));
@@ -1647,7 +1652,7 @@ void FourAxisFabricationManager::on_minusXButton_clicked() {
     }
 }
 
-void FourAxisFabricationManager::on_plusYButton_clicked() {
+void FAFManager::on_plusYButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
         data.mesh.translate(cg3::Point3d(0, ui->stepSpinBox->value(), 0));
@@ -1658,7 +1663,7 @@ void FourAxisFabricationManager::on_plusYButton_clicked() {
     }
 }
 
-void FourAxisFabricationManager::on_minusYButton_clicked() {
+void FAFManager::on_minusYButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
         data.mesh.translate(cg3::Point3d(0, -ui->stepSpinBox->value(), 0));
@@ -1669,7 +1674,7 @@ void FourAxisFabricationManager::on_minusYButton_clicked() {
     }
 }
 
-void FourAxisFabricationManager::on_plusZButton_clicked() {
+void FAFManager::on_plusZButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
         data.mesh.translate(cg3::Point3d(0, 0, ui->stepSpinBox->value()));
@@ -1680,7 +1685,7 @@ void FourAxisFabricationManager::on_plusZButton_clicked() {
     }
 }
 
-void FourAxisFabricationManager::on_minusZButton_clicked() {
+void FAFManager::on_minusZButton_clicked() {
     if (data.isMeshLoaded){
         //Translation of the mesh
         data.mesh.translate(cg3::Point3d(0, 0, -ui->stepSpinBox->value()));
@@ -1693,10 +1698,10 @@ void FourAxisFabricationManager::on_minusZButton_clicked() {
 
 
 
-void FourAxisFabricationManager::on_rotateButton_clicked() {
+void FAFManager::on_rotateButton_clicked() {
     if (data.isMeshLoaded){
         //Rotation of the mesh
-        cg3::Vec3 axis(ui->axisXSpinBox->value(), ui->axisYSpinBox->value(), ui->axisZSpinBox->value());
+        cg3::Vec3d axis(ui->axisXSpinBox->value(), ui->axisYSpinBox->value(), ui->axisZSpinBox->value());
         double angle = ui->angleSpinBox->value() * M_PI/180;
 
         Eigen::Matrix3d m;
@@ -1713,10 +1718,10 @@ void FourAxisFabricationManager::on_rotateButton_clicked() {
 
 
 
-void FourAxisFabricationManager::on_scaleButton_clicked() {
+void FAFManager::on_scaleButton_clicked() {
     if (data.isMeshLoaded){
         //Scale the mesh
-        cg3::Vec3 scaleFactor(ui->scaleXSpinBox->value(), ui->scaleYSpinBox->value(), ui->scaleZSpinBox->value());
+        cg3::Vec3d scaleFactor(ui->scaleXSpinBox->value(), ui->scaleYSpinBox->value(), ui->scaleZSpinBox->value());
 
         data.mesh.scale(scaleFactor);
 
@@ -1726,10 +1731,10 @@ void FourAxisFabricationManager::on_scaleButton_clicked() {
     }
 }
 
-void FourAxisFabricationManager::on_inverseScaleButton_clicked() {
+void FAFManager::on_inverseScaleButton_clicked() {
     if (data.isMeshLoaded){
         //Scale the mesh
-        cg3::Vec3 scaleFactor(1.0/ui->scaleXSpinBox->value(), 1.0/ui->scaleYSpinBox->value(), 1.0/ui->scaleZSpinBox->value());
+        cg3::Vec3d scaleFactor(1.0/ui->scaleXSpinBox->value(), 1.0/ui->scaleYSpinBox->value(), 1.0/ui->scaleZSpinBox->value());
 
         data.mesh.scale(scaleFactor);
 
@@ -1744,36 +1749,36 @@ void FourAxisFabricationManager::on_inverseScaleButton_clicked() {
 
 /* ----- UI SLOTS VISUALIZATION ------ */
 
-void FourAxisFabricationManager::on_meshRadio_clicked() {
+void FAFManager::on_meshRadio_clicked() {
     initializeVisualizationSlider();
 }
 
-void FourAxisFabricationManager::on_extremesRadio_clicked() {
+void FAFManager::on_extremesRadio_clicked() {
     initializeVisualizationSlider();
 }
 
-void FourAxisFabricationManager::on_visibilityRadio_clicked() {
+void FAFManager::on_visibilityRadio_clicked() {
     initializeVisualizationSlider();
 }
 
-void FourAxisFabricationManager::on_associationRadio_clicked() {
+void FAFManager::on_associationRadio_clicked() {
     initializeVisualizationSlider();
 }
 
-void FourAxisFabricationManager::on_resultsRadio_clicked() {
+void FAFManager::on_resultsRadio_clicked() {
     initializeVisualizationSlider();
 }
 
-void FourAxisFabricationManager::on_showNonVisibleCheck_clicked()
+void FAFManager::on_showNonVisibleCheck_clicked()
 {
     initializeVisualizationSlider();
 }
-void FourAxisFabricationManager::on_resetCameraButton_clicked() {
+void FAFManager::on_resetCameraButton_clicked() {
     //Reset camera direction
     resetCameraDirection();
 }
 
-void FourAxisFabricationManager::on_visualizationSlider_valueChanged(int value) {
+void FAFManager::on_visualizationSlider_valueChanged(int value) {
     CG3_SUPPRESS_WARNING(value);
     updateVisualization();
 
@@ -1781,7 +1786,7 @@ void FourAxisFabricationManager::on_visualizationSlider_valueChanged(int value) 
 
     if (ui->moveCameraCheckBox->isChecked()) {
         if (ui->extremesRadio->isChecked()) {
-            cg3::Vec3 xAxis(1,0,0);
+            cg3::Vec3d xAxis(1,0,0);
             if (sliderValue == 1) { //Min
                 setCameraDirection(xAxis);
             }
@@ -1794,7 +1799,7 @@ void FourAxisFabricationManager::on_visualizationSlider_valueChanged(int value) 
         }
         else if (ui->visibilityRadio->isChecked()) {
             if (sliderValue > 0) {
-                cg3::Vec3 currentDirection = data.directions[sliderValue - 1];
+                cg3::Vec3d currentDirection = data.directions[sliderValue - 1];
                 setCameraDirection(-currentDirection);
             }
             else {
@@ -1804,7 +1809,7 @@ void FourAxisFabricationManager::on_visualizationSlider_valueChanged(int value) 
         else if (ui->associationRadio->isChecked()) {
             if (sliderValue > 0) {
                 unsigned int currentIndex = data.targetDirections[sliderValue - 1];
-                cg3::Vec3 currentDirection = data.directions[currentIndex];
+                cg3::Vec3d currentDirection = data.directions[currentIndex];
                 setCameraDirection(-currentDirection);
             }
             else {
@@ -1813,12 +1818,12 @@ void FourAxisFabricationManager::on_visualizationSlider_valueChanged(int value) 
         }
         else if (ui->resultsRadio->isChecked()) {
             if (ui->extractResultsRotateCheckBox->isChecked()) {
-                cg3::Vec3 zAxis(0,0,1);
+                cg3::Vec3d zAxis(0,0,1);
                 setCameraDirection(-zAxis);
             }
             else {
                 unsigned int currentIndex = data.targetDirections[sliderValue];
-                cg3::Vec3 currentDirection = data.directions[currentIndex];
+                cg3::Vec3d currentDirection = data.directions[currentIndex];
                 setCameraDirection(-currentDirection);
             }
 

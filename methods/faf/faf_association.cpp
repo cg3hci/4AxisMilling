@@ -66,7 +66,7 @@ void getAssociation(
         Data& data)
 {
     //Get fabrication data
-    const std::vector<cg3::Vec3>& directions = data.directions;
+    const std::vector<cg3::Vec3d>& directions = data.directions;
     const std::vector<unsigned int>& nonVisibleFaces = data.nonVisibleFaces;
     std::vector<unsigned int>& targetDirections = data.targetDirections;
     std::vector<int>& association = data.association;
@@ -169,7 +169,7 @@ void setupDataCost(
         const Data& data,
         std::vector<float>& dataCost)
 {
-    const std::vector<cg3::Vec3>& directions = data.directions;
+    const std::vector<cg3::Vec3d>& directions = data.directions;
     const cg3::Array2D<int>& visibility = data.visibility;
     const std::vector<unsigned int>& minExtremes = data.minExtremes;
     const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
@@ -238,11 +238,11 @@ void setupDataCost(
     for (unsigned int faceId = 0; faceId < nFaces; faceId++){
         for (unsigned int label = 0; label < nLabels; ++label) {
             const unsigned int& directionIndex = targetLabels[label];
-            const cg3::Vec3& labelNormal = directions[directionIndex];
+            const cg3::Vec3d& labelNormal = directions[directionIndex];
 
             double cost;
 
-            const cg3::Vec3 faceNormal = mesh.faceNormal(faceId);
+            const cg3::Vec3d faceNormal = mesh.faceNormal(faceId);
             double dot = faceNormal.dot(labelNormal);
 
             //Visible
@@ -324,8 +324,8 @@ float getSmoothTerm(
     if (l1 == l2)
         return 0.f;
 
-    cg3::Vec3 faceNormal1 = mesh.faceNormal(f1);
-    cg3::Vec3 faceNormal2 = mesh.faceNormal(f2);
+    cg3::Vec3d faceNormal1 = mesh.faceNormal(f1);
+    cg3::Vec3d faceNormal2 = mesh.faceNormal(f2);
 
     float dot = faceNormal1.dot(faceNormal2);
 
