@@ -150,6 +150,7 @@ void FAFSegmentationManager::addDrawableMesh() {
 void FAFSegmentationManager::addDrawableScaledMesh() {
     drawableScaledMesh = cg3::DrawableEigenMesh(segmentedMesh);
     drawableScaledMesh.setFlatShading();
+    drawableScaledMesh.setEnableVertexColor();
 
     mainWindow.pushDrawableObject(&drawableScaledMesh, "Segmented mesh");
 
@@ -229,6 +230,38 @@ void FAFSegmentationManager::colorizeMesh() {
     }
 }
 
+/**
+ * @brief Colorize mesh to the default color
+ */
+void FAFSegmentationManager::colorizeMeshVertices() {
+    //Variables for colors
+    cg3::Color color;
+
+    //Set the color
+    drawableScaledMesh.setVertexColor(cg3::Color(128,128,128));
+
+    std::set<int> set(association.begin(), association.end());
+
+    if (!set.empty()) {
+        int subd = 255 / set.size();
+
+        //For each face of the drawable mesh
+        for (unsigned int vId = 0; vId < drawableScaledMesh.numberVertices(); vId++) {
+            //Get direction index associated to the current face
+            int associatedDirectionIndex = association[vId];
+
+            //If it has an associated fabrication direction
+            if (associatedDirectionIndex >= 0) {
+                color.setHsv(subd * associatedDirectionIndex, 255, 255);
+
+                //Set the color
+                drawableScaledMesh.setVertexColor(color, vId);
+            }
+        }
+
+    }
+}
+
 
 
 /* ----- UI SLOTS MESH ------ */
@@ -242,7 +275,7 @@ void FAFSegmentationManager::on_segmentationButton_clicked() {
     mainWindow.canvas.fitScene();
 
     updateUI();
-    colorizeMesh();
+    colorizeMeshVertices();
 }
 
 void FAFSegmentationManager::on_loadMeshButton_clicked()

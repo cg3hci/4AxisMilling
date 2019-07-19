@@ -7,6 +7,8 @@ CONFIG(release, debug|release){
     CONFIG += FINAL_RELEASE
 }
 
+CONFIG += CG3_STATIC
+
 VCGLIBPATH = /usr/include/vcglib
 
 #CONFIG += c++14

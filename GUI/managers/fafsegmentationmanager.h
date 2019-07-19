@@ -85,6 +85,7 @@ private:
     void deleteDrawableObjects();
 
     void colorizeMesh();
+    void colorizeMeshVertices();
 
 
 private slots:
