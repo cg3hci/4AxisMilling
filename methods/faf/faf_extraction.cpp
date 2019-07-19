@@ -867,17 +867,11 @@ void extractResults(
     std::cout << std::endl << "Area fabricated from other directions: " << totalCost << " (w.r.t. total area (" << totalArea << "): " << totalCost/totalArea << ")" << std::endl;
 
 
-    /* ----- INITIAL STOCK GENERATION ----- */
-
-
-    std::cout << std::endl <<  "----- STOCK GENERATION ----- " << std::endl << std::endl;
-
-    //Creating stock mesh
-    cg3::EigenMesh currentStock = data.stock;
-
-
 
     /* ----- IMMERSION IN THE STOCK AND STOCK GENERATIONS ----- */
+
+    //Retrieving stock mesh
+    cg3::EigenMesh currentStock = data.stock;
 
     std::cout << std::endl <<  "----- INTERSECTION WITH THE STOCK ----- " << std::endl << std::endl;
 

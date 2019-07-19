@@ -19,9 +19,7 @@ void selectExtremesOnXAxis(
         const double heightFieldAngle,
         const std::vector<std::vector<int>> ffAdj,
         std::vector<unsigned int>& minExtremes,
-        std::vector<unsigned int>& maxExtremes,
-        double& levelSetMinX,
-        double& levelSetMaxX);
+        std::vector<unsigned int>& maxExtremes);
 
 }
 

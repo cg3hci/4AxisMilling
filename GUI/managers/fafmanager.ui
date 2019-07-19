@@ -798,7 +798,7 @@
          <double>10000.000000000000000</double>
         </property>
         <property name="value">
-         <double>10.000000000000000</double>
+         <double>20.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -931,7 +931,7 @@
          <double>90.000000000000000</double>
         </property>
         <property name="value">
-         <double>3.000000000000000</double>
+         <double>4.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -1039,7 +1039,7 @@
          <string>Include +x/-x</string>
         </property>
         <property name="checked">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
        </widget>
       </item>

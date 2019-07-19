@@ -184,9 +184,7 @@ bool rotateToOptimalOrientation(
             //Get extremes
             std::vector<unsigned int> minExtremes;
             std::vector<unsigned int> maxExtremes;
-            double levelSetMinX;
-            double levelSetMaxX;
-            selectExtremesOnXAxis(copySmoothedMesh, heightFieldAngle, ffAdj, minExtremes, maxExtremes, levelSetMinX, levelSetMaxX);
+            selectExtremesOnXAxis(copySmoothedMesh, heightFieldAngle, ffAdj, minExtremes, maxExtremes);
 
             std::set<unsigned int> extremesSet;
             extremesSet.insert(minExtremes.begin(), minExtremes.end());
