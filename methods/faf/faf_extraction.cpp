@@ -34,7 +34,6 @@ void getFabricationOrder(
         const cg3::Array2D<double>& costMatrix,
         const size_t minLabel,
         const size_t maxLabel,
-        const bool extremeResults,
         std::vector<double>& cost,
         std::vector<double>& gain,
         size_t& currentPosition,
@@ -68,6 +67,7 @@ void extractResults(
         const double secondLayerStepHeight,
         const double heightfieldAngle,
         const bool xDirectionsAfter,
+        const bool minFirst,
         const bool rotateResults)
 {
     typedef cg3::libigl::CSGTree CSGTree;
@@ -834,17 +834,35 @@ void extractResults(
 
     std::cout << std::endl << "Result\tCost" << std::endl;
 
+    size_t minLabelResult = std::numeric_limits<size_t>::max(), maxLabelResult = std::numeric_limits<size_t>::max();
+    for (size_t i = 0; i < nResults; i++) {
+        if (tmpResultsAssociation[i] == minLabel) {
+            minLabelResult = i;
+        }
+        if (tmpResultsAssociation[i] == maxLabel) {
+            maxLabelResult = i;
+        }
+    }
+
     //X directions before
     if (!xDirectionsAfter) {
-        internal::getFabricationOrder(tmpResultsAssociation, costMatrix, minLabel, maxLabel, true, cost, gain, currentPosition, totalCost, resultPosition);
+        resultPosition[minFirst ? minLabelResult : maxLabelResult] = currentPosition;
+        currentPosition++;
+
+        resultPosition[minFirst ? maxLabelResult : minLabelResult] = currentPosition;
+        currentPosition++;
     }
 
     //Four axis result
-    internal::getFabricationOrder(tmpResultsAssociation, costMatrix, minLabel, maxLabel, false, cost, gain, currentPosition, totalCost, resultPosition);
+    internal::getFabricationOrder(tmpResultsAssociation, costMatrix, minLabel, maxLabel, cost, gain, currentPosition, totalCost, resultPosition);
 
     //X directions after
     if (xDirectionsAfter) {
-        internal::getFabricationOrder(tmpResultsAssociation, costMatrix, minLabel, maxLabel, true, cost, gain, currentPosition, totalCost, resultPosition);
+        resultPosition[minFirst ? minLabelResult : maxLabelResult] = currentPosition;
+        currentPosition++;
+
+        resultPosition[minFirst ? maxLabelResult : minLabelResult] = currentPosition;
+        currentPosition++;
     }
 
     //Filling results
@@ -862,7 +880,7 @@ void extractResults(
     tmpResultsAssociation.clear();
 
     double totalArea = 0;
-    for (int i = 0; i < fourAxisComponent.numberFaces(); i++)
+    for (unsigned int i = 0; i < fourAxisComponent.numberFaces(); i++)
         totalArea += fourAxisComponent.faceArea(i);
     std::cout << std::endl << "Area fabricated from other directions: " << totalCost << " (w.r.t. total area (" << totalArea << "): " << totalCost/totalArea << ")" << std::endl;
 
@@ -1053,20 +1071,18 @@ std::vector<cg3::Point2d> offsetPolygon(std::vector<cg3::Point2d>& polygon, cons
  * @param resultPosition
  */
 void getFabricationOrder(
-        const std::vector<unsigned int>& association,
+        const std::vector<unsigned int>& resultAssociation,
         const cg3::Array2D<double>& costMatrix,
         const size_t minLabel,
         const size_t maxLabel,
-        const bool extremeResults,
         std::vector<double>& cost,
         std::vector<double>& gain,
         size_t& currentPosition,
         double& totalCost,
         std::vector<size_t>& resultPosition)
 {
-    size_t nResults = association.size();
+    size_t nResults = resultAssociation.size();
 
-    //Useful variables
     size_t minCostIndex;
     double minCost;
 
@@ -1075,9 +1091,9 @@ void getFabricationOrder(
         minCost = std::numeric_limits<int>::max();
         for (size_t i = 0; i < nResults; i++) {
             if (resultPosition[i] == std::numeric_limits<int>::max()) {
-                bool isExtremes = association[i] == minLabel || association[i] == maxLabel;
+                bool isExtremes = resultAssociation[i] == minLabel || resultAssociation[i] == maxLabel;
 
-                if (extremeResults == isExtremes) {
+                if (!isExtremes) {
                     if (cost[i] < minCost || (cg3::epsilonEqual(cost[i], minCost) && gain[i] > gain[minCostIndex])) {
                         minCostIndex = i;
                         minCost = cost[i];

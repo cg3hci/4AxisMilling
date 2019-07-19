@@ -163,6 +163,7 @@ void FAFManager::updateUI() {
     ui->extractResultsSecondLayerStepHeightSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsXDirectionsOrderLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsXDirectionsOrderFrame->setEnabled(!data.areResultsExtracted);
+    ui->extractResultsMinFirstCheckBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsRotateCheckBox->setEnabled(!data.areResultsExtracted);
 
 
@@ -550,12 +551,13 @@ void FAFManager::extractResults() {
         double secondLayerStepHeight = ui->extractResultsSecondLayerStepHeightSpinBox->value();
         bool rotateResults = ui->extractResultsRotateCheckBox->isChecked();
         bool xDirectionsAfter = ui->extractResultsXDirectionsAfterRadio->isChecked();
+        bool minFirst = ui->extractResultsMinFirstCheckBox->isChecked();
 
         cg3::Timer t(std::string("Extract results"));
 
 
         //Extract results
-        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, firstLayerAngle, firstLayerOffset, secondLayerStepWidth, secondLayerStepHeight, heightfieldAngle, xDirectionsAfter, rotateResults);
+        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, firstLayerAngle, firstLayerOffset, secondLayerStepWidth, secondLayerStepHeight, heightfieldAngle, xDirectionsAfter, minFirst, rotateResults);
 
         t.stopAndPrint();
 

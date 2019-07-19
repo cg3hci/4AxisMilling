@@ -1039,7 +1039,7 @@
          <string>Include +x/-x</string>
         </property>
         <property name="checked">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -1231,6 +1231,16 @@
        <widget class="QPushButton" name="scaleStockButton">
         <property name="text">
          <string>Scale/Stock</string>
+        </property>
+       </widget>
+      </item>
+      <item row="34" column="5">
+       <widget class="QCheckBox" name="extractResultsMinFirstCheckBox">
+        <property name="text">
+         <string>Min first</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

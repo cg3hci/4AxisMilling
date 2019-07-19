@@ -24,6 +24,7 @@ void extractResults(
         const double secondLayerStepHeight,
         const double heightfieldAngle,
         const bool xDirectionsAfter,
+        const bool minFirst,
         const bool rotateResults);
 
 }
