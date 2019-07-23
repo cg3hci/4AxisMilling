@@ -4,6 +4,7 @@
  */
 #include "faf_extraction.h"
 #include "faf_charts.h"
+#include "faf_various.h"
 
 #include <cg3/utilities/utils.h>
 
@@ -200,51 +201,30 @@ void extractResults(
 
     /* ----- SUPPORTS ----- */
 
-
     //Create a big box
     cg3::BoundingBox3 bbSupport;
     bbSupport.setMin(cg3::Point3d(-stockLength/2, -stockDiameter/2, -stockDiameter/2));
     bbSupport.setMax(cg3::Point3d(stockLength/2, stockDiameter/2, stockDiameter/2));
 
-    if (minComponent.numberFaces() == 0 && minExtremes.size() > 0) {
-        //Get maximum x in the faces of the min extremes
-        double minLevelSetX = fourAxisComponent.vertex(fourAxisComponent.face(minExtremes[0]).x()).x();
-        for (int minFace : minExtremes) {
-            cg3::Point3i face = fourAxisComponent.face(minFace);
+    double minLevelSetX, maxLevelSetX;
+    getMinAndMaxHeightfieldLevelSet(fourAxisComponent, heightfieldAngle, cg3::libigl::faceToFaceAdjacencies(fourAxisComponent), minLevelSetX, maxLevelSetX);
 
-            minLevelSetX = std::max(minLevelSetX, fourAxisComponent.vertex(face.x()).x());
-            minLevelSetX = std::max(minLevelSetX, fourAxisComponent.vertex(face.y()).x());
-            minLevelSetX = std::max(minLevelSetX, fourAxisComponent.vertex(face.z()).x());
-        }
-        //Set min extremes bounding box
-        cg3::BoundingBox3 minBB = bbSupport;
-        minBB.setMaxX(minLevelSetX);
+    //Set min extremes bounding box
+    cg3::BoundingBox3 minBB = bbSupport;
+    minBB.setMaxX(minLevelSetX);
 
-        //Min support
-        cg3::EigenMesh minBBMesh = cg3::EigenMeshAlgorithms::makeBox(minBB);
-        minSupport = cg3::libigl::difference(minBBMesh, fourAxisComponent);
-    }
+    //Min support
+    cg3::EigenMesh minBBMesh = cg3::EigenMeshAlgorithms::makeBox(minBB);
+    minSupport = cg3::libigl::difference(minBBMesh, fourAxisComponent);
 
+    //Set max extremes bounding box
+    cg3::BoundingBox3 maxBB = bbSupport;
+    maxBB.setMinX(maxLevelSetX);
 
-    if (maxComponent.numberFaces() == 0 && maxExtremes.size() > 0) {
-        //Get minimum x in the faces of the max extremes
-        double maxLevelSetX = fourAxisComponent.vertex(fourAxisComponent.face(maxExtremes[0]).x()).x();
-        for (int maxFace : maxExtremes) {
-            cg3::Point3i face = fourAxisComponent.face(maxFace);
+    //Max support
+    cg3::EigenMesh maxBBMesh = cg3::EigenMeshAlgorithms::makeBox(maxBB);
+    maxSupport = cg3::libigl::difference(maxBBMesh, fourAxisComponent);
 
-            maxLevelSetX = std::min(maxLevelSetX, fourAxisComponent.vertex(face.x()).x());
-            maxLevelSetX = std::min(maxLevelSetX, fourAxisComponent.vertex(face.y()).x());
-            maxLevelSetX = std::min(maxLevelSetX, fourAxisComponent.vertex(face.z()).x());
-        }
-
-        //Set max extremes bounding box
-        cg3::BoundingBox3 maxBB = bbSupport;
-        maxBB.setMinX(maxLevelSetX);
-
-        //Max support
-        cg3::EigenMesh maxBBMesh = cg3::EigenMeshAlgorithms::makeBox(maxBB);
-        maxSupport = cg3::libigl::difference(maxBBMesh, fourAxisComponent);
-    }
 
 
     /* ----- RESULTS WITH BOX ----- */

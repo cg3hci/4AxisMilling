@@ -71,6 +71,8 @@ void getAssociation(
     std::vector<unsigned int>& targetDirections = data.targetDirections;
     std::vector<int>& association = data.association;
     std::vector<unsigned int>& associationNonVisibleFaces = data.associationNonVisibleFaces;
+    std::vector<unsigned int>& minExtremes = data.minExtremes;
+    std::vector<unsigned int>& maxExtremes = data.maxExtremes;
 
     //Setting target directions
     std::vector<unsigned int> targetLabels(directions.size());
@@ -142,6 +144,17 @@ void getAssociation(
             if (usedDirections[lId]) {
                 targetDirections.push_back(lId);
             }
+        }
+
+        int minLabel = targetDirections[targetDirections.size()-2];
+        int maxLabel = targetDirections[targetDirections.size()-1];
+        minExtremes.clear();
+        maxExtremes.clear();
+        for (size_t fId = 0; fId < nFaces; fId++) {
+            if (association[fId] == minLabel)
+                minExtremes.push_back(fId);
+            else if (association[fId] == maxLabel)
+                maxExtremes.push_back(fId);
         }
     }
     catch (GCException e) {
