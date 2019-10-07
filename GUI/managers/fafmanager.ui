@@ -580,7 +580,7 @@
          <double>90.000000000000000</double>
         </property>
         <property name="value">
-         <double>15.000000000000000</double>
+         <double>20.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -755,7 +755,7 @@
       <item row="33" column="4">
        <widget class="QDoubleSpinBox" name="extractResultsFirstLayerOffsetSpinBox">
         <property name="value">
-         <double>2.000000000000000</double>
+         <double>3.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -798,7 +798,7 @@
          <double>10000.000000000000000</double>
         </property>
         <property name="value">
-         <double>20.000000000000000</double>
+         <double>15.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -931,7 +931,7 @@
          <double>90.000000000000000</double>
         </property>
         <property name="value">
-         <double>4.000000000000000</double>
+         <double>5.000000000000000</double>
         </property>
        </widget>
       </item>

@@ -1294,8 +1294,8 @@ void FAFManager::on_saveResultsButton_clicked() {
             if (data.isAssociationComputed) {
                 std::ofstream resultFile;
                 resultFile.open (rawname + "_directions.txt");
-                for (size_t i = 0; i < data.targetDirections.size(); i++) {
-                    size_t label = data.targetDirections[i];
+                for (size_t i = 0; i < data.resultsAssociation.size(); i++) {
+                    size_t label = data.resultsAssociation[i];
                     resultFile << i << " -> " <<
                                   "Label " << label << ", " <<
                                   "Direction: " << data.directions[label];
