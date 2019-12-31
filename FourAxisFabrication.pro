@@ -14,8 +14,8 @@ CONFIG += ALL
 #CONFIG += SERVER_MODE
 #CONFIG += CONVERTER_MODE
 
-VCGLIB_PATH = /usr/include/vcglib
-LIBIGL_PATH = /usr/include/libigl
+#VCGLIB_PATH = /usr/include/vcglib
+#LIBIGL_PATH = /usr/include/libigl
 
 CONFIG += MULTI_LABEL_OPTIMIZATION
 CONFIG += CLIPPER
@@ -37,8 +37,8 @@ FINAL_RELEASE {
 
 exists($$(GUROBI_HOME)){
     message (Gurobi)
-    INCLUDEPATH += $$(GUROBI_HOME)/include
-    LIBS += -L$$(GUROBI_HOME)/lib -lgurobi_g++5.2 -lgurobi81
+    INCLUDEPATH += -I $$(GUROBI_HOME)/include
+    LIBS += -L$$(GUROBI_HOME)/lib -lgurobi_g++4.2 -lgurobi81
     DEFINES += GUROBI_DEFINED
 }
 
@@ -62,6 +62,7 @@ CLIPPER {
 }
 
 HEADERS += \
+    methods/faf/faf_triangulation.h \
     methods/fouraxisfabrication.h \
     methods/faf/faf_data.h \
     methods/faf/faf_optimalrotation.h \
@@ -84,6 +85,7 @@ SOURCES += \
     methods/faf/faf_data.cpp \
     methods/faf/faf_optimalrotation.cpp \
     methods/faf/faf_extremes.cpp \
+    methods/faf/faf_triangulation.cpp \
     methods/faf/faf_visibilitycheck.cpp \
     methods/faf/faf_frequencies.cpp \
     methods/faf/faf_extraction.cpp \
@@ -107,3 +109,5 @@ DISTFILES += \
 
 RESOURCES += \
     resources/resources.qrc
+
+
