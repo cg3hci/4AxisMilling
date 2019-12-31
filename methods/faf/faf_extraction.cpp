@@ -5,6 +5,7 @@
 #include "faf_extraction.h"
 #include "faf_charts.h"
 #include "faf_various.h"
+#include "faf_triangulation.h"
 
 #include <cg3/utilities/utils.h>
 
@@ -22,6 +23,9 @@
 #include <cg3/libigl/connected_components.h>
 
 #include <lib/clipper/clipper.hpp>
+
+#define CODICE_TOLETTO 1
+#define PROVA_FUNCTION 0
 
 namespace FourAxisFabrication {
 
@@ -343,8 +347,125 @@ void extractResults(
         size_t discardedFaces = 0;
 
         //Get step
-        double currentStepOffset = minLength;
 
+#if CODICE_TOLETTO
+
+        /***** Codice Di Toletto *****/
+        double currentStepOffset = firstLayerOffset;
+
+        //Forse non mi serve calcolarlo
+        const double currentStepHeight = currentStepOffset / tan(firstLayerAngle);
+
+        //Get new layer projected points
+        std::vector<cg3::Point2d> newLayerPoints2D =
+                internal::offsetPolygon(projectedPoints2D, currentStepOffset);
+        //size_t nNewLayerVertices = newLayerPoints2D.size();
+
+        std::set<cg3::Point2d> newLayerPoints2DSet;
+        std::map<cg3::Point2d, unsigned int> newLayerPoints2DMap;
+        std::vector<cg3::Point2d> newLayerPoints2Dvector;
+
+
+        triangulation = FourAxisFabrication::internal::triangulation(
+                        currentFirstLayerPoints2D,
+                        newLayerPoints2D,
+                        newLayerPoints2DSet,
+                        newLayerPoints2Dvector);
+
+        size_t nNewLayerVertices = newLayerPoints2D.size();
+
+        //Add triangulation to result
+        for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
+            bool isThereNewVertex = false; //Flag to check if a new point has been created
+            bool isThereHoleVertex = false; //Flag to check if at least a surface vertex has been found
+            bool isThereNonVisibleFaces = false; //Flag to check if the vertex is incident in non visible face
+
+            double minTriangleHeight = std::numeric_limits<double>::max(); //Height for the current triangle
+
+            unsigned int v[3];
+
+            //Set existing hole points, calculate min height in the hole and check if there is new vertex
+            for (unsigned int i = 0; i < 3 && !isThereNewVertex && !isThereNonVisibleFaces; i++) {
+                //Hole vertices
+                if (currentFirstLayerPoints2DMap.find(triangle[i]) != currentFirstLayerPoints2DMap.end()) {
+                    v[i] = currentFirstLayerPoints2DMap.at(triangle[i]);
+
+                    //If the vertex has a incident non visible face
+                    if (borderVerticesWithNonVisibleFaces.find(v[i]) != borderVerticesWithNonVisibleFaces.end()) {
+                        isThereNonVisibleFaces = true;
+                        discardedFaces++;
+                    }
+
+                    //Project on 3D
+                    cg3::Point3d p3D = result.vertex(v[i]);
+                    p3D.rotate(projectionMatrix);
+
+                    //Get minimum new triangle height
+                    minTriangleHeight = std::min(p3D.z() + currentStepHeight, minTriangleHeight);
+
+                    isThereHoleVertex = true;
+                }
+                //If the vertex is not among the existing vertices
+                else if (newLayerPoints2DSet.find(triangle[i]) == newLayerPoints2DSet.end()) {
+                    isThereNewVertex = true;
+                }
+            }
+
+            //If there is a hole vertex and no new vertices
+            if (isThereHoleVertex && !isThereNewVertex && !isThereNonVisibleFaces) {
+                for (unsigned int i = 0; i < 3; i++) {
+                    //First layer vertices in the triangle
+                    if (newLayerPoints2DSet.find(triangle[i]) != newLayerPoints2DSet.end()) {
+                        //Already inserted in the mesh
+                        if (newLayerPoints2DMap.find(triangle[i]) != newLayerPoints2DMap.end()) {
+                            v[i] = newLayerPoints2DMap.at(triangle[i]);
+                        }
+                        //Not yet inserted in the mesh
+                        else {
+                            const cg3::Point2d& p2D = triangle[i];
+
+                            cg3::Point3d newPoint(p2D.x(), p2D.y(), minTriangleHeight);
+                            minCoord.setX(std::min(minCoord.x(), newPoint.x()));
+                            minCoord.setY(std::min(minCoord.y(), newPoint.y()));
+                            minCoord.setZ(std::min(minCoord.z(), newPoint.z()));
+                            maxCoord.setX(std::max(maxCoord.x(), newPoint.x()));
+                            maxCoord.setY(std::max(maxCoord.y(), newPoint.y()));
+                            maxCoord.setZ(std::max(maxCoord.z(), newPoint.z()));
+
+                            //Inverse projection
+                            newPoint.rotate(inverseProjectionMatrix);
+
+                            //Create new result point
+                            const unsigned int newPointId = result.addVertex(newPoint);
+                            newLayerPoints2DMap.insert(std::make_pair(p2D, newPointId));
+
+                            v[i] = newPointId;
+                        }
+                    }
+                }
+
+                result.addFace(v[0], v[1], v[2]);
+            }
+        }
+
+        //Get used first layer points
+        std::vector<cg3::Point2d> usedNewLayerPoints;
+        for (size_t i = 0; i < nNewLayerVertices; i++) {
+            const cg3::Point2d& p2D = newLayerPoints2D[i];
+            if (newLayerPoints2DMap.find(p2D) != newLayerPoints2DMap.end()) {
+                usedNewLayerPoints.push_back(p2D);
+            }
+        }
+
+        //Setting data for next iteration
+        currentFirstLayerPoints2D = usedNewLayerPoints;
+        currentFirstLayerPoints2DMap = newLayerPoints2DMap;
+
+        /***** Fine codice di Toletto *****/
+
+#else
+        //Get step
+        double currentStepOffset = minLength;
         double totalOffset = 0;
         while (totalOffset < firstLayerOffset) {
             //Calculate offset and height
@@ -466,13 +587,12 @@ void extractResults(
 
             currentStepOffset *= 3; //Triple it for next iteration
         }
-
+#endif
 
         /* ------- SECOND LAYER POLYGON ------- */
 
 
         double totalHeight = maxCoord.z();
-
 
         std::vector<cg3::Point2d> currentSecondLayerPoints2D = currentFirstLayerPoints2D;
         std::map<cg3::Point2d, unsigned int> currentSecondLayerPoints2DMap = currentFirstLayerPoints2DMap;
@@ -486,14 +606,16 @@ void extractResults(
 
             //Create new 2D square (down)
             std::map<cg3::Point2d, unsigned int> downPoints2DMap;
-            std::vector<cg3::Point2d> squarePoints2D(4);
-            squarePoints2D[0] = cg3::Point2d(minCoord.x(), minCoord.y());
-            squarePoints2D[1] = cg3::Point2d(maxCoord.x(), minCoord.y());
-            squarePoints2D[2] = cg3::Point2d(maxCoord.x(), maxCoord.y());
-            squarePoints2D[3] = cg3::Point2d(minCoord.x(), maxCoord.y());
+
+            unsigned int nVertexSquare = 128;
+            std::vector<cg3::Point2d> squarePoints2D(nVertexSquare);
+            FourAxisFabrication::internal::createSquare(squarePoints2D, minCoord, maxCoord);
 
             //Adding down vertices
-            std::vector<unsigned int> downVertices(4);
+            for(unsigned int i = 0; i < squarePoints2D.size(); i++)
+                std::cout << squarePoints2D[i] << std::endl;
+
+            std::vector<unsigned int> downVertices(nVertexSquare);
 
             for (size_t i = 0; i < squarePoints2D.size(); i++) {
                 const cg3::Point2d& p2D = squarePoints2D[i];
@@ -507,10 +629,25 @@ void extractResults(
                 downPoints2DMap[p2D] = vid;
             }
 
-            //Delaunay triangulation between second layer polygon and new square
-            holes.resize(1);
-            holes[0] = currentSecondLayerPoints2D;
-            triangulation = cg3::cgal::triangulate2(squarePoints2D, holes);
+            bool delaunayTriangulation = false;
+
+            if(delaunayTriangulation){
+                //Delaunay triangulation between second layer polygon and new square
+                holes.resize(1);
+                holes[0] = currentSecondLayerPoints2D;
+                triangulation = cg3::cgal::triangulate2(squarePoints2D, holes);
+            } else {
+                //Custom triangulation between second layer polygon and new square
+                std::set<cg3::Point2d> newLayerPoints2DSetSquare;
+                std::vector<cg3::Point2d> newLayerPoints2DSquarevector;
+                triangulation = FourAxisFabrication::internal::triangulation(
+                                currentSecondLayerPoints2D,
+                                squarePoints2D,
+                                newLayerPoints2DSetSquare,
+                                newLayerPoints2DSquarevector);
+            }
+
+
 
             //Add triangulation to result
             for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
@@ -530,11 +667,11 @@ void extractResults(
                         isThereNewVertex = true;
                     }
                 }
-
                 if (!isThereNewVertex) {
                     result.addFace(v[0], v[1], v[2]);
                 }
             }
+
 
             totalHeight += secondLayerStepHeight;
             totalHeight = std::min(totalHeight, boxHeight);
@@ -543,7 +680,7 @@ void extractResults(
             std::map<cg3::Point2d, unsigned int> upPoints2DMap;
 
             //Adding up square vertices
-            std::vector<unsigned int> upVertices(4);
+            std::vector<unsigned int> upVertices(nVertexSquare);
 
             for (size_t i = 0; i < squarePoints2D.size(); i++) {
                 const cg3::Point2d& p2D = squarePoints2D[i];
@@ -557,24 +694,17 @@ void extractResults(
                 upPoints2DMap[p2D] = vid;
             }
 
-            result.addFace(upVertices[0], downVertices[1], downVertices[0]);
-            result.addFace(upVertices[0], upVertices[1], downVertices[1]);
-
-            result.addFace(upVertices[1], downVertices[2], downVertices[1]);
-            result.addFace(upVertices[1], upVertices[2], downVertices[2]);
-
-            result.addFace(upVertices[2], downVertices[3], downVertices[2]);
-            result.addFace(upVertices[2], upVertices[3], downVertices[3]);
-
-            result.addFace(upVertices[3], downVertices[0], downVertices[3]);
-            result.addFace(upVertices[3], upVertices[0], downVertices[0]);
+            for(unsigned int i = 0; i < nVertexSquare; i++){
+                result.addFace(upVertices[i], downVertices[(i+1)%nVertexSquare], downVertices[i]);
+                result.addFace(upVertices[i], upVertices[(i+1)%nVertexSquare], downVertices[(i+1)%nVertexSquare]);
+            }
 
             currentSecondLayerPoints2D = squarePoints2D;
             currentSecondLayerPoints2DMap = upPoints2DMap;
         }
 
 
-
+        /* FINE CODICE DA MODIFICARE */
 
         /* ----- BOX ----- */
 
@@ -1100,7 +1230,6 @@ void getFabricationOrder(
 
 
 }
-
 
 } //namespace internal
 
