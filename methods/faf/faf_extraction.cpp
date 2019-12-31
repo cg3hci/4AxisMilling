@@ -607,13 +607,9 @@ void extractResults(
             //Create new 2D square (down)
             std::map<cg3::Point2d, unsigned int> downPoints2DMap;
 
-            unsigned int nVertexSquare = 128;
+            unsigned int nVertexSquare = 256;
             std::vector<cg3::Point2d> squarePoints2D(nVertexSquare);
             FourAxisFabrication::internal::createSquare(squarePoints2D, minCoord, maxCoord);
-
-            //Adding down vertices
-            for(unsigned int i = 0; i < squarePoints2D.size(); i++)
-                std::cout << squarePoints2D[i] << std::endl;
 
             std::vector<unsigned int> downVertices(nVertexSquare);
 
@@ -629,7 +625,7 @@ void extractResults(
                 downPoints2DMap[p2D] = vid;
             }
 
-            bool delaunayTriangulation = false;
+            bool delaunayTriangulation = true;
 
             if(delaunayTriangulation){
                 //Delaunay triangulation between second layer polygon and new square
@@ -694,7 +690,7 @@ void extractResults(
                 upPoints2DMap[p2D] = vid;
             }
 
-            for(unsigned int i = 0; i < nVertexSquare; i++){
+            for(unsigned int i = 0; i < 24; i++){
                 result.addFace(upVertices[i], downVertices[(i+1)%nVertexSquare], downVertices[i]);
                 result.addFace(upVertices[i], upVertices[(i+1)%nVertexSquare], downVertices[(i+1)%nVertexSquare]);
             }
