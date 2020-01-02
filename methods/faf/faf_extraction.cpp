@@ -690,7 +690,7 @@ void extractResults(
                 upPoints2DMap[p2D] = vid;
             }
 
-            for(unsigned int i = 0; i < 24; i++){
+            for(unsigned int i = 0; i < nVertexSquare; i++){
                 result.addFace(upVertices[i], downVertices[(i+1)%nVertexSquare], downVertices[i]);
                 result.addFace(upVertices[i], upVertices[(i+1)%nVertexSquare], downVertices[(i+1)%nVertexSquare]);
             }

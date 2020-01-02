@@ -105,12 +105,10 @@ void createSquare(std::vector<cg3::Point2d>& squarePoints2D, cg3::Point3d minCoo
     }
     counterVertex += nSideVertex;
 
-
     for(; i < counterVertex; i++){
         squarePoints2D[i]=cg3::Point2d(maxCoord.x()-(xStepLenght*(i%nSideVertex)), maxCoord.y());
     }
     counterVertex += nSideVertex;
-
 
     for(; i < counterVertex; i++){
         squarePoints2D[i]=cg3::Point2d(minCoord.x(), maxCoord.y()-(yStepLenght*(i%nSideVertex)));
