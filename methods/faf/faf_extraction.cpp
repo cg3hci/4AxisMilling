@@ -25,7 +25,6 @@
 #include <lib/clipper/clipper.hpp>
 
 #define CODICE_TOLETTO 1
-#define PROVA_FUNCTION 0
 
 namespace FourAxisFabrication {
 
@@ -287,6 +286,8 @@ void extractResults(
             //Get vertices and rotate them
             unsigned int vId = borderVertices[i];
             cg3::Point3d p = result.vertex(vId);
+
+
             p.rotate(projectionMatrix);
 
             //Projected points 3D
@@ -374,78 +375,95 @@ void extractResults(
 
         size_t nNewLayerVertices = newLayerPoints2D.size();
 
+        //Calculate first hieght of new point
+        std::array<cg3::Point2d, 3>& triangleAux = triangulation[0];
+        const cg3::Point2d& p2D = triangleAux[1];
+        cg3::Point3d p3D = result.vertex(currentFirstLayerPoints2DMap.at(triangleAux[0]));
+        p3D.rotate(projectionMatrix);
+        cg3::Point3d newPoint(p2D.x(), p2D.y(), p3D.z() + currentStepHeight);
+        minCoord.setX(std::min(minCoord.x(), newPoint.x()));
+        minCoord.setY(std::min(minCoord.y(), newPoint.y()));
+        minCoord.setZ(std::min(minCoord.z(), newPoint.z()));
+        maxCoord.setX(std::max(maxCoord.x(), newPoint.x()));
+        maxCoord.setY(std::max(maxCoord.y(), newPoint.y()));
+        maxCoord.setZ(std::max(maxCoord.z(), newPoint.z()));
+
+        //Inverse projection
+        newPoint.rotate(inverseProjectionMatrix);
+
+        //Create new result point
+        const unsigned int newPointId = result.addVertex(newPoint);
+        newLayerPoints2DMap.insert(std::make_pair(p2D, newPointId));
+        bool customheight = false;
+
         //Add triangulation to result
         for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
-            bool isThereNewVertex = false; //Flag to check if a new point has been created
-            bool isThereHoleVertex = false; //Flag to check if at least a surface vertex has been found
             bool isThereNonVisibleFaces = false; //Flag to check if the vertex is incident in non visible face
 
             double minTriangleHeight = std::numeric_limits<double>::max(); //Height for the current triangle
 
             unsigned int v[3];
 
-            //Set existing hole points, calculate min height in the hole and check if there is new vertex
-            for (unsigned int i = 0; i < 3 && !isThereNewVertex && !isThereNonVisibleFaces; i++) {
-                //Hole vertices
-                if (currentFirstLayerPoints2DMap.find(triangle[i]) != currentFirstLayerPoints2DMap.end()) {
-                    v[i] = currentFirstLayerPoints2DMap.at(triangle[i]);
+            //Check if a vertex belongs of a non visible face
+            if (borderVerticesWithNonVisibleFaces.find(v[0]) != borderVerticesWithNonVisibleFaces.end() ||
+                borderVerticesWithNonVisibleFaces.find(v[1]) != borderVerticesWithNonVisibleFaces.end() ||
+                borderVerticesWithNonVisibleFaces.find(v[2]) != borderVerticesWithNonVisibleFaces.end()) {
+                isThereNonVisibleFaces = true;
+                discardedFaces++;
+            }
 
-                    //If the vertex has a incident non visible face
-                    if (borderVerticesWithNonVisibleFaces.find(v[i]) != borderVerticesWithNonVisibleFaces.end()) {
-                        isThereNonVisibleFaces = true;
-                        discardedFaces++;
+            //Set first 2 note vertex, check if the third belongs to the chart or is a new vertex
+            v[0] = currentFirstLayerPoints2DMap.at(triangle[0]);
+            v[1] = newLayerPoints2DMap.at(triangle[1]);
+            if(currentFirstLayerPoints2DMap.find(triangle[2]) != currentFirstLayerPoints2DMap.end()){
+                v[2] = currentFirstLayerPoints2DMap.at(triangle[2]);
+            } else {
+                //Project on 3D
+                if (newLayerPoints2DMap.find(triangle[2]) != newLayerPoints2DMap.end()) {
+                    v[2] = newLayerPoints2DMap.at(triangle[2]);
+                } else {
+
+                    double height;
+
+                    //Set hight ofnew vertex to min or avg nears chart points
+                    if(customheight){
+                        height = FourAxisFabrication::internal::computeHeight(triangle[0],
+                            currentFirstLayerPoints2DMap,
+                            projectionMatrix,
+                            result,
+                            currentFirstLayerPoints2D,
+                            currentStepHeight);
+                    } else {
+                        cg3::Point3d p3D2 = result.vertex(v[0]);
+                        p3D2.rotate(projectionMatrix);
+                        minTriangleHeight = std::min(p3D2.z() + currentStepHeight, minTriangleHeight);
+                        height = minTriangleHeight;
                     }
 
-                    //Project on 3D
-                    cg3::Point3d p3D = result.vertex(v[i]);
-                    p3D.rotate(projectionMatrix);
+                    //Create new point
+                    const cg3::Point2d& p2D = triangle[2];
 
-                    //Get minimum new triangle height
-                    minTriangleHeight = std::min(p3D.z() + currentStepHeight, minTriangleHeight);
+                    cg3::Point3d newPoint2(p2D.x(), p2D.y(), height);
+                    minCoord.setX(std::min(minCoord.x(), newPoint2.x()));
+                    minCoord.setY(std::min(minCoord.y(), newPoint2.y()));
+                    minCoord.setZ(std::min(minCoord.z(), newPoint2.z()));
+                    maxCoord.setX(std::max(maxCoord.x(), newPoint2.x()));
+                    maxCoord.setY(std::max(maxCoord.y(), newPoint2.y()));
+                    maxCoord.setZ(std::max(maxCoord.z(), newPoint2.z()));
 
-                    isThereHoleVertex = true;
-                }
-                //If the vertex is not among the existing vertices
-                else if (newLayerPoints2DSet.find(triangle[i]) == newLayerPoints2DSet.end()) {
-                    isThereNewVertex = true;
+                    //Inverse projection
+                    newPoint2.rotate(inverseProjectionMatrix);
+
+                    //Create new result point
+                    const unsigned int newPointId2 = result.addVertex(newPoint2);
+                    newLayerPoints2DMap.insert(std::make_pair(p2D, newPointId2));
+
+                    v[2] = newPointId2;
                 }
             }
 
-            //If there is a hole vertex and no new vertices
-            if (isThereHoleVertex && !isThereNewVertex && !isThereNonVisibleFaces) {
-                for (unsigned int i = 0; i < 3; i++) {
-                    //First layer vertices in the triangle
-                    if (newLayerPoints2DSet.find(triangle[i]) != newLayerPoints2DSet.end()) {
-                        //Already inserted in the mesh
-                        if (newLayerPoints2DMap.find(triangle[i]) != newLayerPoints2DMap.end()) {
-                            v[i] = newLayerPoints2DMap.at(triangle[i]);
-                        }
-                        //Not yet inserted in the mesh
-                        else {
-                            const cg3::Point2d& p2D = triangle[i];
-
-                            cg3::Point3d newPoint(p2D.x(), p2D.y(), minTriangleHeight);
-                            minCoord.setX(std::min(minCoord.x(), newPoint.x()));
-                            minCoord.setY(std::min(minCoord.y(), newPoint.y()));
-                            minCoord.setZ(std::min(minCoord.z(), newPoint.z()));
-                            maxCoord.setX(std::max(maxCoord.x(), newPoint.x()));
-                            maxCoord.setY(std::max(maxCoord.y(), newPoint.y()));
-                            maxCoord.setZ(std::max(maxCoord.z(), newPoint.z()));
-
-                            //Inverse projection
-                            newPoint.rotate(inverseProjectionMatrix);
-
-                            //Create new result point
-                            const unsigned int newPointId = result.addVertex(newPoint);
-                            newLayerPoints2DMap.insert(std::make_pair(p2D, newPointId));
-
-                            v[i] = newPointId;
-                        }
-                    }
-                }
-
-                result.addFace(v[0], v[1], v[2]);
-            }
+            //add points to result
+            result.addFace(v[0], v[1], v[2]);
         }
 
         //Get used first layer points
@@ -597,6 +615,22 @@ void extractResults(
         std::vector<cg3::Point2d> currentSecondLayerPoints2D = currentFirstLayerPoints2D;
         std::map<cg3::Point2d, unsigned int> currentSecondLayerPoints2DMap = currentFirstLayerPoints2DMap;
 
+        //Calculate number of square point based on chart vertex number
+        unsigned int nVertexSquare = 64;
+        bool flagNvertex = true;
+        bool multiSquarePoints = true;
+
+        //Use multi vertex for the square or only 4
+        if(multiSquarePoints){
+            while(flagNvertex){
+                nVertexSquare*=2;
+                if(currentSecondLayerPoints2D.size() / nVertexSquare < 1)
+                    flagNvertex = false;
+            }
+        } else {
+            nVertexSquare = 4;
+        }
+
         while (totalHeight < boxHeight) {
             minCoord.x() -= secondLayerStepWidth;
             minCoord.y() -= secondLayerStepWidth;
@@ -607,7 +641,7 @@ void extractResults(
             //Create new 2D square (down)
             std::map<cg3::Point2d, unsigned int> downPoints2DMap;
 
-            unsigned int nVertexSquare = 256;
+
             std::vector<cg3::Point2d> squarePoints2D(nVertexSquare);
             FourAxisFabrication::internal::createSquare(squarePoints2D, minCoord, maxCoord);
 
