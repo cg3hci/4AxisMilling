@@ -375,18 +375,18 @@ void extractResults(
 
         size_t nNewLayerVertices = newLayerPoints2D.size();
 
-        //Calculate first hieght of new point
+        //Calculate first hieght of first new point
         std::array<cg3::Point2d, 3>& triangleAux = triangulation[0];
         const cg3::Point2d& p2D = triangleAux[1];
         cg3::Point3d p3D = result.vertex(currentFirstLayerPoints2DMap.at(triangleAux[0]));
         p3D.rotate(projectionMatrix);
         cg3::Point3d newPoint(p2D.x(), p2D.y(), p3D.z() + currentStepHeight);
-        minCoord.setX(std::min(minCoord.x(), newPoint.x()));
+        /*minCoord.setX(std::min(minCoord.x(), newPoint.x()));
         minCoord.setY(std::min(minCoord.y(), newPoint.y()));
         minCoord.setZ(std::min(minCoord.z(), newPoint.z()));
         maxCoord.setX(std::max(maxCoord.x(), newPoint.x()));
         maxCoord.setY(std::max(maxCoord.y(), newPoint.y()));
-        maxCoord.setZ(std::max(maxCoord.z(), newPoint.z()));
+        maxCoord.setZ(std::max(maxCoord.z(), newPoint.z()));*/
 
         //Inverse projection
         newPoint.rotate(inverseProjectionMatrix);
@@ -444,12 +444,12 @@ void extractResults(
                     const cg3::Point2d& p2D = triangle[2];
 
                     cg3::Point3d newPoint2(p2D.x(), p2D.y(), height);
-                    minCoord.setX(std::min(minCoord.x(), newPoint2.x()));
+                    /*minCoord.setX(std::min(minCoord.x(), newPoint2.x()));
                     minCoord.setY(std::min(minCoord.y(), newPoint2.y()));
                     minCoord.setZ(std::min(minCoord.z(), newPoint2.z()));
                     maxCoord.setX(std::max(maxCoord.x(), newPoint2.x()));
                     maxCoord.setY(std::max(maxCoord.y(), newPoint2.y()));
-                    maxCoord.setZ(std::max(maxCoord.z(), newPoint2.z()));
+                    maxCoord.setZ(std::max(maxCoord.z(), newPoint2.z()));*/
 
                     //Inverse projection
                     newPoint2.rotate(inverseProjectionMatrix);
@@ -475,9 +475,73 @@ void extractResults(
             }
         }
 
+        /** Smoothing **/
+        size_t usedNewPointsSize = usedNewLayerPoints.size();
+        std::vector<cg3::Point2d> smothNewLayerPoints(usedNewPointsSize);
+        std::vector<cg3::Point2d> auxSmothNewLayerPoints(usedNewPointsSize);
+        std::vector<cg3::Point3d> smothNewLayerPoints3D(usedNewPointsSize);
+        std::map<cg3::Point2d, unsigned int> smothLayerPoints2DMap;
+        unsigned int nSmothingIteration = 4;
+        double currentVertexWeight = 0.7;
+        double nearVertexWeight = (1 - currentVertexWeight) / 2;
+
+        for(unsigned int j = 0; j < nSmothingIteration; j++){
+
+            smothLayerPoints2DMap.clear();
+
+            for(unsigned int i = 0; i < usedNewPointsSize; i++){
+                smothNewLayerPoints3D[i] = result.vertex(newLayerPoints2DMap.at(usedNewLayerPoints[i]));
+            }
+
+            for(unsigned int i = 0; i < usedNewPointsSize; i++){
+                if(j == 0){
+                    auxSmothNewLayerPoints[i] = usedNewLayerPoints[i];
+                } else {
+                    auxSmothNewLayerPoints[i] = smothNewLayerPoints[i];
+                }
+            }
+
+            for(unsigned int i = 1; i <= usedNewPointsSize; i++){
+
+                cg3::Point3d prevPoint = smothNewLayerPoints3D[(i - 1) % usedNewPointsSize];
+                cg3::Point3d currentPoint = smothNewLayerPoints3D[i% usedNewPointsSize];
+                cg3::Point3d nextPoint = smothNewLayerPoints3D[(i + 1) % usedNewPointsSize];
+
+                prevPoint.rotate(projectionMatrix);
+                currentPoint.rotate(projectionMatrix);
+                nextPoint.rotate(projectionMatrix);
+
+                cg3::Point3d avgPoint = (prevPoint * nearVertexWeight) + (currentPoint * currentVertexWeight) + (nextPoint * nearVertexWeight);
+                smothNewLayerPoints[i] = (auxSmothNewLayerPoints[(i - 1) % usedNewPointsSize] * nearVertexWeight) +
+                                         (auxSmothNewLayerPoints[i% usedNewPointsSize] * currentVertexWeight) +
+                                         (auxSmothNewLayerPoints[(i + 1) % usedNewPointsSize] * nearVertexWeight);
+
+
+                minCoord.setX(std::min(minCoord.x(), avgPoint.x()));
+                minCoord.setY(std::min(minCoord.y(), avgPoint.y()));
+                minCoord.setZ(std::min(minCoord.z(), avgPoint.z()));
+                maxCoord.setX(std::max(maxCoord.x(), avgPoint.x()));
+                maxCoord.setY(std::max(maxCoord.y(), avgPoint.y()));
+                maxCoord.setZ(std::max(maxCoord.z(), avgPoint.z()));
+
+                avgPoint.rotate(inverseProjectionMatrix);
+                smothLayerPoints2DMap.insert(std::make_pair(smothNewLayerPoints[i% usedNewPointsSize], newLayerPoints2DMap[usedNewLayerPoints[i% usedNewPointsSize]]));
+                result.setVertex(newLayerPoints2DMap[usedNewLayerPoints[i% usedNewPointsSize]], avgPoint);
+            }
+        }
+
         //Setting data for next iteration
-        currentFirstLayerPoints2D = usedNewLayerPoints;
-        currentFirstLayerPoints2DMap = newLayerPoints2DMap;
+        bool smotHeight = true;
+        if(smotHeight){
+            currentFirstLayerPoints2D = smothNewLayerPoints;
+            currentFirstLayerPoints2DMap = smothLayerPoints2DMap;
+        } else {
+            currentFirstLayerPoints2D = usedNewLayerPoints;
+            currentFirstLayerPoints2DMap = newLayerPoints2DMap;
+        }
+
+
+
 
         /***** Fine codice di Toletto *****/
 
@@ -616,12 +680,13 @@ void extractResults(
         std::map<cg3::Point2d, unsigned int> currentSecondLayerPoints2DMap = currentFirstLayerPoints2DMap;
 
         //Calculate number of square point based on chart vertex number
-        unsigned int nVertexSquare = 64;
+        unsigned int nVertexSquare;
         bool flagNvertex = true;
-        bool multiSquarePoints = true;
+        bool multiSquarePoints = false;
 
         //Use multi vertex for the square or only 4
         if(multiSquarePoints){
+            nVertexSquare = 64;
             while(flagNvertex){
                 nVertexSquare*=2;
                 if(currentSecondLayerPoints2D.size() / nVertexSquare < 1)

@@ -43,15 +43,16 @@ std::vector<std::array<cg3::Point2d, 3>> triangulation(
     }
     while(currentChartVertexID <= nFirstLayerVertices){
         cg3::Point2d currentCharPoint = currentFirstLayerPoints2D[currentChartVertexID%nFirstLayerVertices];
-        cg3::Point2d nextBorderPoint = newLayerPoints2Dvector[(currentBorderVertexID+1)%numBorderVertex];
-        cg3::Point2d nextChartPoint = currentFirstLayerPoints2D[(currentChartVertexID + 1)%nFirstLayerVertices];
+        cg3::Point2d nextBorderPoint = newLayerPoints2Dvector[(currentBorderVertexID + 1) % numBorderVertex];
+        cg3::Point2d nextChartPoint = currentFirstLayerPoints2D[(currentChartVertexID + 1) % nFirstLayerVertices];
         cg3::Point2d currentBorderPoint = newLayerPoints2Dvector[(currentBorderVertexID)%numBorderVertex];
         cg3::Vec2d edgeVecFromChart = currentCharPoint - nextBorderPoint;
         cg3::Vec2d edgeVecFromBorder = nextChartPoint - currentBorderPoint;
         cg3::Vec2d currentChartVec = currentCharPoint;
         cg3::Vec2d currentBorderVec = currentBorderPoint;
         cg3::Vec2d nextBorderVec = nextBorderPoint;
-        if(currentChartVertexID == nFirstLayerVertices && counterBorderVertexID == (numBorderVertex-1)){
+
+        if(currentChartVertexID == nFirstLayerVertices && counterBorderVertexID == (numBorderVertex - 1)){
             std::array<cg3::Point2d, 3> vec = {currentCharPoint,
                                                currentBorderPoint,
                                                nextBorderPoint};
@@ -59,7 +60,7 @@ std::vector<std::array<cg3::Point2d, 3>> triangulation(
             break;
         }
 
-        if(counterBorderVertexID == numBorderVertex && currentChartVertexID == (nFirstLayerVertices-1)){
+        if(counterBorderVertexID == numBorderVertex && currentChartVertexID == (nFirstLayerVertices - 1)){
             std::array<cg3::Point2d, 3> vec = {currentCharPoint,
                                                currentBorderPoint,
                                                nextChartPoint};
@@ -70,8 +71,8 @@ std::vector<std::array<cg3::Point2d, 3>> triangulation(
 
         if((edgeVecFromChart.length() < edgeVecFromBorder.length()) && (counterBorderVertexID < numBorderVertex) /*&&
                 currentChartVec.dot(nextBorderPoint) <= currentChartVec.dot(currentBorderVec)*/){
-            std::cout << "Dot chart and current border: " << currentChartVec.dot(currentBorderVec) << std::endl;
-            std::cout << "Dot chart and next border: " << currentChartVec.dot(nextBorderPoint) << std::endl;
+            //std::cout << "Dot chart and current border: " << currentChartVec.dot(currentBorderVec) << std::endl;
+            //std::cout << "Dot chart and next border: " << currentChartVec.dot(nextBorderPoint) << std::endl;
 
             std::array<cg3::Point2d, 3> vec = {currentCharPoint,
                                                currentBorderPoint,
@@ -93,9 +94,9 @@ std::vector<std::array<cg3::Point2d, 3>> triangulation(
 
 void createSquare(std::vector<cg3::Point2d>& squarePoints2D, cg3::Point3d minCoord, cg3::Point3d maxCoord){
 
-    unsigned int i=0;
+    unsigned int i = 0;
     unsigned int nVertex = squarePoints2D.size();
-    unsigned int nSideVertex = nVertex/4;
+    unsigned int nSideVertex = nVertex / 4;
     unsigned int counterVertex = nSideVertex;
     double xStepLenght = (maxCoord.x() - minCoord.x())/nSideVertex;
     double yStepLenght = (maxCoord.y() - minCoord.y())/nSideVertex;
@@ -133,18 +134,18 @@ double computeHeight(
     unsigned int pos = distance(currentFirstLayerPoints2D.begin(), it);
     double height;
 
-    cg3::Point3d p3Dprevprev = result.vertex(currentFirstLayerPoints2DMap.at(currentFirstLayerPoints2D[(pos-2)%currentFirstLayerPoints2DMap.size()]));
-    cg3::Point3d p3Dprev = result.vertex(currentFirstLayerPoints2DMap.at(currentFirstLayerPoints2D[(pos-1)%currentFirstLayerPoints2DMap.size()]));
+    cg3::Point3d p3Dprevprev = result.vertex(currentFirstLayerPoints2DMap.at(currentFirstLayerPoints2D[(pos - 2) % currentFirstLayerPoints2DMap.size()]));
+    cg3::Point3d p3Dprev = result.vertex(currentFirstLayerPoints2DMap.at(currentFirstLayerPoints2D[(pos - 1) % currentFirstLayerPoints2DMap.size()]));
     cg3::Point3d p3D = result.vertex(currentFirstLayerPoints2DMap.at(vertex));
-    cg3::Point3d p3Dnext = result.vertex(currentFirstLayerPoints2DMap.at(currentFirstLayerPoints2D[(pos+1)%currentFirstLayerPoints2DMap.size()]));
-    cg3::Point3d p3Dnextnext = result.vertex(currentFirstLayerPoints2DMap.at(currentFirstLayerPoints2D[(pos+2)%currentFirstLayerPoints2DMap.size()]));
+    cg3::Point3d p3Dnext = result.vertex(currentFirstLayerPoints2DMap.at(currentFirstLayerPoints2D[(pos + 1) % currentFirstLayerPoints2DMap.size()]));
+    cg3::Point3d p3Dnextnext = result.vertex(currentFirstLayerPoints2DMap.at(currentFirstLayerPoints2D[(pos + 2) % currentFirstLayerPoints2DMap.size()]));
     p3Dprevprev.rotate(projectionMatrix);
     p3Dprev.rotate(projectionMatrix);
     p3D.rotate(projectionMatrix);
     p3Dnext.rotate(projectionMatrix);
     p3Dnextnext.rotate(projectionMatrix);
 
-    height = (((p3Dnext.z() + p3Dnextnext.z() + p3D.z() + p3Dprev.z() + p3Dprevprev.z())  / 5) + currentStepHeight);
+    height = (((p3Dnext.z() + p3Dnextnext.z() + p3D.z() + p3Dprev.z() + p3Dprevprev.z()) / 5) + currentStepHeight);
 
     return height;
 }
