@@ -381,12 +381,6 @@ void extractResults(
         cg3::Point3d p3D = result.vertex(currentFirstLayerPoints2DMap.at(triangleAux[0]));
         p3D.rotate(projectionMatrix);
         cg3::Point3d newPoint(p2D.x(), p2D.y(), p3D.z() + currentStepHeight);
-        /*minCoord.setX(std::min(minCoord.x(), newPoint.x()));
-        minCoord.setY(std::min(minCoord.y(), newPoint.y()));
-        minCoord.setZ(std::min(minCoord.z(), newPoint.z()));
-        maxCoord.setX(std::max(maxCoord.x(), newPoint.x()));
-        maxCoord.setY(std::max(maxCoord.y(), newPoint.y()));
-        maxCoord.setZ(std::max(maxCoord.z(), newPoint.z()));*/
 
         //Inverse projection
         newPoint.rotate(inverseProjectionMatrix);
@@ -394,7 +388,6 @@ void extractResults(
         //Create new result point
         const unsigned int newPointId = result.addVertex(newPoint);
         newLayerPoints2DMap.insert(std::make_pair(p2D, newPointId));
-        bool customheight = false;
 
         //Add triangulation to result
         for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
@@ -426,30 +419,16 @@ void extractResults(
                     double height;
 
                     //Set hight ofnew vertex to min or avg nears chart points
-                    if(customheight){
-                        height = FourAxisFabrication::internal::computeHeight(triangle[0],
-                            currentFirstLayerPoints2DMap,
-                            projectionMatrix,
-                            result,
-                            currentFirstLayerPoints2D,
-                            currentStepHeight);
-                    } else {
-                        cg3::Point3d p3D2 = result.vertex(v[0]);
-                        p3D2.rotate(projectionMatrix);
-                        minTriangleHeight = std::min(p3D2.z() + currentStepHeight, minTriangleHeight);
-                        height = minTriangleHeight;
-                    }
+                    cg3::Point3d p3D2 = result.vertex(v[0]);
+                    p3D2.rotate(projectionMatrix);
+                    /* Verificare questo controllo, non garantisce che l'altezza rientri entro il limite fornito da currentStepHeight */
+                    minTriangleHeight = std::min(p3D2.z() + currentStepHeight, minTriangleHeight);
+                    height = minTriangleHeight;
 
                     //Create new point
                     const cg3::Point2d& p2D = triangle[2];
 
                     cg3::Point3d newPoint2(p2D.x(), p2D.y(), height);
-                    /*minCoord.setX(std::min(minCoord.x(), newPoint2.x()));
-                    minCoord.setY(std::min(minCoord.y(), newPoint2.y()));
-                    minCoord.setZ(std::min(minCoord.z(), newPoint2.z()));
-                    maxCoord.setX(std::max(maxCoord.x(), newPoint2.x()));
-                    maxCoord.setY(std::max(maxCoord.y(), newPoint2.y()));
-                    maxCoord.setZ(std::max(maxCoord.z(), newPoint2.z()));*/
 
                     //Inverse projection
                     newPoint2.rotate(inverseProjectionMatrix);
@@ -475,24 +454,27 @@ void extractResults(
             }
         }
 
-        /** Smoothing **/
+        /** Border smoothing **/
         size_t usedNewPointsSize = usedNewLayerPoints.size();
         std::vector<cg3::Point2d> smothNewLayerPoints(usedNewPointsSize);
         std::vector<cg3::Point2d> auxSmothNewLayerPoints(usedNewPointsSize);
         std::vector<cg3::Point3d> smothNewLayerPoints3D(usedNewPointsSize);
         std::map<cg3::Point2d, unsigned int> smothLayerPoints2DMap;
-        unsigned int nSmothingIteration = 4;
-        double currentVertexWeight = 0.7;
-        double nearVertexWeight = (1 - currentVertexWeight) / 2;
+        unsigned int nSmothingIteration = 15;
+        double currentVertexWeight = 0.8;
+        double nearVertexWeight = (1 - currentVertexWeight);
 
         for(unsigned int j = 0; j < nSmothingIteration; j++){
 
+            //Clear smothLayerPoints2DMap beafore each iteration
             smothLayerPoints2DMap.clear();
 
+            //Get che vertex from the result
             for(unsigned int i = 0; i < usedNewPointsSize; i++){
                 smothNewLayerPoints3D[i] = result.vertex(newLayerPoints2DMap.at(usedNewLayerPoints[i]));
             }
 
+            //Create the auxSmothNewLayerPoints for the current iteration
             for(unsigned int i = 0; i < usedNewPointsSize; i++){
                 if(j == 0){
                     auxSmothNewLayerPoints[i] = usedNewLayerPoints[i];
@@ -511,10 +493,10 @@ void extractResults(
                 currentPoint.rotate(projectionMatrix);
                 nextPoint.rotate(projectionMatrix);
 
-                cg3::Point3d avgPoint = (prevPoint * nearVertexWeight) + (currentPoint * currentVertexWeight) + (nextPoint * nearVertexWeight);
-                smothNewLayerPoints[i] = (auxSmothNewLayerPoints[(i - 1) % usedNewPointsSize] * nearVertexWeight) +
-                                         (auxSmothNewLayerPoints[i% usedNewPointsSize] * currentVertexWeight) +
-                                         (auxSmothNewLayerPoints[(i + 1) % usedNewPointsSize] * nearVertexWeight);
+                //compute the weighted avarage in the 3D and 2D space
+                cg3::Point3d avgPoint = ((prevPoint + nextPoint) / 2 * nearVertexWeight) + (currentPoint * currentVertexWeight);
+                smothNewLayerPoints[i] = ((auxSmothNewLayerPoints[(i - 1) % usedNewPointsSize] + auxSmothNewLayerPoints[(i + 1) % usedNewPointsSize]) / 2 * nearVertexWeight) +
+                                         (auxSmothNewLayerPoints[i% usedNewPointsSize] * currentVertexWeight);
 
 
                 minCoord.setX(std::min(minCoord.x(), avgPoint.x()));
@@ -524,6 +506,7 @@ void extractResults(
                 maxCoord.setY(std::max(maxCoord.y(), avgPoint.y()));
                 maxCoord.setZ(std::max(maxCoord.z(), avgPoint.z()));
 
+                //Update che new coordinates
                 avgPoint.rotate(inverseProjectionMatrix);
                 smothLayerPoints2DMap.insert(std::make_pair(smothNewLayerPoints[i% usedNewPointsSize], newLayerPoints2DMap[usedNewLayerPoints[i% usedNewPointsSize]]));
                 result.setVertex(newLayerPoints2DMap[usedNewLayerPoints[i% usedNewPointsSize]], avgPoint);
