@@ -157,10 +157,15 @@ void FAFManager::updateUI() {
     ui->extractResultsFirstLayerAngleSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsFirstLayerOffsetLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsFirstLayerOffsetSpinBox->setEnabled(!data.areResultsExtracted);
+    ui->extractResultsFirstLayerSmoothingIterationsLabel->setEnabled(!data.areResultsExtracted);
+    ui->extractResultsFirstLayerSmoothingIterationsSpinBox->setEnabled(!data.areResultsExtracted);
+    ui->extractResultsFirstLayerSmoothingWeightLabel->setEnabled(!data.areResultsExtracted);
+    ui->extractResultsFirstLayerSmoothingWeightSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsSecondLayerStepWidthLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsSecondLayerStepWidthSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsSecondLayerStepHeightLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsSecondLayerStepHeightSpinBox->setEnabled(!data.areResultsExtracted);
+    ui->extractResultsSecondLayerSideSubdivisionCheckBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsXDirectionsOrderLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsXDirectionsOrderFrame->setEnabled(!data.areResultsExtracted);
     ui->extractResultsMinFirstCheckBox->setEnabled(!data.areResultsExtracted);
@@ -547,8 +552,11 @@ void FAFManager::extractResults() {
         double stockDiameter = ui->stockDiameterSpinBox->value();
         double firstLayerAngle = ui->extractResultsFirstLayerAngleSpinBox->value() / 180.0 * M_PI;
         double firstLayerOffset = ui->extractResultsFirstLayerOffsetSpinBox->value();
+        unsigned int smoothingIterations = static_cast<unsigned int>(ui->extractResultsFirstLayerSmoothingIterationsSpinBox->value());
+        double smoothingWeight = ui->extractResultsFirstLayerSmoothingWeightSpinBox->value();
         double secondLayerStepWidth = ui->extractResultsSecondLayerStepWidthSpinBox->value();
         double secondLayerStepHeight = ui->extractResultsSecondLayerStepHeightSpinBox->value();
+        bool secondLayerSideSubdivision = ui->extractResultsSecondLayerSideSubdivisionCheckBox->isChecked();
         bool rotateResults = ui->extractResultsRotateCheckBox->isChecked();
         bool xDirectionsAfter = ui->extractResultsXDirectionsAfterRadio->isChecked();
         bool minFirst = ui->extractResultsMinFirstCheckBox->isChecked();
@@ -557,7 +565,7 @@ void FAFManager::extractResults() {
 
 
         //Extract results
-        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, firstLayerAngle, firstLayerOffset, secondLayerStepWidth, secondLayerStepHeight, heightfieldAngle, xDirectionsAfter, minFirst, rotateResults);
+        FourAxisFabrication::extractResults(data, stockLength, stockDiameter, firstLayerAngle, firstLayerOffset, smoothingIterations, smoothingWeight, secondLayerStepWidth, secondLayerStepHeight, secondLayerSideSubdivision, heightfieldAngle, xDirectionsAfter, minFirst, rotateResults);
 
         t.stopAndPrint();
 

@@ -13,15 +13,17 @@
 
 namespace FourAxisFabrication {
 
-
 void extractResults(
         Data& data,
         const double stockLength,
         const double stockDiameter,
         const double firstLayerAngle,
         const double firstLayerOffset,
+        const unsigned int firstLayerSmoothingIterations,
+        const double firstLayerSmoothingWeight,
         const double secondLayerStepWidth,
         const double secondLayerStepHeight,
+        const bool secondLayerSideSubdivision,
         const double heightfieldAngle,
         const bool xDirectionsAfter,
         const bool minFirst,

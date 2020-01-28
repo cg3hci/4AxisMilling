@@ -35,7 +35,7 @@ FINAL_RELEASE {
     }
 }
 
-exists($$(GUROBI_HOME)){
+!isEmpty(GUROBI_HOME):exists($$(GUROBI_HOME)){
     message (Gurobi)
     INCLUDEPATH += -I $$(GUROBI_HOME)/include
     LIBS += -L$$(GUROBI_HOME)/lib -lgurobi_g++4.2 -lgurobi81
@@ -62,7 +62,6 @@ CLIPPER {
 }
 
 HEADERS += \
-    methods/faf/faf_triangulation.h \
     methods/fouraxisfabrication.h \
     methods/faf/faf_data.h \
     methods/faf/faf_optimalrotation.h \
@@ -85,7 +84,6 @@ SOURCES += \
     methods/faf/faf_data.cpp \
     methods/faf/faf_optimalrotation.cpp \
     methods/faf/faf_extremes.cpp \
-    methods/faf/faf_triangulation.cpp \
     methods/faf/faf_visibilitycheck.cpp \
     methods/faf/faf_frequencies.cpp \
     methods/faf/faf_extraction.cpp \

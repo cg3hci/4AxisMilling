@@ -5,7 +5,6 @@
 #include "faf_extraction.h"
 #include "faf_charts.h"
 #include "faf_various.h"
-#include "faf_triangulation.h"
 
 #include <cg3/utilities/utils.h>
 
@@ -24,8 +23,6 @@
 
 #include <lib/clipper/clipper.hpp>
 
-#define CODICE_TOLETTO 1
-
 namespace FourAxisFabrication {
 
 /* Useful function declaration */
@@ -43,6 +40,11 @@ void getFabricationOrder(
         size_t& currentPosition,
         double& totalCost,
         std::vector<size_t>& resultPosition);
+
+std::vector<cg3::Point2d> createSquare(
+        unsigned int nVertex,
+        const cg3::Point3d& minCoord,
+        const cg3::Point3d& maxCoord);
 
 } //namespace internal
 
@@ -67,8 +69,11 @@ void extractResults(
         const double stockDiameter,
         const double firstLayerAngle,
         const double firstLayerOffset,
+        const unsigned int firstLayerSmoothingIterations,
+        const double firstLayerSmoothingWeight,
         const double secondLayerStepWidth,
         const double secondLayerStepHeight,
+        const bool secondLayerSideSubdivision,
         const double heightfieldAngle,
         const bool xDirectionsAfter,
         const bool minFirst,
@@ -76,17 +81,12 @@ void extractResults(
 {
     typedef cg3::libigl::CSGTree CSGTree;
 
-
-    //Cos of the height field angle
-    const double heightFieldLimit = cos(heightfieldAngle);
-
     //Referencing input data
     const std::vector<unsigned int>& minExtremes = data.minExtremes;
     const std::vector<unsigned int>& maxExtremes = data.maxExtremes;
 
     const std::vector<double>& angles = data.angles;
     const std::vector<unsigned int>& targetDirections = data.targetDirections;
-    const std::vector<cg3::Vec3d>& directions = data.directions;
 
     const cg3::EigenMesh& minComponent = data.minComponent;
     const cg3::EigenMesh& maxComponent = data.maxComponent;
@@ -134,12 +134,16 @@ void extractResults(
         colorMap[label] = color;
     }
 
+
+
     /* ----- GET CHARTS DATA ----- */
 
     //Get chart data
     ChartData fourAxisChartData = getChartData(fourAxisComponent, fourAxisAssociation, minExtremes, maxExtremes);
     std::vector<int> chartToResult;
     std::vector<size_t> resultToChart;
+
+
 
     /* ----- ADD SURFACE OF THE CHARTS TO THE RESULTS ----- */
 
@@ -238,15 +242,10 @@ void extractResults(
     const double boxWidth = stockLength*2;
     const double boxHeight = stockDiameter*2;
 
-    //Triangulation data-structures
-    std::vector<std::array<cg3::Point2d, 3>> triangulation;
-    std::vector<std::vector<cg3::Point2d>> holes;
-
     for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
         cg3::EigenMesh& result = tmpResults[rId];
         unsigned int targetLabel = tmpResultsAssociation[rId];
-
 
         //Get projection matrix and its inverse for 2D projection
         Eigen::Matrix3d projectionMatrix;
@@ -265,435 +264,254 @@ void extractResults(
             cg3::rotationMatrix(xAxis, directionAngle, inverseProjectionMatrix);
         }
 
-
-
         //Compute external borders
         std::vector<unsigned int>& borderVertices = chartExternalBorders.at(rId);
         size_t nBorderVertices = borderVertices.size();
 
         //Projected vertices data
-        std::vector<cg3::Point3d> projectedPoints3D(nBorderVertices);
-        std::vector<cg3::Point2d> projectedPoints2D(nBorderVertices);
-        std::map<cg3::Point2d, unsigned int> projectedPoints2DMap;
+        std::vector<cg3::Point3d> borderProjectedPoints3D(nBorderVertices);
+        std::vector<cg3::Point2d> borderProjectedPoints2D(nBorderVertices);
 
-
-
-//        std::unordered_map<size_t, size_t>& resultFaceToMeshFacesMap = resultFacesToMeshFaces.at(rId);
-
-        //Compute minZ and save projected points
-        double minZ = std::numeric_limits<double>::max();
+        //Save projected points
         for (size_t i = 0; i < nBorderVertices; i++) {
-            //Get vertices and rotate them
+            //Get vertex and coordinate
             unsigned int vId = borderVertices[i];
-            cg3::Point3d p = result.vertex(vId);
+            cg3::Point3d p3d = result.vertex(vId);
 
-
-            p.rotate(projectionMatrix);
+            //Project the point (rotate on Z the current direction)
+            p3d.rotate(projectionMatrix);
 
             //Projected points 3D
-            projectedPoints3D[i] = p;
+            borderProjectedPoints3D[i] = p3d;
 
             //Projected points 2D
-            cg3::Point2d p2D(p.x(), p.y());
-            projectedPoints2D[i] = p2D;
-
-            //Fill map
-            projectedPoints2DMap.insert(std::make_pair(p2D, vId));
-
-            minZ = std::min(minZ, p.z());
+            cg3::Point2d p2D(p3d.x(), p3d.y());
+            borderProjectedPoints2D[i] = p2D;
         }
 
-        // VF adjacencies
-        std::vector<std::vector<int>> vfAdj = cg3::libigl::vertexToFaceIncidences(result);
-        std::unordered_set<unsigned int> borderVerticesWithNonVisibleFaces; //Risky vertices
 
+        /* ------- FIRST LAYER: OFFSET POLYGON ------- */
 
-        //Select vertices with non visible faces
+        const double firstLayerHeight = firstLayerOffset / tan(firstLayerAngle);
+
+        //Get the offset polygon
+        std::vector<cg3::Point2d> offsetPolygon2D =
+                internal::offsetPolygon(borderProjectedPoints2D, firstLayerOffset);
+        size_t nOffsetVertices = offsetPolygon2D.size();
+
+        //Border-offset triangulation
+        size_t startBorderId = 0; //Starting vertex border
+        size_t startOffsetId = 0; //Starting offset border
+
+        //Get index of the starting vertices
+        double bestScore = std::numeric_limits<double>::max();
         for (size_t i = 0; i < nBorderVertices; i++) {
-            //Get vertex
-            const cg3::Point2d& p2D = projectedPoints2D[i];
-            unsigned int vId = projectedPoints2DMap.at(p2D);
-
-            bool hasNonVisibleIncidentFaces = false;
-            for (int fId : vfAdj.at(vId)) {
-                if (directions.at(targetLabel).dot(result.faceNormal(fId)) < heightFieldLimit) {
-                    hasNonVisibleIncidentFaces = true;
+            for (size_t j = 0; j < nOffsetVertices; j++) {
+                double distance = (borderProjectedPoints2D[i] - offsetPolygon2D[j]).length();
+                double score = std::fabs(distance - firstLayerOffset);
+                if (score < bestScore) {
+                    bestScore = score;
+                    startBorderId = i;
+                    startOffsetId = j;
                 }
             }
-            if (hasNonVisibleIncidentFaces) {
-                borderVerticesWithNonVisibleFaces.insert(vId);
-            }
         }
 
+        //Create offset vertices in the mesh
+        std::vector<unsigned int> offsetVertices(nOffsetVertices);
+        for (size_t i = 0; i < nOffsetVertices; i++) {
+            cg3::Point3d p(offsetPolygon2D[i].x(), offsetPolygon2D[i].y(), boxHeight);
 
+            //Project the point (rotate on Z the current direction)
+            p.rotate(inverseProjectionMatrix);
 
-        /* ------- FIRST LAYER OFFSET POLYGONS ------- */
-
-
-        cg3::Point3d minCoord(0,0,0);
-        cg3::Point3d maxCoord(0,0,0);
-
-        std::vector<cg3::Point2d> currentFirstLayerPoints2D = projectedPoints2D;
-        std::map<cg3::Point2d, unsigned int> currentFirstLayerPoints2DMap = projectedPoints2DMap;
-
-
-        //Get min length of the edges
-        size_t nFirstLayerVertices = currentFirstLayerPoints2D.size();
-        double minLength = std::numeric_limits<double>::max();
-        for (size_t i = 0; i < nFirstLayerVertices; i++) {
-            cg3::Vec2d edgeVec = currentFirstLayerPoints2D[(i+1) % nFirstLayerVertices] - currentFirstLayerPoints2D[i];
-            minLength = std::min(edgeVec.length(), minLength);
+            unsigned int id = result.addVertex(p);
+            offsetVertices[i] = id;
         }
 
-        size_t discardedFaces = 0;
-
-        //Get step
-
-#if CODICE_TOLETTO
-
-        /***** Codice Di Toletto *****/
-        double currentStepOffset = firstLayerOffset;
-
-        //Forse non mi serve calcolarlo
-        const double currentStepHeight = currentStepOffset / tan(firstLayerAngle);
-
-        //Get new layer projected points
-        std::vector<cg3::Point2d> newLayerPoints2D =
-                internal::offsetPolygon(projectedPoints2D, currentStepOffset);
-        //size_t nNewLayerVertices = newLayerPoints2D.size();
-
-        std::set<cg3::Point2d> newLayerPoints2DSet;
-        std::map<cg3::Point2d, unsigned int> newLayerPoints2DMap;
-        std::vector<cg3::Point2d> newLayerPoints2Dvector;
-
-
-        triangulation = FourAxisFabrication::internal::triangulation(
-                        currentFirstLayerPoints2D,
-                        newLayerPoints2D,
-                        newLayerPoints2DSet,
-                        newLayerPoints2Dvector);
-
-        size_t nNewLayerVertices = newLayerPoints2D.size();
-
-        //Calculate first hieght of first new point
-        std::array<cg3::Point2d, 3>& triangleAux = triangulation[0];
-        const cg3::Point2d& p2D = triangleAux[1];
-        cg3::Point3d p3D = result.vertex(currentFirstLayerPoints2DMap.at(triangleAux[0]));
-        p3D.rotate(projectionMatrix);
-        cg3::Point3d newPoint(p2D.x(), p2D.y(), p3D.z() + currentStepHeight);
-
-        //Inverse projection
-        newPoint.rotate(inverseProjectionMatrix);
-
-        //Create new result point
-        const unsigned int newPointId = result.addVertex(newPoint);
-        newLayerPoints2DMap.insert(std::make_pair(p2D, newPointId));
-
-        //Add triangulation to result
-        for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
-            bool isThereNonVisibleFaces = false; //Flag to check if the vertex is incident in non visible face
-
-            double minTriangleHeight = std::numeric_limits<double>::max(); //Height for the current triangle
-
-            unsigned int v[3];
-
-            //Check if a vertex belongs of a non visible face
-            if (borderVerticesWithNonVisibleFaces.find(v[0]) != borderVerticesWithNonVisibleFaces.end() ||
-                borderVerticesWithNonVisibleFaces.find(v[1]) != borderVerticesWithNonVisibleFaces.end() ||
-                borderVerticesWithNonVisibleFaces.find(v[2]) != borderVerticesWithNonVisibleFaces.end()) {
-                isThereNonVisibleFaces = true;
-                discardedFaces++;
+        //Border-offset actual triangulation
+        size_t currentBorderId = startBorderId;
+        size_t currentOffsetId = startOffsetId;
+        bool firstIterationBorder = true;
+        bool firstIterationOffset = true;
+        do {
+            //Get border vertex move score
+            size_t nextBorderId = (currentBorderId + 1) % nBorderVertices;
+            double scoreBorder = std::numeric_limits<double>::max();
+            if (firstIterationBorder || currentBorderId != startBorderId) {
+                double distanceBorder = (borderProjectedPoints2D[nextBorderId] - offsetPolygon2D[currentOffsetId]).length();
+                scoreBorder = std::fabs(distanceBorder - firstLayerOffset);
             }
 
-            //Set first 2 note vertex, check if the third belongs to the chart or is a new vertex
-            v[0] = currentFirstLayerPoints2DMap.at(triangle[0]);
-            v[1] = newLayerPoints2DMap.at(triangle[1]);
-            if(currentFirstLayerPoints2DMap.find(triangle[2]) != currentFirstLayerPoints2DMap.end()){
-                v[2] = currentFirstLayerPoints2DMap.at(triangle[2]);
-            } else {
-                //Project on 3D
-                if (newLayerPoints2DMap.find(triangle[2]) != newLayerPoints2DMap.end()) {
-                    v[2] = newLayerPoints2DMap.at(triangle[2]);
-                } else {
-
-                    double height;
-
-                    //Set hight ofnew vertex to min or avg nears chart points
-                    cg3::Point3d p3D2 = result.vertex(v[0]);
-                    p3D2.rotate(projectionMatrix);
-                    /* Verificare questo controllo, non garantisce che l'altezza rientri entro il limite fornito da currentStepHeight */
-                    minTriangleHeight = std::min(p3D2.z() + currentStepHeight, minTriangleHeight);
-                    height = minTriangleHeight;
-
-                    //Create new point
-                    const cg3::Point2d& p2D = triangle[2];
-
-                    cg3::Point3d newPoint2(p2D.x(), p2D.y(), height);
-
-                    //Inverse projection
-                    newPoint2.rotate(inverseProjectionMatrix);
-
-                    //Create new result point
-                    const unsigned int newPointId2 = result.addVertex(newPoint2);
-                    newLayerPoints2DMap.insert(std::make_pair(p2D, newPointId2));
-
-                    v[2] = newPointId2;
-                }
+            //Get offset vertex move score
+            size_t nextOffsetId = (currentOffsetId + 1) % nOffsetVertices;
+            double scoreOffset = std::numeric_limits<double>::max();
+            if (firstIterationOffset || currentOffsetId != startOffsetId) {
+                double distanceOffset = (borderProjectedPoints2D[currentBorderId] - offsetPolygon2D[nextOffsetId]).length();
+                scoreOffset = std::fabs(distanceOffset - firstLayerOffset);
             }
 
-            //add points to result
-            result.addFace(v[0], v[1], v[2]);
-        }
+            //Get projected point (current border)
+            cg3::Point3d currentBorderProjectedPoint = borderProjectedPoints3D[currentBorderId];
 
-        //Get used first layer points
-        std::vector<cg3::Point2d> usedNewLayerPoints;
-        for (size_t i = 0; i < nNewLayerVertices; i++) {
-            const cg3::Point2d& p2D = newLayerPoints2D[i];
-            if (newLayerPoints2DMap.find(p2D) != newLayerPoints2DMap.end()) {
-                usedNewLayerPoints.push_back(p2D);
+            //Triangulate with a border vertex
+            if (scoreBorder < scoreOffset) {
+                //Add triangle
+                result.addFace(borderVertices[currentBorderId], offsetVertices[currentOffsetId], borderVertices[nextBorderId]);
+
+                //Calculate height for the current offset vertex and set the new z
+                cg3::Point3d nextBorderProjectedPoint = borderProjectedPoints3D[nextBorderId];
+                cg3::Point3d currentOffsetProjectedPoint = result.vertex(offsetVertices[currentOffsetId]);
+                currentOffsetProjectedPoint.rotate(projectionMatrix);
+
+                currentOffsetProjectedPoint.setZ(
+                    std::min(
+                        currentOffsetProjectedPoint.z(),
+                        std::min(
+                            currentBorderProjectedPoint.z() + firstLayerHeight,
+                            nextBorderProjectedPoint.z() + firstLayerHeight
+                        )
+                    )
+                );
+
+                currentOffsetProjectedPoint.rotate(inverseProjectionMatrix);
+                result.setVertex(offsetVertices[currentOffsetId], currentOffsetProjectedPoint);
+
+                //Next iteration
+                currentBorderId = nextBorderId;
+                firstIterationBorder = false;
+            }
+            else { //Triangulate with a offset vertex
+                //Add triangle
+                result.addFace(borderVertices[currentBorderId], offsetVertices[currentOffsetId], offsetVertices[nextOffsetId]);
+
+                //Calculate height for the current offset vertex and set the new z
+                cg3::Point3d currentOffsetProjectedPoint = result.vertex(offsetVertices[currentOffsetId]);
+                currentOffsetProjectedPoint.rotate(projectionMatrix);
+
+                currentOffsetProjectedPoint.setZ(
+                    std::min(
+                        currentOffsetProjectedPoint.z(),
+                        currentBorderProjectedPoint.z() + firstLayerHeight
+                    )
+                );
+
+                currentOffsetProjectedPoint.rotate(inverseProjectionMatrix);
+                result.setVertex(offsetVertices[currentOffsetId], currentOffsetProjectedPoint);
+
+                //Calculate height for the next offset vertex and set the new z
+                cg3::Point3d nextOffsetProjectedPoint = result.vertex(offsetVertices[nextOffsetId]);
+                nextOffsetProjectedPoint.rotate(projectionMatrix);
+
+                double nextOffsetMinZ = std::min(
+                    nextOffsetProjectedPoint.z(),
+                    currentBorderProjectedPoint.z() + firstLayerHeight);
+
+                nextOffsetProjectedPoint.setZ(nextOffsetMinZ);
+
+                nextOffsetProjectedPoint.rotate(inverseProjectionMatrix);
+                result.setVertex(offsetVertices[nextOffsetId], nextOffsetProjectedPoint);
+
+                //Next iteration
+                currentOffsetId = nextOffsetId;
+                firstIterationOffset = false;
             }
         }
+        while (currentBorderId != startBorderId || currentOffsetId != startOffsetId);
 
-        /** Border smoothing **/
-        size_t usedNewPointsSize = usedNewLayerPoints.size();
-        std::vector<cg3::Point2d> smothNewLayerPoints(usedNewPointsSize);
-        std::vector<cg3::Point2d> auxSmothNewLayerPoints(usedNewPointsSize);
-        std::vector<cg3::Point3d> smothNewLayerPoints3D(usedNewPointsSize);
-        std::map<cg3::Point2d, unsigned int> smothLayerPoints2DMap;
-        unsigned int nSmothingIteration = 15;
-        double currentVertexWeight = 0.8;
-        double nearVertexWeight = (1 - currentVertexWeight);
 
-        for(unsigned int j = 0; j < nSmothingIteration; j++){
+        /* ------- FIRST LAYER SMOOTHING ------- */
 
-            //Clear smothLayerPoints2DMap beafore each iteration
-            smothLayerPoints2DMap.clear();
-
-            //Get che vertex from the result
-            for(unsigned int i = 0; i < usedNewPointsSize; i++){
-                smothNewLayerPoints3D[i] = result.vertex(newLayerPoints2DMap.at(usedNewLayerPoints[i]));
+        if (firstLayerSmoothingIterations > 0) {
+            //Get the projected point
+            std::vector<cg3::Point3d> projectedOffsetVertices(nOffsetVertices);
+            for (size_t i = 0; i < nOffsetVertices; i++) {
+                cg3::Point3d point = result.vertex(offsetVertices[i]);
+                point.rotate(projectionMatrix);
+                projectedOffsetVertices[i] = point;
             }
 
-            //Create the auxSmothNewLayerPoints for the current iteration
-            for(unsigned int i = 0; i < usedNewPointsSize; i++){
-                if(j == 0){
-                    auxSmothNewLayerPoints[i] = usedNewLayerPoints[i];
-                } else {
-                    auxSmothNewLayerPoints[i] = smothNewLayerPoints[i];
+            //Get parameters
+            const double smoothingWeight = firstLayerSmoothingWeight;
+            const double neighborWeight = (1 - firstLayerSmoothingWeight) * 0.5;
+
+            //Execute smoothing
+            for (unsigned int it = 0; it < firstLayerSmoothingIterations; it++) {
+                const std::vector<cg3::Point3d> auxOffsetVertices = projectedOffsetVertices;
+
+                for (size_t i = 1; i <= nOffsetVertices; i++) {
+                    size_t prevId = i - 1;
+                    size_t currentId = i % nOffsetVertices;
+                    size_t nextId = (i + 1) % nOffsetVertices;
+
+                    const cg3::Point3d& prevPoint = auxOffsetVertices[prevId];
+                    const cg3::Point3d& currentPoint = auxOffsetVertices[currentId];
+                    const cg3::Point3d& nextPoint = auxOffsetVertices[nextId];
+
+                    projectedOffsetVertices[currentId] = (currentPoint * smoothingWeight) + ((prevPoint + nextPoint) * neighborWeight);
                 }
             }
 
-            for(unsigned int i = 1; i <= usedNewPointsSize; i++){
-
-                cg3::Point3d prevPoint = smothNewLayerPoints3D[(i - 1) % usedNewPointsSize];
-                cg3::Point3d currentPoint = smothNewLayerPoints3D[i% usedNewPointsSize];
-                cg3::Point3d nextPoint = smothNewLayerPoints3D[(i + 1) % usedNewPointsSize];
-
-                prevPoint.rotate(projectionMatrix);
-                currentPoint.rotate(projectionMatrix);
-                nextPoint.rotate(projectionMatrix);
-
-                //compute the weighted avarage in the 3D and 2D space
-                cg3::Point3d avgPoint = ((prevPoint + nextPoint) / 2 * nearVertexWeight) + (currentPoint * currentVertexWeight);
-                smothNewLayerPoints[i] = ((auxSmothNewLayerPoints[(i - 1) % usedNewPointsSize] + auxSmothNewLayerPoints[(i + 1) % usedNewPointsSize]) / 2 * nearVertexWeight) +
-                                         (auxSmothNewLayerPoints[i% usedNewPointsSize] * currentVertexWeight);
-
-
-                minCoord.setX(std::min(minCoord.x(), avgPoint.x()));
-                minCoord.setY(std::min(minCoord.y(), avgPoint.y()));
-                minCoord.setZ(std::min(minCoord.z(), avgPoint.z()));
-                maxCoord.setX(std::max(maxCoord.x(), avgPoint.x()));
-                maxCoord.setY(std::max(maxCoord.y(), avgPoint.y()));
-                maxCoord.setZ(std::max(maxCoord.z(), avgPoint.z()));
-
-                //Update che new coordinates
-                avgPoint.rotate(inverseProjectionMatrix);
-                smothLayerPoints2DMap.insert(std::make_pair(smothNewLayerPoints[i% usedNewPointsSize], newLayerPoints2DMap[usedNewLayerPoints[i% usedNewPointsSize]]));
-                result.setVertex(newLayerPoints2DMap[usedNewLayerPoints[i% usedNewPointsSize]], avgPoint);
+            //Unproject the points
+            for (size_t i = 0; i < nOffsetVertices; i++) {
+                cg3::Point3d point = projectedOffsetVertices[i];
+                point.rotate(inverseProjectionMatrix);
+                result.setVertex(offsetVertices[i], point);
             }
         }
-
-        //Setting data for next iteration
-        bool smotHeight = true;
-        if(smotHeight){
-            currentFirstLayerPoints2D = smothNewLayerPoints;
-            currentFirstLayerPoints2DMap = smothLayerPoints2DMap;
-        } else {
-            currentFirstLayerPoints2D = usedNewLayerPoints;
-            currentFirstLayerPoints2DMap = newLayerPoints2DMap;
-        }
-
-
-
-
-        /***** Fine codice di Toletto *****/
-
-#else
-        //Get step
-        double currentStepOffset = minLength;
-        double totalOffset = 0;
-        while (totalOffset < firstLayerOffset) {
-            //Calculate offset and height
-            totalOffset += currentStepOffset;
-
-            if (totalOffset > firstLayerOffset) {
-                currentStepOffset -= totalOffset - firstLayerOffset;
-                totalOffset = firstLayerOffset;
-            }
-            const double currentStepHeight = currentStepOffset / tan(firstLayerAngle);
-
-            //Get new layer projected points
-            std::vector<cg3::Point2d> newLayerPoints2D =
-                    internal::offsetPolygon(currentFirstLayerPoints2D, currentStepOffset);
-            size_t nNewLayerVertices = newLayerPoints2D.size();
-
-            //New layer vertices data
-            std::set<cg3::Point2d> newLayerPoints2DSet;
-            std::map<cg3::Point2d, unsigned int> newLayerPoints2DMap;
-
-            //Add to the set
-            for (size_t i = 0; i < nNewLayerVertices; i++) {
-                newLayerPoints2DSet.insert(newLayerPoints2D[i]);
-            }
-
-
-            //Delaunay triangulation of the offset with the surface
-            holes.resize(1);
-            holes[0] = currentFirstLayerPoints2D;
-            triangulation = cg3::cgal::triangulate2(newLayerPoints2D, holes);
-
-            //Add triangulation to result
-            for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
-                bool isThereNewVertex = false; //Flag to check if a new point has been created
-                bool isThereHoleVertex = false; //Flag to check if at least a surface vertex has been found
-                bool isThereNonVisibleFaces = false; //Flag to check if the vertex is incident in non visible face
-
-                double minTriangleHeight = std::numeric_limits<double>::max(); //Height for the current triangle
-
-                unsigned int v[3];
-
-                //Set existing hole points, calculate min height in the hole and check if there is new vertex
-                for (unsigned int i = 0; i < 3 && !isThereNewVertex && !isThereNonVisibleFaces; i++) {
-                    //Hole vertices
-                    if (currentFirstLayerPoints2DMap.find(triangle[i]) != currentFirstLayerPoints2DMap.end()) {
-                        v[i] = currentFirstLayerPoints2DMap.at(triangle[i]);
-
-                        //If the vertex has a incident non visible face
-                        if (borderVerticesWithNonVisibleFaces.find(v[i]) != borderVerticesWithNonVisibleFaces.end()) {
-                            isThereNonVisibleFaces = true;
-                            discardedFaces++;
-                        }
-
-                        //Project on 3D
-                        cg3::Point3d p3D = result.vertex(v[i]);
-                        p3D.rotate(projectionMatrix);
-
-                        //Get minimum new triangle height
-                        minTriangleHeight = std::min(p3D.z() + currentStepHeight, minTriangleHeight);
-
-                        isThereHoleVertex = true;
-                    }
-                    //If the vertex is not among the existing vertices
-                    else if (newLayerPoints2DSet.find(triangle[i]) == newLayerPoints2DSet.end()) {
-                        isThereNewVertex = true;
-                    }
-                }
-
-                //If there is a hole vertex and no new vertices
-                if (isThereHoleVertex && !isThereNewVertex && !isThereNonVisibleFaces) {
-                    for (unsigned int i = 0; i < 3; i++) {
-                        //First layer vertices in the triangle
-                        if (newLayerPoints2DSet.find(triangle[i]) != newLayerPoints2DSet.end()) {
-                            //Already inserted in the mesh
-                            if (newLayerPoints2DMap.find(triangle[i]) != newLayerPoints2DMap.end()) {
-                                v[i] = newLayerPoints2DMap.at(triangle[i]);
-                            }
-                            //Not yet inserted in the mesh
-                            else {
-                                const cg3::Point2d& p2D = triangle[i];
-
-                                cg3::Point3d newPoint(p2D.x(), p2D.y(), minTriangleHeight);
-                                minCoord.setX(std::min(minCoord.x(), newPoint.x()));
-                                minCoord.setY(std::min(minCoord.y(), newPoint.y()));
-                                minCoord.setZ(std::min(minCoord.z(), newPoint.z()));
-                                maxCoord.setX(std::max(maxCoord.x(), newPoint.x()));
-                                maxCoord.setY(std::max(maxCoord.y(), newPoint.y()));
-                                maxCoord.setZ(std::max(maxCoord.z(), newPoint.z()));
-
-                                //Inverse projection
-                                newPoint.rotate(inverseProjectionMatrix);
-
-                                //Create new result point
-                                const unsigned int newPointId = result.addVertex(newPoint);
-                                newLayerPoints2DMap.insert(std::make_pair(p2D, newPointId));
-
-                                v[i] = newPointId;
-                            }
-                        }
-                    }
-
-                    result.addFace(v[0], v[1], v[2]);
-                }
-            }
-
-            //Get used first layer points
-            std::vector<cg3::Point2d> usedNewLayerPoints;
-            for (size_t i = 0; i < nNewLayerVertices; i++) {
-                const cg3::Point2d& p2D = newLayerPoints2D[i];
-                if (newLayerPoints2DMap.find(p2D) != newLayerPoints2DMap.end()) {
-                    usedNewLayerPoints.push_back(p2D);
-                }
-            }
-
-            //Setting data for next iteration
-            currentFirstLayerPoints2D = usedNewLayerPoints;
-            currentFirstLayerPoints2DMap = newLayerPoints2DMap;
-
-
-            currentStepOffset *= 3; //Triple it for next iteration
-        }
-#endif
 
         /* ------- SECOND LAYER POLYGON ------- */
 
+        //New layer vertices and map (used by CGAL)
+        std::vector<cg3::Point2d> currentSecondLayerPoints2D(nOffsetVertices);
+        std::map<cg3::Point2d, unsigned int> currentSecondLayerPoints2DMap;
 
-        double totalHeight = maxCoord.z();
+        //Min coord of the new points inserted
+        cg3::Point3d minCoord(std::numeric_limits<double>::max(),std::numeric_limits<double>::max(),std::numeric_limits<double>::max());
+        //Max coord of the new points inserted
+        cg3::Point3d maxCoord(std::numeric_limits<double>::min(),std::numeric_limits<double>::min(),std::numeric_limits<double>::min());
 
-        std::vector<cg3::Point2d> currentSecondLayerPoints2D = currentFirstLayerPoints2D;
-        std::map<cg3::Point2d, unsigned int> currentSecondLayerPoints2DMap = currentFirstLayerPoints2DMap;
+        //Fill the above data
+        for (size_t i = 0; i < nOffsetVertices; i++) {
+            unsigned int vId = offsetVertices[i];
 
-        //Calculate number of square point based on chart vertex number
-        unsigned int nVertexSquare;
-        bool flagNvertex = true;
-        bool multiSquarePoints = false;
+            cg3::Point3d point = result.vertex(vId);
+            point.rotate(projectionMatrix);
 
-        //Use multi vertex for the square or only 4
-        if(multiSquarePoints){
-            nVertexSquare = 64;
-            while(flagNvertex){
-                nVertexSquare*=2;
-                if(currentSecondLayerPoints2D.size() / nVertexSquare < 1)
-                    flagNvertex = false;
-            }
-        } else {
-            nVertexSquare = 4;
+            currentSecondLayerPoints2D[i] = cg3::Point2d(point.x(), point.y());
+
+            currentSecondLayerPoints2DMap.insert(std::make_pair(currentSecondLayerPoints2D[i], vId));
+
+            minCoord.setX(std::min(minCoord.x(), point.x()));
+            minCoord.setY(std::min(minCoord.y(), point.y()));
+            minCoord.setZ(std::min(minCoord.z(), point.z()));
+            maxCoord.setX(std::max(maxCoord.x(), point.x()));
+            maxCoord.setY(std::max(maxCoord.y(), point.y()));
+            maxCoord.setZ(std::max(maxCoord.z(), point.z()));
         }
 
+        //Execute the second layer, until the target height has been reached
+        double totalHeight = maxCoord.z();
         while (totalHeight < boxHeight) {
             minCoord.x() -= secondLayerStepWidth;
             minCoord.y() -= secondLayerStepWidth;
 
             maxCoord.x() += secondLayerStepWidth;
-            maxCoord.y() += secondLayerStepWidth;
+            maxCoord.y() += secondLayerStepWidth;            
+
+            //Calculate vertices per side (if enabled)
+            unsigned int nSideSubdivision = 1;
+            while (secondLayerSideSubdivision && nSideSubdivision * 4 < currentSecondLayerPoints2D.size()) {
+                nSideSubdivision *= 2;
+            }
 
             //Create new 2D square (down)
             std::map<cg3::Point2d, unsigned int> downPoints2DMap;
+            std::vector<cg3::Point2d> squarePoints2D = FourAxisFabrication::internal::createSquare(nSideSubdivision, minCoord, maxCoord);
 
+            size_t newVerticesNumber = squarePoints2D.size();
 
-            std::vector<cg3::Point2d> squarePoints2D(nVertexSquare);
-            FourAxisFabrication::internal::createSquare(squarePoints2D, minCoord, maxCoord);
-
-            std::vector<unsigned int> downVertices(nVertexSquare);
+            std::vector<unsigned int> downVertices(newVerticesNumber);
 
             for (size_t i = 0; i < squarePoints2D.size(); i++) {
                 const cg3::Point2d& p2D = squarePoints2D[i];
@@ -701,31 +519,19 @@ void extractResults(
                 cg3::Point3d newPoint(p2D.x(), p2D.y(), totalHeight);
                 newPoint.rotate(inverseProjectionMatrix);
 
-                unsigned int vid = result.addVertex(newPoint);
-                downVertices[i] = vid;
+                unsigned int vId = result.addVertex(newPoint);
 
-                downPoints2DMap[p2D] = vid;
+                downVertices[i] = vId;
+                downPoints2DMap[p2D] = vId;
             }
 
-            bool delaunayTriangulation = true;
+            //Delaunay triangulation between second layer polygon and new square
+            std::vector<std::array<cg3::Point2d, 3>> triangulation;
+            std::vector<std::vector<cg3::Point2d>> holes;
 
-            if(delaunayTriangulation){
-                //Delaunay triangulation between second layer polygon and new square
-                holes.resize(1);
-                holes[0] = currentSecondLayerPoints2D;
-                triangulation = cg3::cgal::triangulate2(squarePoints2D, holes);
-            } else {
-                //Custom triangulation between second layer polygon and new square
-                std::set<cg3::Point2d> newLayerPoints2DSetSquare;
-                std::vector<cg3::Point2d> newLayerPoints2DSquarevector;
-                triangulation = FourAxisFabrication::internal::triangulation(
-                                currentSecondLayerPoints2D,
-                                squarePoints2D,
-                                newLayerPoints2DSetSquare,
-                                newLayerPoints2DSquarevector);
-            }
-
-
+            holes.resize(1);
+            holes[0] = currentSecondLayerPoints2D;
+            triangulation = cg3::cgal::triangulate2(squarePoints2D, holes);
 
             //Add triangulation to result
             for (std::array<cg3::Point2d, 3>& triangle : triangulation) {
@@ -758,7 +564,7 @@ void extractResults(
             std::map<cg3::Point2d, unsigned int> upPoints2DMap;
 
             //Adding up square vertices
-            std::vector<unsigned int> upVertices(nVertexSquare);
+            std::vector<unsigned int> upVertices(newVerticesNumber);
 
             for (size_t i = 0; i < squarePoints2D.size(); i++) {
                 const cg3::Point2d& p2D = squarePoints2D[i];
@@ -772,17 +578,15 @@ void extractResults(
                 upPoints2DMap[p2D] = vid;
             }
 
-            for(unsigned int i = 0; i < nVertexSquare; i++){
-                result.addFace(upVertices[i], downVertices[(i+1)%nVertexSquare], downVertices[i]);
-                result.addFace(upVertices[i], upVertices[(i+1)%nVertexSquare], downVertices[(i+1)%nVertexSquare]);
+            for(unsigned int i = 0; i < newVerticesNumber; i++){
+                result.addFace(upVertices[i], downVertices[(i+1)%newVerticesNumber], downVertices[i]);
+                result.addFace(upVertices[i], upVertices[(i+1)%newVerticesNumber], downVertices[(i+1)%newVerticesNumber]);
             }
 
             currentSecondLayerPoints2D = squarePoints2D;
             currentSecondLayerPoints2DMap = upPoints2DMap;
         }
 
-
-        /* FINE CODICE DA MODIFICARE */
 
         /* ----- BOX ----- */
 
@@ -810,6 +614,9 @@ void extractResults(
         }
 
         //Delaunay triangulation between second layer polygon and square polygon
+        std::vector<std::array<cg3::Point2d, 3>> triangulation;
+        std::vector<std::vector<cg3::Point2d>> holes;
+
         holes.resize(1);
         holes[0] = currentSecondLayerPoints2D;
         triangulation = cg3::cgal::triangulate2(boxUpperPoints2D, holes);
@@ -881,24 +688,21 @@ void extractResults(
 
         result.addFace(boxVertices[7], boxVertices[3], boxVertices[2]);
         result.addFace(boxVertices[7], boxVertices[2], boxVertices[6]);
-
-        std::cout << "Result " << rId << ": " << discardedFaces << " discarded faces." << std::endl;
     }
 
-    /* ----- HOLE FILLING ----- */
+//    /* ----- HOLE FILLING ----- */
 
+//    std::cout << std::endl <<  "----- HOLE FILLING ----- " << std::endl << std::endl;
 
-    std::cout << std::endl <<  "----- HOLE FILLING ----- " << std::endl << std::endl;
+//    for (size_t rId = 0; rId < nResults; rId++) {
+//        //Copying the surface and getting its label
+//        cg3::EigenMesh& result = tmpResults[rId];
 
-    for (size_t rId = 0; rId < nResults; rId++) {
-        //Copying the surface and getting its label
-        cg3::EigenMesh& result = tmpResults[rId];
+//        std::cout << "Result " << rId << ":" << std::endl;
 
-        std::cout << "Result " << rId << ":" << std::endl;
-
-        //Hole filling
-        result = cg3::EigenMesh(cg3::cgal::holeFillingTriangulation(result));
-    }
+//        //Hole filling
+//        result = cg3::EigenMesh(cg3::cgal::holeFillingTriangulation(result));
+//    }
 
 
     std::cout << std::endl <<  "----- CLEANING ----- " << std::endl << std::endl;
@@ -1241,6 +1045,7 @@ std::vector<cg3::Point2d> offsetPolygon(std::vector<cg3::Point2d>& polygon, cons
     for (IntPoint& ip : solution[bestIndex]) {
         result.push_back(cg3::Point2d(ip.X / INT_DOUBLE_TRANSLATION, ip.Y / INT_DOUBLE_TRANSLATION));
     }
+
     return result;
 }
 
@@ -1305,9 +1110,42 @@ void getFabricationOrder(
         }
     }
     while (minCost < std::numeric_limits<int>::max());
-
-
 }
+
+
+std::vector<cg3::Point2d> createSquare(
+        unsigned int nSideVertex,
+        const cg3::Point3d& minCoord,
+        const cg3::Point3d& maxCoord)
+{
+    std::vector<cg3::Point2d> squarePoints2D(nSideVertex * 4);
+
+    double xStepLenght = (maxCoord.x() - minCoord.x()) / nSideVertex;
+    double yStepLenght = (maxCoord.y() - minCoord.y()) / nSideVertex;
+
+    unsigned int offset = 0;
+    for(unsigned int i = 0; i < nSideVertex; i++) {
+        squarePoints2D[offset + i] = cg3::Point2d(minCoord.x() + (xStepLenght * (i % nSideVertex)), minCoord.y());
+    }
+
+    offset += nSideVertex;
+    for(unsigned int i = 0; i < nSideVertex; i++) {
+        squarePoints2D[offset + i] = cg3::Point2d(maxCoord.x(), minCoord.y() + (yStepLenght * (i % nSideVertex)));
+    }
+
+    offset += nSideVertex;
+    for(unsigned int i = 0; i < nSideVertex; i++) {
+        squarePoints2D[offset + i] = cg3::Point2d(maxCoord.x() - (xStepLenght * (i % nSideVertex)), maxCoord.y());
+    }
+
+    offset += nSideVertex;
+    for(unsigned int i = 0; i < nSideVertex; i++) {
+        squarePoints2D[offset + i] = cg3::Point2d(minCoord.x(), maxCoord.y() - (yStepLenght * (i % nSideVertex)));
+    }
+
+    return squarePoints2D;
+}
+
 
 } //namespace internal
 
