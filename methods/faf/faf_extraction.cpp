@@ -299,16 +299,114 @@ void extractResults(
                 internal::offsetPolygon(borderProjectedPoints2D, firstLayerOffset);
         size_t nOffsetVertices = offsetPolygon2D.size();
 
+        //Get the avg length
+        double avgLength = 0;
+        for (size_t i = 0; i < nBorderVertices; i++) {
+            avgLength += (borderProjectedPoints2D[(i + 1) % nBorderVertices] - borderProjectedPoints2D[i]).length();
+        }
+        avgLength /= nBorderVertices;
+
+        //Sample offset polygon
+        std::vector<cg3::Point2d> sampledOffsetPolygon2D;
+        sampledOffsetPolygon2D.reserve(nOffsetVertices);
+        for (size_t i = 0; i < nOffsetVertices; i++) {
+            sampledOffsetPolygon2D.push_back(offsetPolygon2D[i]);
+
+            cg3::Vec2d vec = offsetPolygon2D[(i + 1) % nOffsetVertices] - offsetPolygon2D[i];
+            double edgeLength = vec.length();
+
+            unsigned int subdivision = std::ceil(edgeLength / (avgLength * 2));
+            double unitstep = 1.0 / subdivision;
+
+            for (unsigned int j = 1; j < subdivision - 1; j++) {
+                sampledOffsetPolygon2D.push_back(offsetPolygon2D[i] + (unitstep * j) * vec);
+            }
+        }
+        offsetPolygon2D = sampledOffsetPolygon2D;
+        nOffsetVertices = offsetPolygon2D.size();
+
+        //Get offset polygon vertex normals
+        std::vector<cg3::Vec2d> offsetPolygonNormals(nOffsetVertices);
+        for (size_t i = 1; i <= nOffsetVertices; i++) {
+            size_t prevId = i - 1;
+            size_t currentId = i % nOffsetVertices;
+            size_t nextId = (i + 1) % nOffsetVertices;
+
+            cg3::Vec2d vec1 = sampledOffsetPolygon2D[currentId] - sampledOffsetPolygon2D[prevId];
+            cg3::Vec2d vec2 = sampledOffsetPolygon2D[nextId] - sampledOffsetPolygon2D[currentId];
+
+            cg3::Vec2d n1(vec1.y(), -vec1.x());
+            cg3::Vec2d n2(vec2.y(), -vec2.x());
+
+            offsetPolygonNormals[currentId] = n1 + n2;
+            offsetPolygonNormals[currentId].normalize();
+        }
+
+        //Smooth offset polygon vertex normals
+        for (size_t it = 0; it < 3; it++) {
+            std::vector<cg3::Vec2d> auxOffsetPolygonNormals = offsetPolygonNormals;
+            for (size_t i = 1; i <= nOffsetVertices; i++) {
+                size_t prevId = i - 1;
+                size_t currentId = i % nOffsetVertices;
+                size_t nextId = (i + 1) % nOffsetVertices;
+
+                offsetPolygonNormals[currentId] = auxOffsetPolygonNormals[currentId] + auxOffsetPolygonNormals[prevId] + auxOffsetPolygonNormals[nextId];
+                offsetPolygonNormals[currentId].normalize();
+            }
+        }
+
+        //Get bprder polygon vertex normals
+        std::vector<cg3::Vec2d> borderPolygonNormals(nBorderVertices);
+        for (size_t i = 1; i <= nBorderVertices; i++) {
+            size_t prevId = i - 1;
+            size_t currentId = i % nBorderVertices;
+            size_t nextId = (i + 1) % nBorderVertices;
+
+            cg3::Vec2d vec1 = borderProjectedPoints2D[currentId] - borderProjectedPoints2D[prevId];
+            cg3::Vec2d vec2 = borderProjectedPoints2D[nextId] - borderProjectedPoints2D[currentId];
+
+            cg3::Vec2d n1(vec1.y(), -vec1.x());
+            cg3::Vec2d n2(vec2.y(), -vec2.x());
+
+            borderPolygonNormals[currentId] = n1 + n2;
+            borderPolygonNormals[currentId].normalize();
+        }
+
+        //Smooth offset polygon vertex normals
+        for (size_t it = 0; it < 3; it++) {
+            std::vector<cg3::Vec2d> auxBorderPolygonNormals = borderPolygonNormals;
+            for (size_t i = 1; i <= nBorderVertices; i++) {
+                size_t prevId = i - 1;
+                size_t currentId = i % nBorderVertices;
+                size_t nextId = (i + 1) % nBorderVertices;
+
+                borderPolygonNormals[currentId] = auxBorderPolygonNormals[currentId] + auxBorderPolygonNormals[prevId] + auxBorderPolygonNormals[nextId];
+                borderPolygonNormals[currentId].normalize();
+            }
+        }
+
         //Border-offset triangulation
         size_t startBorderId = 0; //Starting vertex border
         size_t startOffsetId = 0; //Starting offset border
+        unsigned int numberConsecutiveBorder = 0;
+        unsigned int numberConsecutiveOffset = 0;
+        double bestScore = std::numeric_limits<double>::max();
 
         //Get index of the starting vertices
-        double bestScore = std::numeric_limits<double>::max();
         for (size_t i = 0; i < nBorderVertices; i++) {
             for (size_t j = 0; j < nOffsetVertices; j++) {
-                double distance = (borderProjectedPoints2D[i] - offsetPolygon2D[j]).length();
-                double score = std::fabs(distance - firstLayerOffset);
+                cg3::Vec2d vec = (offsetPolygon2D[j] - borderProjectedPoints2D[i]);
+                double distance = vec.length();
+
+                double dot = borderPolygonNormals[i].dot(offsetPolygonNormals[j]);
+
+                double multiplier = 1 - dot;
+                if (dot <= 0) {
+                    multiplier = 2;
+                }
+
+                double score = std::fabs(distance - firstLayerOffset)  * (0.8 + multiplier * 0.2);
+
                 if (score < bestScore) {
                     bestScore = score;
                     startBorderId = i;
@@ -338,17 +436,35 @@ void extractResults(
             //Get border vertex move score
             size_t nextBorderId = (currentBorderId + 1) % nBorderVertices;
             double scoreBorder = std::numeric_limits<double>::max();
-            if (firstIterationBorder || currentBorderId != startBorderId) {
-                double distanceBorder = (borderProjectedPoints2D[nextBorderId] - offsetPolygon2D[currentOffsetId]).length();
-                scoreBorder = std::fabs(distanceBorder - firstLayerOffset);
+            if ((firstIterationBorder || currentBorderId != startBorderId) && numberConsecutiveBorder <= 5) {
+                cg3::Vec2d vec = offsetPolygon2D[currentOffsetId] - borderProjectedPoints2D[nextBorderId];
+                double distanceBorder = vec.length();
+
+                double dot = borderPolygonNormals[nextBorderId].dot(offsetPolygonNormals[currentOffsetId]);
+
+                double multiplier = 1 - dot;
+                if (dot <= 0) {
+                    multiplier = 2;
+                }
+
+                scoreBorder = distanceBorder * (0.8 + multiplier * 0.2);
             }
 
             //Get offset vertex move score
             size_t nextOffsetId = (currentOffsetId + 1) % nOffsetVertices;
             double scoreOffset = std::numeric_limits<double>::max();
-            if (firstIterationOffset || currentOffsetId != startOffsetId) {
-                double distanceOffset = (borderProjectedPoints2D[currentBorderId] - offsetPolygon2D[nextOffsetId]).length();
-                scoreOffset = std::fabs(distanceOffset - firstLayerOffset);
+            if ((firstIterationOffset || currentOffsetId != startOffsetId) && numberConsecutiveOffset <= 5) {
+                cg3::Vec2d vec = offsetPolygon2D[nextOffsetId] - borderProjectedPoints2D[currentBorderId];
+                double distanceOffset = vec.length();
+
+                double dot = borderPolygonNormals[currentBorderId].dot(offsetPolygonNormals[nextOffsetId]);
+
+                double multiplier = 1 - dot;
+                if (dot <= 0) {
+                    multiplier = 2;
+                }
+
+                scoreOffset = distanceOffset * (0.8 + multiplier * 0.2);
             }
 
             //Get projected point (current border)
@@ -380,6 +496,8 @@ void extractResults(
                 //Next iteration
                 currentBorderId = nextBorderId;
                 firstIterationBorder = false;
+                numberConsecutiveBorder++;
+                numberConsecutiveOffset = 0;
             }
             else { //Triangulate with a offset vertex
                 //Add triangle
@@ -415,10 +533,11 @@ void extractResults(
                 //Next iteration
                 currentOffsetId = nextOffsetId;
                 firstIterationOffset = false;
+                numberConsecutiveOffset++;
+                numberConsecutiveBorder = 0;
             }
         }
         while (currentBorderId != startBorderId || currentOffsetId != startOffsetId);
-
 
         /* ------- FIRST LAYER SMOOTHING ------- */
 
@@ -460,6 +579,7 @@ void extractResults(
             }
         }
 
+
         /* ------- SECOND LAYER POLYGON ------- */
 
         //New layer vertices and map (used by CGAL)
@@ -482,6 +602,7 @@ void extractResults(
 
             currentSecondLayerPoints2DMap.insert(std::make_pair(currentSecondLayerPoints2D[i], vId));
 
+            //Set min and max coordinates
             minCoord.setX(std::min(minCoord.x(), point.x()));
             minCoord.setY(std::min(minCoord.y(), point.y()));
             minCoord.setZ(std::min(minCoord.z(), point.z()));
@@ -690,19 +811,19 @@ void extractResults(
         result.addFace(boxVertices[7], boxVertices[2], boxVertices[6]);
     }
 
-//    /* ----- HOLE FILLING ----- */
+    /* ----- HOLE FILLING ----- */
 
-//    std::cout << std::endl <<  "----- HOLE FILLING ----- " << std::endl << std::endl;
+    std::cout << std::endl <<  "----- HOLE FILLING ----- " << std::endl << std::endl;
 
-//    for (size_t rId = 0; rId < nResults; rId++) {
-//        //Copying the surface and getting its label
-//        cg3::EigenMesh& result = tmpResults[rId];
+    for (size_t rId = 0; rId < nResults; rId++) {
+        //Copying the surface and getting its label
+        cg3::EigenMesh& result = tmpResults[rId];
 
-//        std::cout << "Result " << rId << ":" << std::endl;
+        std::cout << "Hole filling for result " << rId << ":" << std::endl;
 
-//        //Hole filling
-//        result = cg3::EigenMesh(cg3::cgal::holeFillingTriangulation(result));
-//    }
+        //Hole filling
+        result = cg3::EigenMesh(cg3::cgal::holeFillingTriangulation(result));
+    }
 
 
     std::cout << std::endl <<  "----- CLEANING ----- " << std::endl << std::endl;

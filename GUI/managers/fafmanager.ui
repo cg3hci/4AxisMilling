@@ -250,7 +250,7 @@
          </sizepolicy>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>2</number>
         </property>
         <widget class="QWidget" name="translateTab">
          <attribute name="title">
@@ -1274,7 +1274,7 @@
          <double>1.000000000000000</double>
         </property>
         <property name="value">
-         <double>0.900000000000000</double>
+         <double>0.800000000000000</double>
         </property>
        </widget>
       </item>
