@@ -405,7 +405,7 @@ void extractResults(
                     multiplier = 2;
                 }
 
-                double score = std::fabs(distance - firstLayerOffset)  * (0.8 + multiplier * 0.2);
+                double score = std::fabs(distance - firstLayerOffset)  * (0.9 + multiplier * 0.1);
 
                 if (score < bestScore) {
                     bestScore = score;
@@ -447,7 +447,7 @@ void extractResults(
                     multiplier = 2;
                 }
 
-                scoreBorder = distanceBorder * (0.8 + multiplier * 0.2);
+                scoreBorder = distanceBorder * (0.9 + multiplier * 0.1);
             }
 
             //Get offset vertex move score
@@ -464,7 +464,7 @@ void extractResults(
                     multiplier = 2;
                 }
 
-                scoreOffset = distanceOffset * (0.8 + multiplier * 0.2);
+                scoreOffset = distanceOffset * (0.9 + multiplier * 0.1);
             }
 
             //Get projected point (current border)
