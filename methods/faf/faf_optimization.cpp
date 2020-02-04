@@ -291,6 +291,23 @@ void optimization(
                         ));
                     }
                 }
+
+                for (size_t i = 0; i < chart.holeVertices.size(); i++) {
+                    for (size_t j = 0; j < chart.holeVertices[i].size(); j++) {
+                        std::array<int, 2>& labelArray = chartData.edgeLabelMap.at(
+                                    std::make_pair(
+                                        chart.holeVertices[i][j],
+                                        chart.holeVertices[i][(j+1) % chart.holeVertices[i].size()]
+                                    ));
+
+                        if (labelArray[0] == label && labelArray[1] == adjLabel) {
+                            polylines.push_back(std::make_pair(
+                                mesh.vertex(chart.holeVertices[i][j]),
+                                mesh.vertex(chart.holeVertices[i][(j+1) % chart.holeVertices[i].size()])
+                            ));
+                        }
+                    }
+                }
             }
         }
 

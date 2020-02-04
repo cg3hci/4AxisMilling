@@ -1,4 +1,4 @@
-#include "faf_charts.h"
+﻿#include "faf_charts.h"
 
 #include <cg3/geometry/transformations3.h>
 
@@ -420,7 +420,7 @@ bool getChartBorders(
 
                 pos++;
                 if (pos >= vHeMap.at(vCurrent).size()) {
-                    std::cout << "Error in detecting borders (no path)." << std::endl;
+                    std::cout << "Error in detecting borders (no path)" << (findHoleCharts ? " (hole)" : "") << "." << std::endl;
                     return false;
                 }
             }
