@@ -65,38 +65,40 @@ void optimization(
         for (const Chart& surroundingChart : chartData.charts) {
             const int surroundingChartLabel = surroundingChart.label;
 
-            for (unsigned int holeChartId : surroundingChart.holeCharts) {
-                const Chart& holeChart = chartData.charts.at(holeChartId);
+            for (const std::set<size_t>& holeChartsIds : surroundingChart.holeCharts) {
+                for (unsigned int holeChartId : holeChartsIds) {
+                    const Chart& holeChart = chartData.charts.at(holeChartId);
 
-                if (!chartData.isExtreme.at(holeChart.id)) {
-                    std::set<unsigned int> remainingHoleChartFaces(holeChart.faces.begin(), holeChart.faces.end());
+                    if (!chartData.isExtreme.at(holeChart.id)) {
+                        std::set<unsigned int> remainingHoleChartFaces(holeChart.faces.begin(), holeChart.faces.end());
 
-                    std::vector<unsigned int> facesToBeRelaxed;
-                    do {
-                        facesToBeRelaxed.clear();
+                        std::vector<unsigned int> facesToBeRelaxed;
+                        do {
+                            facesToBeRelaxed.clear();
 
-                        for (const unsigned int fId : remainingHoleChartFaces) {
-                            bool isOnBorder = false;
-                            for (const int adjF : ffAdj[fId]) {
-                                if (association[adjF] == surroundingChartLabel) {
-                                    isOnBorder = true;
+                            for (const unsigned int fId : remainingHoleChartFaces) {
+                                bool isOnBorder = false;
+                                for (const int adjF : ffAdj[fId]) {
+                                    if (association[adjF] == surroundingChartLabel) {
+                                        isOnBorder = true;
+                                    }
                                 }
+
+                                if (isOnBorder && visibility(surroundingChartLabel, fId) > 0)
+                                    facesToBeRelaxed.push_back(fId);
                             }
 
-                            if (isOnBorder && visibility(surroundingChartLabel, fId) > 0)
-                                facesToBeRelaxed.push_back(fId);
-                        }
+                            for (const unsigned int fId : facesToBeRelaxed) {
+                                association[fId] = surroundingChartLabel;
+                                facesAffected++;
 
-                        for (const unsigned int fId : facesToBeRelaxed) {
-                            association[fId] = surroundingChartLabel;
-                            facesAffected++;
-
-                            remainingHoleChartFaces.erase(fId);
+                                remainingHoleChartFaces.erase(fId);
+                            }
                         }
+                        while (!facesToBeRelaxed.empty());
+
+                        chartAffected++;
                     }
-                    while (!facesToBeRelaxed.empty());
-
-                    chartAffected++;
                 }
             }
         }
@@ -237,16 +239,18 @@ void optimization(
         for (const Chart& surroundingChart : chartData.charts) {
             const int surroundingChartLabel = surroundingChart.label;
 
-            for (unsigned int holeChartId : surroundingChart.holeCharts) {
-                const Chart& holeChart = chartData.charts.at(holeChartId);
+            for (const std::set<size_t>& holeChartsIds : surroundingChart.holeCharts) {
+                for (unsigned int holeChartId : holeChartsIds) {
+                    const Chart& holeChart = chartData.charts.at(holeChartId);
 
-                if (!chartData.isExtreme.at(holeChart.id)) {
-                    for (const int fId : holeChart.faces) {
-                        association[fId] = surroundingChartLabel;
-                        facesAffected++;
+                    if (!chartData.isExtreme.at(holeChart.id)) {
+                        for (const int fId : holeChart.faces) {
+                            association[fId] = surroundingChartLabel;
+                            facesAffected++;
 
-                        if (visibility(surroundingChartLabel, fId) == 0) {
-                            facesNoLongerVisible++;
+                            if (visibility(surroundingChartLabel, fId) == 0) {
+                                facesNoLongerVisible++;
+                            }
                         }
                     }
                 }

@@ -24,8 +24,7 @@ bool getChartBorders(
         std::set<size_t>& currentBorderCharts,
         std::vector<unsigned int>& currentBorderFaces,
         std::vector<unsigned int>& currentBorderVertices,
-        std::unordered_set<unsigned int>& visitedBorderVertex,
-        int& currentHoleChartId);
+        std::unordered_set<unsigned int>& visitedBorderVertex);
 } //namespace internal
 
 /**
@@ -227,7 +226,6 @@ ChartData getChartData(
             std::vector<unsigned int> currentBorderVertices;
             std::unordered_set<unsigned int> visitedBorderVertex;
 
-            int currentHoleId = -1;
             bool externalBorderSuccess = internal::getChartBorders(
                         chartData,
                         chart,
@@ -239,8 +237,7 @@ ChartData getChartData(
                         currentBorderCharts,
                         currentBorderFaces,
                         currentBorderVertices,
-                        visitedBorderVertex,
-                        currentHoleId);
+                        visitedBorderVertex);
 
             if (!externalBorderSuccess)
                 std::cout << "Error in detecting external borders." << std::endl;
@@ -264,20 +261,18 @@ ChartData getChartData(
                 std::vector<unsigned int> currentHoleVertices;
                 std::unordered_set<unsigned int> visitedHoleVertex;
 
-                int currentHoleId = -1;
                 bool holeBorderSuccess = internal::getChartBorders(
-                            chartData,
-                            chart,
-                            vNext,
-                            vHeMap,
-                            vStart,
-                            vCurrent,
-                            true,
-                            currentHoleCharts,
-                            currentHoleFaces,
-                            currentHoleVertices,
-                            visitedHoleVertex,
-                            currentHoleId);
+                    chartData,
+                    chart,
+                    vNext,
+                    vHeMap,
+                    vStart,
+                    vCurrent,
+                    true,
+                    currentHoleCharts,
+                    currentHoleFaces,
+                    currentHoleVertices,
+                    visitedHoleVertex);
 
                 if (!holeBorderSuccess) {
                     std::cout << "Error in detecting hole borders." << std::endl;
@@ -290,7 +285,7 @@ ChartData getChartData(
                     continue;
                 }
 
-                if (currentHoleId == -1) {
+                if (currentHoleCharts.empty()) {
                     std::cout << "Error in detecting hole chart ids in borders." << std::endl;
 
                     for (unsigned int v : currentHoleVertices)
@@ -303,7 +298,7 @@ ChartData getChartData(
 
 
                 //Add adjacent chart
-                chart.holeCharts.insert(static_cast<size_t>(currentHoleId));
+                chart.holeCharts.push_back(currentHoleCharts);
                 chart.holeFaces.push_back(currentHoleFaces);
                 chart.holeVertices.push_back(currentHoleVertices);
 
@@ -330,14 +325,12 @@ bool getChartBorders(
         std::set<size_t>& currentBorderCharts,
         std::vector<unsigned int>& currentBorderFaces,
         std::vector<unsigned int>& currentBorderVertices,
-        std::unordered_set<unsigned int>& visitedBorderVertex,
-        int& currentAdjHoleChartId)
+        std::unordered_set<unsigned int>& visitedBorderVertex)
 {
     const cg3::Dcel::HalfEdge* he;
 
     do {
-        if (visitedBorderVertex.find(vCurrent) != visitedBorderVertex.end() && !findHoleCharts) {
-            std::cout << "Error in detecting borders (already visited)." << std::endl;
+        if (visitedBorderVertex.find(vCurrent) != visitedBorderVertex.end()) {
             return false;
         }
 
@@ -348,10 +341,6 @@ bool getChartBorders(
             unsigned int adjId = he->twin()->face()->id();
             size_t adjChart = chartData.faceChartMap.at(adjId);
 
-            if (currentAdjHoleChartId == -1 && findHoleCharts) {
-                currentAdjHoleChartId = static_cast<int>(adjChart);
-            }
-
             currentBorderCharts.insert(adjChart);
             currentBorderFaces.push_back(fId);
             currentBorderVertices.push_back(vCurrent);
@@ -360,6 +349,7 @@ bool getChartBorders(
             vCurrent = vNext.at(vCurrent).at(0);
         }
         else {
+            assert(!vNext.at(vCurrent).empty());
             size_t pos = 0;
             bool success = false;
             do {
@@ -374,39 +364,29 @@ bool getChartBorders(
                 unsigned int adjId = he->twin()->face()->id();
                 size_t adjChart = chartData.faceChartMap.at(adjId);
 
-                if (currentAdjHoleChartId == -1 && findHoleCharts) {
-                    currentAdjHoleChartId = static_cast<int>(adjChart);
-                }
-
-                int adjHoleChartId = -1;
-                adjHoleChartId = static_cast<int>(adjChart);
-
                 newCurrentBorderCharts.insert(adjChart);
                 newCurrentBorderFaces.push_back(fId);
                 newCurrentBorderVertices.push_back(vCurrent);
                 copyVisitedBorderVertex.insert(vCurrent);
 
-                if (!findHoleCharts || adjHoleChartId == currentAdjHoleChartId) {
-                    unsigned int nextVCurrent = vNext.at(vCurrent).at(pos);
+                unsigned int nextVCurrent = vNext.at(vCurrent).at(pos);
 
-                    if (vStart == nextVCurrent) {
-                        success = true;
-                    }
-                    else {
-                        success = internal::getChartBorders(
-                                    chartData,
-                                    chart,
-                                    vNext,
-                                    vHeMap,
-                                    vStart,
-                                    nextVCurrent,
-                                    findHoleCharts,
-                                    newCurrentBorderCharts,
-                                    newCurrentBorderFaces,
-                                    newCurrentBorderVertices,
-                                    copyVisitedBorderVertex,
-                                    currentAdjHoleChartId);
-                    }
+                if (vStart == nextVCurrent) {
+                    success = true;
+                }
+                else {
+                    success = internal::getChartBorders(
+                        chartData,
+                        chart,
+                        vNext,
+                        vHeMap,
+                        vStart,
+                        nextVCurrent,
+                        findHoleCharts,
+                        newCurrentBorderCharts,
+                        newCurrentBorderFaces,
+                        newCurrentBorderVertices,
+                        copyVisitedBorderVertex);
                 }
 
                 if (success) {
