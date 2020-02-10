@@ -2,8 +2,8 @@
  * @author Stefano Nuvoli
  * @author Alessandro Muntoni
  */
-#ifndef FAF_OPTIMIZATION_H
-#define FAF_OPTIMIZATION_H
+#ifndef FAF_SMOOTHLINES_H
+#define FAF_SMOOTHLINES_H
 
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
 
@@ -11,13 +11,11 @@
 
 namespace FourAxisFabrication {
 
-void optimization(
+void smoothLines(
         cg3::EigenMesh& mesh,
-        const bool relaxHoles,
-        const bool loseHoles,
-        const double minChartArea,
+        const bool smoothEdgeLines,
         Data& data);
 
 }
 
-#endif // FAF_OPTIMIZATION_H
+#endif // FAF_SMOOTHLINES_H

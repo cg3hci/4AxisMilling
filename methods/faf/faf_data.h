@@ -40,6 +40,7 @@ public:
     bool isVisibilityChecked;
     bool isAssociationComputed;
     bool isAssociationOptimized;
+    bool isLineSmoothed;
     bool areFrequenciesRestored;
     bool isVisibilityRecheckedAfterRestore;
     bool areComponentsCut;

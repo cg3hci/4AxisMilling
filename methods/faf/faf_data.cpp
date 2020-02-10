@@ -21,6 +21,7 @@ void Data::clear() {
     isVisibilityChecked = false;
     isAssociationComputed = false;
     isAssociationOptimized = false;
+    isLineSmoothed = false;
     areFrequenciesRestored = false;
     isVisibilityRecheckedAfterRestore = false;
     areComponentsCut = false;
@@ -86,6 +87,7 @@ void Data::serialize(std::ofstream &binaryFile) const
                 isVisibilityChecked,
                 isAssociationComputed,
                 isAssociationOptimized,
+                isLineSmoothed,
                 areFrequenciesRestored,
                 isVisibilityRecheckedAfterRestore,
                 areComponentsCut,
@@ -137,6 +139,7 @@ void Data::deserialize(std::ifstream &binaryFile)
                 isVisibilityChecked,
                 isAssociationComputed,
                 isAssociationOptimized,
+                isLineSmoothed,
                 areFrequenciesRestored,
                 isVisibilityRecheckedAfterRestore,
                 areComponentsCut,

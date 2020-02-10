@@ -93,6 +93,7 @@ private:
     void checkVisibility();
     void getAssociation();
     void optimizeAssociation();
+    void smoothLines();
     void restoreFrequencies();
     void recheckVisibilityAfterRestore();
     void cutComponents();
@@ -193,6 +194,7 @@ private slots:
     void on_resetCameraButton_clicked();
     void on_visualizationSlider_valueChanged(int value);
     void on_scaleStockButton_clicked();
+    void on_smoothLinesButton_clicked();
 };
 
 #endif // FAFMANAGER_H

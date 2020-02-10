@@ -62,6 +62,7 @@ CLIPPER {
 }
 
 HEADERS += \
+    methods/faf/faf_smoothlines.h \
     methods/fouraxisfabrication.h \
     methods/faf/faf_data.h \
     methods/faf/faf_optimalrotation.h \
@@ -84,6 +85,7 @@ SOURCES += \
     methods/faf/faf_data.cpp \
     methods/faf/faf_optimalrotation.cpp \
     methods/faf/faf_extremes.cpp \
+    methods/faf/faf_smoothlines.cpp \
     methods/faf/faf_visibilitycheck.cpp \
     methods/faf/faf_frequencies.cpp \
     methods/faf/faf_extraction.cpp \

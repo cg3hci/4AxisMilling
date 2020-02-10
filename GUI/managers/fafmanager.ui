@@ -645,13 +645,6 @@
         </property>
        </widget>
       </item>
-      <item row="23" column="5">
-       <widget class="QPushButton" name="optimizationButton">
-        <property name="text">
-         <string>Optimization</string>
-        </property>
-       </widget>
-      </item>
       <item row="24" column="2">
        <widget class="QSpinBox" name="restoreFrequenciesIterationsSpinBox">
         <property name="minimum">
@@ -938,7 +931,7 @@
        </widget>
       </item>
       <item row="23" column="1" colspan="2">
-       <widget class="QCheckBox" name="optimizationSmoothEdgeLinesCheckBox">
+       <widget class="QCheckBox" name="smoothLinesCheckBox">
         <property name="text">
          <string>Smooth edge lines</string>
         </property>
@@ -1282,6 +1275,20 @@
        <widget class="QCheckBox" name="extractResultsSecondLayerSideSubdivisionCheckBox">
         <property name="text">
          <string>Side subd</string>
+        </property>
+       </widget>
+      </item>
+      <item row="21" column="5">
+       <widget class="QPushButton" name="optimizationButton">
+        <property name="text">
+         <string>Optimization</string>
+        </property>
+       </widget>
+      </item>
+      <item row="23" column="5">
+       <widget class="QPushButton" name="smoothLinesButton">
+        <property name="text">
+         <string>Smooth lines</string>
         </property>
        </widget>
       </item>

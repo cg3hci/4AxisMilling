@@ -135,7 +135,10 @@ void FAFManager::updateUI() {
     ui->optimizationLoseHolesCheckBox->setEnabled(!data.isAssociationOptimized);
     ui->optimizationMinChartAreaLabel->setEnabled(!data.isAssociationOptimized);
     ui->optimizationMinChartAreaSpinBox->setEnabled(!data.isAssociationOptimized);
-    ui->optimizationSmoothEdgeLinesCheckBox->setEnabled(!data.isAssociationOptimized);
+
+    //Smooth lines
+    ui->smoothLinesButton->setEnabled(!data.isLineSmoothed);
+    ui->smoothLinesCheckBox->setEnabled(!data.isLineSmoothed);
 
     //Restore frequencies
     ui->restoreFrequenciesButton->setEnabled(!data.areFrequenciesRestored);
@@ -415,7 +418,6 @@ void FAFManager::optimizeAssociation() {
         bool relaxHoles = ui->optimizationRelaxHolesCheckBox->isChecked();
         bool loseHoles = ui->optimizationLoseHolesCheckBox->isChecked();
         double minChartArea = ui->optimizationMinChartAreaSpinBox->value();
-        bool smoothEdgeLines = ui->optimizationSmoothEdgeLinesCheckBox->isChecked();
 
         cg3::Timer t(std::string("Optimize association"));
 
@@ -425,7 +427,6 @@ void FAFManager::optimizeAssociation() {
                     relaxHoles,
                     loseHoles,
                     minChartArea,
-                    smoothEdgeLines,
                     data);
 
         t.stopAndPrint();
@@ -434,7 +435,35 @@ void FAFManager::optimizeAssociation() {
 
         updateDrawableSmoothedMesh();
 
-        std::cout << "Non-visible triangles after association: " << data.associationNonVisibleFaces.size() << std::endl;
+        std::cout << "Non-visible triangles after optimization: " << data.associationNonVisibleFaces.size() << std::endl;
+    }
+}
+
+/**
+ * @brief Get optimized association
+ */
+void FAFManager::smoothLines() {
+    if (!data.isLineSmoothed) {
+        optimizeAssociation();
+
+        //Get UI data;
+        bool smoothEdgeLines = ui->smoothLinesCheckBox->isChecked();
+
+        cg3::Timer t(std::string("Smooth lines"));
+
+        //Execute optimization
+        FourAxisFabrication::smoothLines(
+                    data.smoothedMesh,
+                    smoothEdgeLines,
+                    data);
+
+        t.stopAndPrint();
+
+        data.isLineSmoothed = true;
+
+        updateDrawableSmoothedMesh();
+
+        std::cout << "Non-visible triangles after line smoothings: " << data.associationNonVisibleFaces.size() << std::endl;
     }
 }
 
@@ -444,7 +473,7 @@ void FAFManager::optimizeAssociation() {
  */
 void FAFManager::restoreFrequencies() {
     if (!data.areFrequenciesRestored) {
-        optimizeAssociation();
+        smoothLines();
 
         //Get UI data
         double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
@@ -1552,6 +1581,22 @@ void FAFManager::on_optimizationButton_clicked()
 {
     //Optimization
     optimizeAssociation();
+
+    //Update canvas and fit the scene
+    mainWindow.canvas.update();
+    mainWindow.canvas.fitScene();
+
+    //Visualize association
+    ui->associationRadio->setChecked(true);
+    initializeVisualizationSlider();
+
+    updateUI();
+}
+
+void FAFManager::on_smoothLinesButton_clicked()
+{
+    //Optimization
+    smoothLines();
 
     //Update canvas and fit the scene
     mainWindow.canvas.update();

@@ -12,6 +12,7 @@
 #include "faf/faf_extremes.h"
 #include "faf/faf_visibilitycheck.h"
 #include "faf/faf_association.h"
+#include "faf/faf_smoothlines.h"
 #include "faf/faf_frequencies.h"
 #include "faf/faf_extraction.h"
 #include "faf/faf_optimization.h"
