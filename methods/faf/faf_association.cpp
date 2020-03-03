@@ -263,7 +263,7 @@ void setupDataCost(
                 cost = pow(1.f - dot, dataSigma);
             }
             //Not visibile
-            else {                
+            else {
                 cost = MAXCOST;
             }
 
@@ -332,8 +332,6 @@ float getSmoothTerm(
     float smoothSigma = smoothData->smoothSigma;
     float compactness = smoothData->compactness;
 
-    float epsilon = 0.001;
-
     if (l1 == l2)
         return 0.f;
 
@@ -343,14 +341,9 @@ float getSmoothTerm(
     float dot = faceNormal1.dot(faceNormal2);
 
     if (dot < 0) {
-        return MAXCOST;
+        return 0.0f;
     }
-    else {
-        float cost = pow(dot, smoothSigma);
-        float smoothTerm = compactness * (cost + epsilon);
-
-        return smoothTerm;
-    }
+    return compactness;
 
 
 //    if (l1 == l2)
