@@ -22,6 +22,7 @@
 #include <QFrame>
 
 #include "methods/fouraxisfabrication.h"
+#include "../paintingwindown.h"
 
 namespace Ui {
 class FAFManager;
@@ -38,7 +39,7 @@ public:
     explicit FAFManager(QWidget *parent = nullptr);
     ~FAFManager();
 
-
+    std::vector<std::vector<size_t>> partitions;
 private:    
 
     /* Data fields */
@@ -77,6 +78,7 @@ private:
     cg3::viewer::LoaderSaver loaderSaverObj;
     cg3::viewer::LoaderSaver loaderSaverData;
 
+    PaintingWindown painting;
 
     /* UI methods */
 
@@ -195,6 +197,7 @@ private slots:
     void on_visualizationSlider_valueChanged(int value);
     void on_scaleStockButton_clicked();
     void on_smoothLinesButton_clicked();
+    void on_paintModel_clicked();
 };
 
 #endif // FAFMANAGER_H

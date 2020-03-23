@@ -22,6 +22,10 @@ CONFIG += CLIPPER
 CONFIG += CG3_CORE CG3_DATA_STRUCTURES CG3_MESHES CG3_ALGORITHMS CG3_CGAL CG3_LIBIGL CG3_VIEWER CG3_VCGLIB
 include(cg3lib/cg3.pri)
 
+INCLUDEPATH    += $$PWD/cinolib/include
+DEFINES        += CINOLIB_USES_OPENGL
+DEFINES        += CINOLIB_USES_QT
+DATA_PATH       = \\\"$$PWD/cinolib/examples/data\\\"
 
 message(Included modules: $$MODULES)
 FINAL_RELEASE {
@@ -62,6 +66,7 @@ CLIPPER {
 }
 
 HEADERS += \
+    GUI/paintingwindown.h \
     methods/faf/faf_smoothlines.h \
     methods/fouraxisfabrication.h \
     methods/faf/faf_data.h \
@@ -78,9 +83,10 @@ HEADERS += \
     methods/faf/faf_various.h \
     GUI/managers/fafmanager.h \
     GUI/managers/fafsegmentationmanager.h \
-    methods/faf/faf_split.h
+    methods/faf/faf_split.h \
 
 SOURCES += \
+    GUI/paintingwindown.cpp \
     main.cpp \
     methods/faf/faf_data.cpp \
     methods/faf/faf_optimalrotation.cpp \
@@ -97,12 +103,12 @@ SOURCES += \
     methods/faf/faf_various.cpp \
     GUI/managers/fafmanager.cpp \
     GUI/managers/fafsegmentationmanager.cpp \
-    methods/faf/faf_split.cpp
+    methods/faf/faf_split.cpp \
 
 
 FORMS += \
-    GUI/managers/fafmanager.ui \
-    GUI/managers/fafsegmentationmanager.ui
+    GUI/managers/fafsegmentationmanager.ui \
+    GUI/managers/fafmanager.ui
 
 DISTFILES += \
     README.txt

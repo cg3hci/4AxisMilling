@@ -27,7 +27,8 @@
 FAFManager::FAFManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FAFManager),
-    mainWindow((cg3::viewer::MainWindow&)*parent)
+    mainWindow((cg3::viewer::MainWindow&)*parent),
+    painting(partitions)
 {
     ui->setupUi(this);
 
@@ -72,6 +73,7 @@ void FAFManager::updateUI() {
     ui->saveResultsButton->setEnabled(data.isMeshLoaded);
     ui->loadDataButton->setEnabled(!data.isMeshLoaded);
     ui->saveDataButton->setEnabled(data.isMeshLoaded);
+    ui->paintModel->setEnabled(data.isMeshLoaded);
 
 
     // ----- Four axis fabrication -----
@@ -1888,4 +1890,10 @@ void FAFManager::on_visualizationSlider_valueChanged(int value) {
             mainWindow.setDrawableObjectVisibility(&drawableResults[sliderValue], true);
         }
     }
+}
+
+void FAFManager::on_paintModel_clicked(){
+
+    painting.setInstance("/home/toletto/Documenti/kitten.obj", drawableOriginalMesh);
+    painting.showWindown();
 }
