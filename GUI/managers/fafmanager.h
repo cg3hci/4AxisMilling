@@ -40,6 +40,8 @@ public:
     ~FAFManager();
 
     std::vector<std::vector<size_t>> partitions;
+
+
 private:    
 
     /* Data fields */
@@ -78,8 +80,9 @@ private:
     cg3::viewer::LoaderSaver loaderSaverObj;
     cg3::viewer::LoaderSaver loaderSaverData;
 
-    PaintingWindown painting;
-    cg3::DrawableEigenMesh paintedMesh;
+    PaintingWindow paintingWindow;
+    cg3::DrawableEigenMesh drawablePaintedMesh;
+
 
     /* UI methods */
 

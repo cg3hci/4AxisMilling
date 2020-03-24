@@ -28,7 +28,7 @@ FAFManager::FAFManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FAFManager),
     mainWindow((cg3::viewer::MainWindow&)*parent),
-    painting(partitions, paintedMesh)
+    paintingWindow(partitions, drawablePaintedMesh)
 {
     ui->setupUi(this);
 
@@ -73,11 +73,13 @@ void FAFManager::updateUI() {
     ui->saveResultsButton->setEnabled(data.isMeshLoaded);
     ui->loadDataButton->setEnabled(!data.isMeshLoaded);
     ui->saveDataButton->setEnabled(data.isMeshLoaded);
-    ui->paintModel->setEnabled(data.isMeshLoaded);
 
 
     // ----- Four axis fabrication -----
     ui->fourAxisFabricationGroup->setEnabled(data.isMeshLoaded);
+
+    //Painting
+    ui->paintModel->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
 
     //Scale and stock generation
     ui->scaleStockButton->setEnabled(!data.isMeshScaledAndStockGenerated);
@@ -618,9 +620,11 @@ void FAFManager::addDrawableMesh() {
     //Add drawable meshes to the canvas
     drawableOriginalMesh = cg3::DrawableEigenMesh(data.mesh);
     drawableOriginalMesh.setFlatShading();
-    paintedMesh = cg3::DrawableEigenMesh(data.mesh);
+    drawablePaintedMesh = cg3::DrawableEigenMesh(data.mesh);
+    drawablePaintedMesh.setFlatShading();
 
-    mainWindow.pushDrawableObject(&drawableOriginalMesh, "Mesh");
+    mainWindow.pushDrawableObject(&drawableOriginalMesh, "Mesh", false);
+    mainWindow.pushDrawableObject(&drawablePaintedMesh, "Painted mesh");
 }
 
 /**
@@ -633,6 +637,7 @@ void FAFManager::addDrawableSmoothedMesh() {
     mainWindow.pushDrawableObject(&drawableSmoothedMesh, "Smoothed mesh");
 
     mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
+    mainWindow.setDrawableObjectVisibility(&drawablePaintedMesh, false);
 }
 
 /**
@@ -752,12 +757,12 @@ void FAFManager::addDrawableResults() {
  */
 void FAFManager::updateDrawableMesh() {
     //Update drawable meshes (already in the canvas)
-    bool originalVisibility = drawableOriginalMesh.isVisible();
+    bool meshOriginalVisibility = drawableOriginalMesh.isVisible();
 
     drawableOriginalMesh = cg3::DrawableEigenMesh(data.mesh);
     drawableOriginalMesh.setFlatShading();
 
-    mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, originalVisibility);
+    mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, meshOriginalVisibility);
 }
 
 /**
@@ -793,11 +798,14 @@ void FAFManager::deleteDrawableObjects() {
     if (data.isMeshLoaded) {
         //Delete meshes
         mainWindow.deleteDrawableObject(&drawableOriginalMesh);
+        mainWindow.deleteDrawableObject(&drawablePaintedMesh);
         mainWindow.deleteDrawableObject(&drawableSmoothedMesh);
         mainWindow.deleteDrawableObject(&drawableStock);
 
+        drawablePaintedMesh.clear();
         drawableOriginalMesh.clear();
         drawableSmoothedMesh.clear();
+        drawableStock.clear();
 
         if (data.areFrequenciesRestored) {
             //Delete restored mesh
@@ -1490,6 +1498,9 @@ void FAFManager::on_scaleStockButton_clicked()
     //Scale and stock generation
     scaleAndStock();
 
+    mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, true);
+    mainWindow.setDrawableObjectVisibility(&drawablePaintedMesh, false);
+
     //Update canvas and fit the scene
     mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
@@ -1895,6 +1906,6 @@ void FAFManager::on_visualizationSlider_valueChanged(int value) {
 
 void FAFManager::on_paintModel_clicked(){
 
-    painting.setInstance("");
-    painting.showWindown();
+    paintingWindow.setInstance("");
+    paintingWindow.showWindow();
 }

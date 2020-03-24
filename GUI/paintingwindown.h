@@ -14,23 +14,22 @@
 #include <cg3/viewer/utilities/loadersaver.h>
 #include <cg3/viewer/drawable_objects/drawable_eigenmesh.h>
 
-class PaintingWindown
+class PaintingWindow
 {
 
 public:
 
-    //PaintingWindown(std::vector<std::vector<size_t>>& value, std::string meshName);
-    PaintingWindown(std::vector<std::vector<size_t> > &value, cg3::DrawableEigenMesh &mesh);
+    PaintingWindow(std::vector<std::vector<size_t> > &value, cg3::DrawableEigenMesh &mesh);
 
     void setInstance(std::string meshName);
 
-    void showWindown();
+    void showWindow();
 
     std::vector<std::vector<size_t>>& partitions;
 
 private:
 
-    void setWindown(bool show);
+    void setWindow(bool show);
 
     void loadMesh(std::string meshName);
 

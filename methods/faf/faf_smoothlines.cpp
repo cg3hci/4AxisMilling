@@ -172,6 +172,9 @@ void reassignLabelsAfterLineSmoothing(
 
     std::vector<bool> visited(mesh.numberFaces(), false);
     for (unsigned int i = 0; i < mesh.numberFaces(); i++) {
+        if (visited[i])
+            continue;
+
         std::vector<unsigned int> currentChartFaces;
 
         stack.push(i);

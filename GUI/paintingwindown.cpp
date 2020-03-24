@@ -1,28 +1,23 @@
 #include "paintingwindown.h"
 
-/*PaintingWindown::PaintingWindown(std::vector<std::vector<size_t> > &value, std::string meshName) : partitions(value) {
-    setWindown(true);
-    loadMesh(meshName);
-
-}*/
-
-PaintingWindown::PaintingWindown(std::vector<std::vector<size_t> > &value, cg3::DrawableEigenMesh& mesh) :
+PaintingWindow::PaintingWindow(std::vector<std::vector<size_t> > &value, cg3::DrawableEigenMesh& mesh) :
     partitions(value),
     drawablePaintedMesh(mesh)
 {
-    setWindown(false);
+    setWindow(false);
 
 }
 
-void PaintingWindown::setInstance(std::string meshName){
+void PaintingWindow::setInstance(std::string meshName){
     if(meshName == "") loadEigenMesh();
     else loadMesh(meshName);
 }
 
-void PaintingWindown::showWindown(){
+void PaintingWindow::showWindow(){
     window.show();
 }
-void PaintingWindown::setWindown(bool show){
+
+void PaintingWindow::setWindow(bool show){
 
     canvas.setParent(&window);
     but_reset.setText("Reset");
@@ -43,7 +38,7 @@ void PaintingWindown::setWindown(bool show){
     window.resize(1024,1024);
 }
 
-void PaintingWindown::loadMesh(std::string meshName){
+void PaintingWindow::loadMesh(std::string meshName){
     meshToPaint = cinolib::DrawableTrimesh<>(meshName.c_str());
     pushObjectCanvas();
 
@@ -51,7 +46,7 @@ void PaintingWindown::loadMesh(std::string meshName){
 
 }
 
-void PaintingWindown::loadEigenMesh(){
+void PaintingWindow::loadEigenMesh(){
 
     meshToPaint.clear();
     for(uint vertexId = 0; vertexId < drawablePaintedMesh.numberVertices(); vertexId++){
@@ -69,7 +64,7 @@ void PaintingWindown::loadEigenMesh(){
 
 }
 
-void PaintingWindown::connectButtons(){
+void PaintingWindow::connectButtons(){
     QPushButton::connect(&but_reset, &QPushButton::clicked, [&]()
     {
         meshToPaint.poly_set_color( cinolib::Color::WHITE());
@@ -100,7 +95,7 @@ void PaintingWindown::connectButtons(){
     QApplication::connect(new QShortcut(QKeySequence(Qt::CTRL+Qt::Key_1), &canvas), &QShortcut::activated, [&](){panel.show();});
 }
 
-void PaintingWindown::pushObjectCanvas(){
+void PaintingWindow::pushObjectCanvas(){
     canvas.push_obj(&meshToPaint);
     meshToPaint.show_wireframe(false);
     meshToPaint.show_poly_color();
@@ -133,14 +128,15 @@ void PaintingWindown::pushObjectCanvas(){
 
 }
 
-uint PaintingWindown::closest_vertex_paint(const cinolib::vec3d & p){
+uint PaintingWindow::closest_vertex_paint(const cinolib::vec3d & p){
     std::vector<std::pair<double,uint>> closest;
-    for(uint vid=0; vid<meshToPaint.num_verts(); ++vid) closest.push_back(std::make_pair(meshToPaint.vert(vid).dist(p),vid));
+    for(uint vid=0; vid<meshToPaint.num_verts(); ++vid)
+        closest.push_back(std::make_pair(meshToPaint.vert(vid).dist(p),vid));
     std::sort(closest.begin(), closest.end());
     return closest.front().second;
 }
 
-std::string PaintingWindown::generateModelPath(bool openDocumentFolder,
+std::string PaintingWindow::generateModelPath(bool openDocumentFolder,
                                                std::string meshName){
     cg3::viewer::LoaderSaver loaderSaverObj;
     std::string pathMesh;
@@ -154,7 +150,7 @@ std::string PaintingWindown::generateModelPath(bool openDocumentFolder,
     return pathMesh;
 }
 
-void PaintingWindown::createChartFromSeed(cinolib::ScalarField& f,
+void PaintingWindow::createChartFromSeed(cinolib::ScalarField& f,
                                           float brush_size,
                                           std::set<uint>& currentChart){
 
@@ -183,7 +179,7 @@ void PaintingWindown::createChartFromSeed(cinolib::ScalarField& f,
     }
 }
 
-void PaintingWindown::mergeCharts(std::set<uint>& currentChart){
+void PaintingWindow::mergeCharts(std::set<uint>& currentChart){
 
     std::set<uint>::iterator aux;
     uint originalChart = 0;
