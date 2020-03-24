@@ -19,12 +19,8 @@ class PaintingWindown
 
 public:
 
-
-    //explicit PaintingWindown(QWidget *parent = nullptr);
-
     //PaintingWindown(std::vector<std::vector<size_t>>& value, std::string meshName);
     PaintingWindown(std::vector<std::vector<size_t> > &value, cg3::DrawableEigenMesh &mesh);
-    //~PaintingWindown();
 
     void setInstance(std::string meshName);
 

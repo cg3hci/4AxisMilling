@@ -25,7 +25,7 @@ include(cg3lib/cg3.pri)
 INCLUDEPATH    += $$PWD/cinolib/include
 DEFINES        += CINOLIB_USES_OPENGL
 DEFINES        += CINOLIB_USES_QT
-DATA_PATH       = \\\"$$PWD/cinolib/examples/data\\\"
+
 
 message(Included modules: $$MODULES)
 FINAL_RELEASE {
