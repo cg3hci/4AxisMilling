@@ -22,11 +22,11 @@ public:
 
     //explicit PaintingWindown(QWidget *parent = nullptr);
 
-    PaintingWindown(std::vector<std::vector<size_t>>& value, std::string meshName);
-    PaintingWindown(std::vector<std::vector<size_t> > &value);
+    //PaintingWindown(std::vector<std::vector<size_t>>& value, std::string meshName);
+    PaintingWindown(std::vector<std::vector<size_t> > &value, cg3::DrawableEigenMesh &mesh);
     //~PaintingWindown();
 
-    void setInstance(std::string meshName, cg3::DrawableEigenMesh mesh);
+    void setInstance(std::string meshName);
 
     void showWindown();
 
@@ -38,7 +38,7 @@ private:
 
     void loadMesh(std::string meshName);
 
-    void loadEigenMesh(cg3::DrawableEigenMesh& eigenMesh);
+    void loadEigenMesh();
 
     void connectButtons();
 
@@ -55,6 +55,7 @@ private:
 
     void mergeCharts(std::set<uint>& currentChart);
 
+
     QWidget     window;
     QVBoxLayout layout;
     cinolib::GLcanvas canvas;
@@ -63,6 +64,7 @@ private:
     QPushButton but_next;
     cg3::viewer::LoaderSaver    loaderSaverObj;
     cinolib::DrawableTrimesh<>  meshToPaint;
+    cg3::DrawableEigenMesh& drawablePaintedMesh;
     cinolib::GeodesicsCache     prefactored_matrices;
     std::vector<std::set<uint>> chartFaces;
 

@@ -1,19 +1,22 @@
 #include "paintingwindown.h"
 
-PaintingWindown::PaintingWindown(std::vector<std::vector<size_t> > &value, std::string meshName) : partitions(value) {
+/*PaintingWindown::PaintingWindown(std::vector<std::vector<size_t> > &value, std::string meshName) : partitions(value) {
     setWindown(true);
-    //loadMesh(meshName);
+    loadMesh(meshName);
 
-}
+}*/
 
-PaintingWindown::PaintingWindown(std::vector<std::vector<size_t> > &value) : partitions(value) {
+PaintingWindown::PaintingWindown(std::vector<std::vector<size_t> > &value, cg3::DrawableEigenMesh& mesh) :
+    partitions(value),
+    drawablePaintedMesh(mesh)
+{
     setWindown(false);
 
 }
 
-void PaintingWindown::setInstance(std::string meshName, cg3::DrawableEigenMesh mesh){
-    //loadMesh(meshName);
-    loadEigenMesh(mesh);
+void PaintingWindown::setInstance(std::string meshName){
+    if(meshName == "") loadEigenMesh();
+    else loadMesh(meshName);
 }
 
 void PaintingWindown::showWindown(){
@@ -24,7 +27,7 @@ void PaintingWindown::setWindown(bool show){
     canvas.setParent(&window);
     but_reset.setText("Reset");
     but_reset.setParent(&window);
-    but_next.setText("Confirm");
+    but_next.setText("Confirm and close");
     but_next.setParent(&window);
     sl_size.setOrientation(Qt::Horizontal);
     sl_size.setParent(&window);
@@ -48,18 +51,17 @@ void PaintingWindown::loadMesh(std::string meshName){
 
 }
 
-void PaintingWindown::loadEigenMesh(cg3::DrawableEigenMesh& eigenMesh){
+void PaintingWindown::loadEigenMesh(){
 
-    for(uint vertexId = 0; vertexId < eigenMesh.numberVertices(); vertexId++){
-        meshToPaint.vert_add(cinolib::vec3d(eigenMesh.vertex(vertexId).x(), eigenMesh.vertex(vertexId).y(), eigenMesh.vertex(vertexId).z()));
+    meshToPaint.clear();
+    for(uint vertexId = 0; vertexId < drawablePaintedMesh.numberVertices(); vertexId++){
+        meshToPaint.vert_add(cinolib::vec3d(drawablePaintedMesh.vertex(vertexId).x(), drawablePaintedMesh.vertex(vertexId).y(), drawablePaintedMesh.vertex(vertexId).z()));
     }
 
-    for(uint faceId = 0; faceId < eigenMesh.numberFaces(); faceId++){
-        meshToPaint.poly_add(eigenMesh.face(faceId).x(), eigenMesh.face(faceId).y(), eigenMesh.face(faceId).z());
-        //meshToPaint.poly_set_color(cinolib::Color(eigenMesh.faceColor(faceId).red(), eigenMesh.faceColor(faceId).green(), eigenMesh.faceColor(faceId).blue()));
+    for(uint faceId = 0; faceId < drawablePaintedMesh.numberFaces(); faceId++){
+        meshToPaint.poly_add(drawablePaintedMesh.face(faceId).x(), drawablePaintedMesh.face(faceId).y(), drawablePaintedMesh.face(faceId).z());
+        meshToPaint.poly_data(faceId).color = cinolib::Color(drawablePaintedMesh.faceColor(faceId).red()/128, drawablePaintedMesh.faceColor(faceId).green()/128, drawablePaintedMesh.faceColor(faceId).blue()/128);
     }
-    std::cout << "Facce create" << std::endl;
-
 
     pushObjectCanvas();
 
@@ -87,18 +89,9 @@ void PaintingWindown::connectButtons(){
             }
             partitions.push_back(currentChart);
         }
-        std::cout << partitions.size() << std::endl;
-        /*std::vector<std::vector<uint>> finalpaintedChart;
-        for(uint chartId = 0; chartId < chartFaces.size(); chartId++){
-            std::vector<uint> currentChart;
-            for(std::set<uint>::iterator it = chartFaces[chartId].begin(); it != chartFaces[chartId].end(); ++it){
-                currentChart.push_back(*it);
-            }
-            finalpaintedChart.push_back(currentChart);
-        }
-        std::cout << finalpaintedChart.size() << std::endl;*/
 
         canvas.updateGL();
+        window.close();
     });
 
 
@@ -183,6 +176,8 @@ void PaintingWindown::createChartFromSeed(cinolib::ScalarField& f,
             //val -= (brush_size-dist)/brush_size;
             //if(val<0) val = 0.f;
             meshToPaint.poly_data(fid).color = cinolib::Color(1,0,0);
+            drawablePaintedMesh.setFaceColor(cg3::Color(255,0,0), fid);
+
             currentChart.insert(fid);
         }
     }

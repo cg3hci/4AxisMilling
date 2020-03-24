@@ -51,6 +51,7 @@ private:
 
     cg3::DrawableEigenMesh drawableOriginalMesh;
     cg3::DrawableEigenMesh drawableSmoothedMesh;
+    cg3::DrawableEigenMesh drawablePaintedMesh;
     cg3::DrawableEigenMesh drawableStock;
 
     cg3::DrawableEigenMesh drawableRestoredMesh;

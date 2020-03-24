@@ -83,7 +83,7 @@
       <item row="1" column="3">
        <widget class="QPushButton" name="paintModel">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
          <string>Paint model</string>

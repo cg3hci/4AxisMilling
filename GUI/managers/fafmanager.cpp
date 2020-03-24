@@ -28,7 +28,7 @@ FAFManager::FAFManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FAFManager),
     mainWindow((cg3::viewer::MainWindow&)*parent),
-    painting(partitions)
+    painting(partitions, drawableOriginalMesh)
 {
     ui->setupUi(this);
 
@@ -618,6 +618,7 @@ void FAFManager::addDrawableMesh() {
     //Add drawable meshes to the canvas
     drawableOriginalMesh = cg3::DrawableEigenMesh(data.mesh);
     drawableOriginalMesh.setFlatShading();
+    drawablePaintedMesh = cg3::DrawableEigenMesh(data.mesh);
 
     mainWindow.pushDrawableObject(&drawableOriginalMesh, "Mesh");
 }
@@ -1894,6 +1895,6 @@ void FAFManager::on_visualizationSlider_valueChanged(int value) {
 
 void FAFManager::on_paintModel_clicked(){
 
-    painting.setInstance("/home/toletto/Documenti/kitten.obj", drawableOriginalMesh);
+    painting.setInstance("");
     painting.showWindown();
 }
