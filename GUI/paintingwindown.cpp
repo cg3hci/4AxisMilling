@@ -1,7 +1,7 @@
 #include "paintingwindown.h"
 
-PaintingWindow::PaintingWindow(std::vector<std::vector<size_t> > &value, cg3::DrawableEigenMesh& mesh) :
-    partitions(value),
+PaintingWindow::PaintingWindow(std::vector<bool>& paintedFaces, cg3::DrawableEigenMesh& mesh) :
+    paintedFaces(paintedFaces),
     drawablePaintedMesh(mesh)
 {
     setWindow(false);
@@ -22,8 +22,8 @@ void PaintingWindow::setWindow(bool show){
     canvas.setParent(&window);
     but_reset.setText("Reset");
     but_reset.setParent(&window);
-    but_next.setText("Confirm and close");
-    but_next.setParent(&window);
+    but_close.setText("Confirm and close");
+    but_close.setParent(&window);
     sl_size.setOrientation(Qt::Horizontal);
     sl_size.setParent(&window);
     sl_size.setMaximum(100);
@@ -31,7 +31,7 @@ void PaintingWindow::setWindow(bool show){
     sl_size.setValue(10);
     layout.addWidget(&sl_size);
     layout.addWidget(&but_reset);
-    layout.addWidget(&but_next);
+    layout.addWidget(&but_close);
     layout.addWidget(&canvas);
     window.setLayout(&layout);
     if(show) window.show();
@@ -49,6 +49,9 @@ void PaintingWindow::loadMesh(std::string meshName){
 void PaintingWindow::loadEigenMesh(){
 
     meshToPaint.clear();
+    paintedFaces.clear();
+    paintedFaces.resize(drawablePaintedMesh.numberFaces(), false);
+
     for(uint vertexId = 0; vertexId < drawablePaintedMesh.numberVertices(); vertexId++){
         meshToPaint.vert_add(cinolib::vec3d(drawablePaintedMesh.vertex(vertexId).x(), drawablePaintedMesh.vertex(vertexId).y(), drawablePaintedMesh.vertex(vertexId).z()));
     }
@@ -72,10 +75,11 @@ void PaintingWindow::connectButtons(){
         canvas.updateGL();
     });
 
-    QPushButton::connect(&but_next, &QPushButton::clicked, [&]()
+    QPushButton::connect(&but_close, &QPushButton::clicked, [&]()
     {
 
-        partitions.clear();
+        //Create partition
+        /*partitions.clear();
         std::cout << chartFaces.size() << std::endl;
         for(uint chartId = 0; chartId < chartFaces.size(); chartId++){
             std::vector<size_t> currentChart;
@@ -83,7 +87,8 @@ void PaintingWindow::connectButtons(){
                 currentChart.push_back(*it);
             }
             partitions.push_back(currentChart);
-        }
+        }*/
+
 
         canvas.updateGL();
         window.close();
@@ -103,23 +108,28 @@ void PaintingWindow::pushObjectCanvas(){
     compute_geodesics_amortized(meshToPaint, prefactored_matrices, {0});
     canvas.callback_mouse_press = [&](cinolib::GLcanvas *c, QMouseEvent *e)
     {
-        if (e->modifiers() == Qt::ControlModifier)
-        {
-            cinolib::vec3d p;
-            std::set<uint> currentChart;
+        cinolib::vec3d p;
+
+        if (e->modifiers() == Qt::ControlModifier){
 
             if(c->unproject(cinolib::vec2i(e->x(),e->y()), p))
             {
-                float brush_size = static_cast<float>(sl_size.value())/100.f;
-                uint  vertexId = closest_vertex_paint(p);
-
-                cinolib::ScalarField f = compute_geodesics_amortized(meshToPaint, prefactored_matrices, {vertexId});
-
-                createChartFromSeed(f,brush_size,currentChart);
+                createChart(p, true);
                 meshToPaint.updateGL();
                 c->updateGL();
             }
-            mergeCharts(currentChart);
+            //mergeCharts(currentChart);
+        }
+
+        if (e->modifiers() == Qt::ShiftModifier){
+
+            if(c->unproject(cinolib::vec2i(e->x(),e->y()), p))
+            {
+                createChart(p, false);
+                meshToPaint.updateGL();
+                c->updateGL();
+            }
+            //mergeCharts(currentChart);
         }
         return;
     };
@@ -150,31 +160,43 @@ std::string PaintingWindow::generateModelPath(bool openDocumentFolder,
     return pathMesh;
 }
 
-void PaintingWindow::createChartFromSeed(cinolib::ScalarField& f,
-                                          float brush_size,
-                                          std::set<uint>& currentChart){
+void PaintingWindow::createChart(cinolib::vec3d p,
+                                 bool paint){
 
-    for(uint fid=0; fid<meshToPaint.num_polys(); ++fid)
+    float brush_size = static_cast<float>(sl_size.value())/100.f;
+    uint  vertexId = closest_vertex_paint(p);
+    std::set<uint> currentChart;
+    cinolib::ScalarField f = compute_geodesics_amortized(meshToPaint, prefactored_matrices, {vertexId});
+
+    for(uint faceId=0; faceId<meshToPaint.num_polys(); ++faceId)
     {
 
         //TODO Cercare il vertico più vicino del triangolo
         std::vector<float> closest;
-        closest.push_back(f[meshToPaint.poly_vert_id(fid,0)]);
-        closest.push_back(f[meshToPaint.poly_vert_id(fid,1)]);
-        closest.push_back(f[meshToPaint.poly_vert_id(fid,2)]);
+        closest.push_back(f[meshToPaint.poly_vert_id(faceId,0)]);
+        closest.push_back(f[meshToPaint.poly_vert_id(faceId,1)]);
+        closest.push_back(f[meshToPaint.poly_vert_id(faceId,2)]);
         std::sort(closest.begin(), closest.end());
         float dist = 1.f - closest.front();
-        //float dist = 1.f - f[meshToPaint.poly_vert_id(fid,0)];
+        //float dist = 1.f - f[meshToPaint.poly_vert_id(faceId,0)];
         if(dist<=brush_size)
         {
             //Gradiente
-            //float val = meshToPaint.poly_data(fid).color.g;
+            //float val = meshToPaint.poly_data(faceId).color.g;
             //val -= (brush_size-dist)/brush_size;
             //if(val<0) val = 0.f;
-            meshToPaint.poly_data(fid).color = cinolib::Color(1,0,0);
-            drawablePaintedMesh.setFaceColor(cg3::Color(255,0,0), fid);
+            if(paint){
+                meshToPaint.poly_data(faceId).color = cinolib::Color(1,0,0);
+                //drawablePaintedMesh.setFaceColor(cg3::Color(255,0,0), faceId);
+                paintedFaces[faceId] = paint;
+            } else {
+                meshToPaint.poly_data(faceId).color = cinolib::Color(1,1,1);
+                //drawablePaintedMesh.setFaceColor(cg3::Color(255,255,255), faceId);
+                paintedFaces[faceId] = paint;
+            }
 
-            currentChart.insert(fid);
+
+            currentChart.insert(faceId);
         }
     }
 }
@@ -211,4 +233,3 @@ void PaintingWindow::mergeCharts(std::set<uint>& currentChart){
         chartFaces.push_back(currentChart);
     }
 }
-

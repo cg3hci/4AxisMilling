@@ -28,7 +28,7 @@ FAFManager::FAFManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FAFManager),
     mainWindow((cg3::viewer::MainWindow&)*parent),
-    paintingWindow(partitions, drawablePaintedMesh)
+    paintingWindow(paintedFaces, drawablePaintedMesh)
 {
     ui->setupUi(this);
 
@@ -1908,4 +1908,16 @@ void FAFManager::on_paintModel_clicked(){
 
     paintingWindow.setInstance("");
     paintingWindow.showWindow();
+    QApplication::connect(&paintingWindow.but_close, SIGNAL(clicked()), this, SLOT(colorPaintedMesh()));
+    //QApplication::connect(&paintingWindow ,SIGNAL(paintingWindow.paintedClosed()),this,SLOT(colorPaintedMesh()));
+
+}
+
+void FAFManager::colorPaintedMesh()
+{
+    std::cout << " ciao " << std::endl;
+    for(uint faceId = 0; faceId < paintedFaces.size(); faceId++){
+        if(paintedFaces[faceId])
+            drawablePaintedMesh.setFaceColor(cg3::Color(128,0,0), faceId);
+    }
 }

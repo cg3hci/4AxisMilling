@@ -40,6 +40,7 @@ public:
     ~FAFManager();
 
     std::vector<std::vector<size_t>> partitions;
+    std::vector<bool> paintedFaces;
 
 
 private:    
@@ -202,6 +203,7 @@ private slots:
     void on_scaleStockButton_clicked();
     void on_smoothLinesButton_clicked();
     void on_paintModel_clicked();
+    void colorPaintedMesh();
 };
 
 #endif // FAFMANAGER_H

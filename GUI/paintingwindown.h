@@ -19,13 +19,18 @@ class PaintingWindow
 
 public:
 
-    PaintingWindow(std::vector<std::vector<size_t> > &value, cg3::DrawableEigenMesh &mesh);
+    PaintingWindow(std::vector<bool> &paintedFaces, cg3::DrawableEigenMesh &mesh);
 
     void setInstance(std::string meshName);
 
     void showWindow();
 
-    std::vector<std::vector<size_t>>& partitions;
+    QPushButton but_close;
+
+    std::vector<std::vector<size_t>> partitions;
+
+    std::vector<bool>& paintedFaces;
+
 
 private:
 
@@ -44,9 +49,7 @@ private:
 
     uint closest_vertex_paint(const cinolib::vec3d & p);
 
-
-    void createChartFromSeed(cinolib::ScalarField &f,
-                             float brush_size, std::set<uint> &currentChart);
+    void createChart(cinolib::vec3d p, bool paint);
 
     void mergeCharts(std::set<uint>& currentChart);
 
@@ -56,7 +59,6 @@ private:
     cinolib::GLcanvas canvas;
     QSlider sl_size;
     QPushButton but_reset;
-    QPushButton but_next;
     cg3::viewer::LoaderSaver    loaderSaverObj;
     cinolib::DrawableTrimesh<>  meshToPaint;
     cg3::DrawableEigenMesh& drawablePaintedMesh;
