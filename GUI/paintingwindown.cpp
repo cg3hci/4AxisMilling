@@ -1,6 +1,6 @@
 #include "paintingwindown.h"
 
-PaintingWindow::PaintingWindow(std::vector<bool>& paintedFaces, cg3::DrawableEigenMesh& mesh) :
+PaintingWindow::PaintingWindow(std::vector<bool>& paintedFaces, const cg3::DrawableEigenMesh& mesh) :
     paintedFaces(paintedFaces),
     drawablePaintedMesh(mesh)
 {

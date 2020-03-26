@@ -1915,8 +1915,7 @@ void FAFManager::on_paintModel_clicked(){
 
 void FAFManager::colorPaintedMesh()
 {
-    std::cout << " ciao " << std::endl;
-    for(uint faceId = 0; faceId < paintedFaces.size(); faceId++){
+   for(uint faceId = 0; faceId < paintedFaces.size(); faceId++){
         if(paintedFaces[faceId])
             drawablePaintedMesh.setFaceColor(cg3::Color(128,0,0), faceId);
     }

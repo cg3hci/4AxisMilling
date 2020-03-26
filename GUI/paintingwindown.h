@@ -19,7 +19,7 @@ class PaintingWindow
 
 public:
 
-    PaintingWindow(std::vector<bool> &paintedFaces, cg3::DrawableEigenMesh &mesh);
+    PaintingWindow(std::vector<bool> &paintedFaces, const cg3::DrawableEigenMesh &mesh);
 
     void setInstance(std::string meshName);
 
@@ -61,7 +61,7 @@ private:
     QPushButton but_reset;
     cg3::viewer::LoaderSaver    loaderSaverObj;
     cinolib::DrawableTrimesh<>  meshToPaint;
-    cg3::DrawableEigenMesh& drawablePaintedMesh;
+    const cg3::DrawableEigenMesh& drawablePaintedMesh;
     cinolib::GeodesicsCache     prefactored_matrices;
     std::vector<std::set<uint>> chartFaces;
 
