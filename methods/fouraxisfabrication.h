@@ -16,5 +16,6 @@
 #include "faf/faf_frequencies.h"
 #include "faf/faf_extraction.h"
 #include "faf/faf_optimization.h"
+#include "faf/faf_saliency.h"
 
 #endif // FOURAXISFABRICATION_H

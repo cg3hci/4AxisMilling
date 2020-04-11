@@ -204,6 +204,7 @@ private slots:
     void on_smoothLinesButton_clicked();
     void on_paintModel_clicked();
     void colorPaintedMesh();
+    void on_saliencyButton_clicked();
 };
 
 #endif // FAFMANAGER_H

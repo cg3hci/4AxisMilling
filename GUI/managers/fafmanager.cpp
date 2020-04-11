@@ -1913,10 +1913,14 @@ void FAFManager::on_paintModel_clicked(){
 
 }
 
-void FAFManager::colorPaintedMesh()
-{
+void FAFManager::colorPaintedMesh(){
    for(uint faceId = 0; faceId < paintedFaces.size(); faceId++){
         if(paintedFaces[faceId])
             drawablePaintedMesh.setFaceColor(cg3::Color(128,0,0), faceId);
     }
+}
+
+void FAFManager::on_saliencyButton_clicked(){
+    FourAxisFabrication::meshCurvature(drawablePaintedMesh);
+    mainWindow.canvas.update();
 }
