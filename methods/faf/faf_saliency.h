@@ -18,12 +18,6 @@ std::vector<bool> findDetailsBySaliency(
         const cg3::EigenMesh& mesh,
         const double limitValue,
         const unsigned int nRing = 5);
-
-std::vector<double> gaussianWeightedSmoothing(
-        const cg3::EigenMesh& mesh,
-        const std::vector<double>& values,
-        unsigned int nRing = 5);
-
 }
 
 

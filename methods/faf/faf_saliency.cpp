@@ -9,7 +9,7 @@ namespace internal {
 
 //Da cancellare da qui, fare da interfaccia
 cg3::Color computeColorByNormalizedValue(const double value);
-
+//Da cancellare anche, da interfaccia
 std::vector<double> normalizeWithVariance(const std::vector<double>& function, const double stdMultiplier = 1.5);
 
 }
@@ -145,7 +145,6 @@ std::vector<double> normalizeWithVariance(const std::vector<double>& function, c
     negativeSTD = std::sqrt(negativeSTD) * stdMultiplier;
 
     for(size_t i = 0; i < function.size(); i++) {
-        std::cout << function[i];
         if (function[i] >= 0) {
             if (function[i] > positiveSTD)
                 normalizedFunction[i] = 1;
@@ -158,7 +157,6 @@ std::vector<double> normalizeWithVariance(const std::vector<double>& function, c
             else
                 normalizedFunction[i] = 0.5 - ((-function[i] / negativeSTD) / 2.0);
         }
-        std::cout << " -> " << normalizedFunction[i] << std::endl;
     }
 
     return normalizedFunction;
