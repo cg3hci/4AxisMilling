@@ -1,110 +1,42 @@
 #include "faf_saliency.h"
 
+#include <cg3/algorithms/gaussian_weighted_smoothing.h>
+#include <cg3/algorithms/saliency.h>
+
 namespace FourAxisFabrication {
 
 namespace internal {
 
-cg3::Color computeColorByMeancurvature(double long floatBetweenZeroAndOne){
-    cg3::Color color(0,0,0);
+//Da cancellare da qui, fare da interfaccia
+cg3::Color computeColorByNormalizedValue(const double value);
 
-    if (floatBetweenZeroAndOne <= 0.5f)
-    {
-        //floatBetweenZeroAndOne = floatBetweenZeroAndOne * 2.0f - 1.0f;
-        floatBetweenZeroAndOne *= 2.0f;
-        color.setRed((unsigned int)(255 * (1.0f - floatBetweenZeroAndOne) + 0.5f));
-        color.setGreen((unsigned int)(255 * (floatBetweenZeroAndOne) + 0.5f));
+std::vector<double> normalizeWithVariance(const std::vector<double>& function, const double stdMultiplier = 1.5);
+
+}
+
+void colorByGaussianWeighted(cg3::DrawableEigenMesh& drawablePaintedMesh, const unsigned int nRing)
+{
+    std::vector<double> meanCurvature = cg3::libigl::meanVertexCurvature(drawablePaintedMesh, nRing);
+
+    double sigma = (drawablePaintedMesh.boundingBox().diag() * 0.003) * 2;
+    std::vector<double> gaussianWeighted = cg3::vertexGaussianWeightedSmoothing(drawablePaintedMesh, meanCurvature, sigma, sigma * 2);
+
+    std::vector<double> gaussianWeightedNormalized = internal::normalizeWithVariance(gaussianWeighted);
+
+    for(size_t fId = 0; fId < drawablePaintedMesh.numberFaces(); fId++) {
+
+        double value = (gaussianWeightedNormalized[drawablePaintedMesh.face(fId).x()] +
+                        gaussianWeightedNormalized[drawablePaintedMesh.face(fId).y()] +
+                        gaussianWeightedNormalized[drawablePaintedMesh.face(fId).z()] ) / 3.0;
+
+        cg3::Color color = internal::computeColorByNormalizedValue(value);
+
+        drawablePaintedMesh.setFaceColor(color, fId);
     }
-    else
-    {
-        //floatBetweenZeroAndOne *= 2.0f;
-        floatBetweenZeroAndOne = floatBetweenZeroAndOne * 2.0f - 1.0f;
-        color.setGreen((unsigned int)(255 * (1.0f - floatBetweenZeroAndOne) + 0.5f));
-        color.setBlue((unsigned int)(255 * (floatBetweenZeroAndOne) + 0.5f));
-    }
-
-    return color;
 }
 
-double expression(cg3::Point3d x, cg3::Point3d v, double sigma){
-    return (-(std::pow(x.dist(v),2))) / (2 * std::pow(sigma,2));
-}
-
-}
-
-void meshCurvature(cg3::DrawableEigenMesh& drawablePaintedMesh){
-
-    bool meanCurvatureFalg = true;
-    if(meanCurvatureFalg)
-        colorMeanCurvature(drawablePaintedMesh);
-    else {
-
-
-        unsigned int nRing = 5;
-        std::vector<double> meanCurvature = cg3::libigl::meanVertexCurvature(drawablePaintedMesh, nRing);
-        std::vector<std::vector<int>> vvadjacenses = cg3::libigl::vertexToVertexAdjacencies(drawablePaintedMesh);
-        std::vector<double> gaussian_wheighted(drawablePaintedMesh.numberVertices());
-        double sigma = (drawablePaintedMesh.boundingBox().diag() * 0.003) * 2;
-
-        for(unsigned int vertex_id = 0; vertex_id < drawablePaintedMesh.numberVertices(); vertex_id++){
-            std::vector<int> stack;
-            std::vector<bool> visited(drawablePaintedMesh.numberVertices(), false);
-            long double numerator = 0;
-            long double denominator = 0;
-            stack.push_back(vertex_id);
-            visited[vertex_id] = true;
-            while(stack.size() > 0){
-                int current_vertex = stack.back();
-                stack.pop_back();
-                double exp = internal::expression(drawablePaintedMesh.vertex(current_vertex), drawablePaintedMesh.vertex(vertex_id), sigma);
-                numerator += meanCurvature[current_vertex] * exp;
-                denominator += exp;
-
-                for(unsigned int adj_vertex_id = 0; adj_vertex_id < vvadjacenses[current_vertex].size(); adj_vertex_id++){
-                    if(!visited[vvadjacenses[current_vertex][adj_vertex_id]] && (drawablePaintedMesh.vertex(vertex_id).dist(drawablePaintedMesh.vertex(vvadjacenses[current_vertex][adj_vertex_id])) < (sigma * 2))){
-                        stack.push_back(vvadjacenses[current_vertex][adj_vertex_id]);
-                        visited[vvadjacenses[current_vertex][adj_vertex_id]] = true;
-                    }
-                }
-            }
-            if(denominator != 0)
-                gaussian_wheighted[vertex_id] = numerator / denominator;
-        }
-
-
-        double min, max = gaussian_wheighted[0];
-        for(unsigned int i = 0; i < gaussian_wheighted.size(); i++){
-            if(gaussian_wheighted[i] > max)
-                max = gaussian_wheighted[i];
-            if(gaussian_wheighted[i] < min)
-                min = gaussian_wheighted[i];
-        }
-
-        std::cout << "Min value: " << min << std::endl;
-        std::cout << "Max value: " << max << std::endl;
-
-        std::vector<double> gaussian_wheighted_norm = gaussian_wheighted;
-        for(unsigned int value = 0; value < gaussian_wheighted_norm.size(); value++){
-            gaussian_wheighted_norm[value] = (gaussian_wheighted_norm[value])/(max);
-        }
-
-        for(unsigned int face_id = 0; face_id < drawablePaintedMesh.numberFaces(); face_id++){
-
-            double long floatBetweenZeroAndOne = (gaussian_wheighted[drawablePaintedMesh.face(face_id).x()] +
-                                                  gaussian_wheighted[drawablePaintedMesh.face(face_id).y()] +
-                                                  gaussian_wheighted[drawablePaintedMesh.face(face_id).z()] ) / 3;
-            //std::cout << floatBetweenZeroAndOne << std::endl;
-            cg3::Color color = internal::computeColorByMeancurvature(floatBetweenZeroAndOne);
-            drawablePaintedMesh.setFaceColor(color, face_id);
-        }
-
-    }
-
-}
-
-
-
-void colorMeanCurvature(cg3::DrawableEigenMesh& drawablePaintedMesh){
-    unsigned int nRing = 5;
+void colorByMeanCurvature(cg3::DrawableEigenMesh& drawablePaintedMesh, const unsigned int nRing)
+{
     double scaleFactor = 1/drawablePaintedMesh.boundingBox().diag();
     cg3::DrawableEigenMesh scaledMesh(drawablePaintedMesh);
     const cg3::Vec3d scaleVec(scaleFactor, scaleFactor, scaleFactor);
@@ -115,33 +47,124 @@ void colorMeanCurvature(cg3::DrawableEigenMesh& drawablePaintedMesh){
     scaledMesh.updateBoundingBox();
 
     std::vector<double> meanCurvature = cg3::libigl::meanVertexCurvature(drawablePaintedMesh, nRing);
-    std::vector<double> meanCurvatureSorted = meanCurvature;
-    std::vector<double> meanCurvatureNormalized = meanCurvature;
 
-    std::sort(meanCurvatureSorted.begin(), meanCurvatureSorted.end());
-    double min = meanCurvatureSorted.front();
-    double max = meanCurvatureSorted.back();
-    std::cout << min << std::endl;
-    std::cout << max << std::endl;
+    std::vector<double> meanCurvatureNormalized = internal::normalizeWithVariance(meanCurvature);
 
-    for(unsigned int value = 0; value < meanCurvature.size(); value++){
-        meanCurvatureNormalized[value] = (meanCurvatureNormalized[value]-min)/(max-min);
-    }
+    for(size_t fId = 0; fId < drawablePaintedMesh.numberFaces(); fId++) {
+        float value = (meanCurvatureNormalized[drawablePaintedMesh.face(fId).x()] +
+                       meanCurvatureNormalized[drawablePaintedMesh.face(fId).y()] +
+                       meanCurvatureNormalized[drawablePaintedMesh.face(fId).z()] ) / 3;
 
-    for(unsigned int face_id = 0; face_id < drawablePaintedMesh.numberFaces(); face_id++){
+        cg3::Color color = internal::computeColorByNormalizedValue(value);
 
-        float floatBetweenZeroAndOne = (meanCurvatureNormalized[drawablePaintedMesh.face(face_id).x()] +
-                                        meanCurvatureNormalized[drawablePaintedMesh.face(face_id).y()] +
-                                        meanCurvatureNormalized[drawablePaintedMesh.face(face_id).z()] ) / 3;
-        cg3::Color color = internal::computeColorByMeancurvature(floatBetweenZeroAndOne);
-        drawablePaintedMesh.setFaceColor(color, face_id);
+        drawablePaintedMesh.setFaceColor(color, fId);
     }
 
 }
 
-void computeGaussianWeight(cg3::DrawableEigenMesh& drawablePaintedMesh){
+void colorBySaliency(cg3::DrawableEigenMesh& drawablePaintedMesh, const unsigned int nRing)
+{
+    double sigma = (drawablePaintedMesh.boundingBox().diag() * 0.003) * 4;
+
+    std::vector<double> saliency = cg3::computeSaliency(drawablePaintedMesh, sigma, nRing);
+
+    std::vector<double> saliencyNormalized = internal::normalizeWithVariance(saliency);
+
+    for(size_t fId = 0; fId < drawablePaintedMesh.numberFaces(); fId++) {
+        double value = (saliencyNormalized[drawablePaintedMesh.face(fId).x()] +
+                        saliencyNormalized[drawablePaintedMesh.face(fId).y()] +
+                        saliencyNormalized[drawablePaintedMesh.face(fId).z()] ) / 3.0;
+
+        cg3::Color color = internal::computeColorByNormalizedValue(value);
+
+        drawablePaintedMesh.setFaceColor(color, fId);
+    }
+}
+
+
+namespace internal {
+
+//Da cancellare da qui, fare da interfaccia
+cg3::Color computeColorByNormalizedValue(const double value)
+{
+    cg3::Color color(0,0,0);
+
+    assert(value >= 0 && value <= 1);
+
+    if (value <= 0.5f) {
+        double normalizedValue = value * 2.0;
+        color.setRed(static_cast<unsigned int>(std::round(255 * (1.0 - normalizedValue))));
+        color.setGreen(static_cast<unsigned int>(std::round(255 * normalizedValue)));
+    }
+    else {
+        double normalizedValue = (value - 0.5) * 2.0;
+        color.setGreen(static_cast<unsigned int>(std::round(255 * (1.0 - normalizedValue))));
+        color.setBlue(static_cast<unsigned int>(std::round(255 * normalizedValue)));
+    }
+
+    return color;
+}
+
+std::vector<double> normalizeWithVariance(const std::vector<double>& function, const double stdMultiplier)
+{
+    std::vector<double> normalizedFunction(function.size());
+
+//    double min = function[0];
+//    double max = function[0];
+//    for(size_t i = 0; i < function.size(); i++) {
+//        if(function[i] > max)
+//            max = function[i];
+//        if(function[i] < min)
+//            min = function[i];
+//        for(size_t i = 0; i < function.size(); i++) {
+//            normalizedFunction[i] = (function[i] - min) / (max - min);
+//        }
+//    }
+
+
+    //We find the variance from 0
+    double positiveSTD = 0;
+    double negativeSTD = 0;
+
+    size_t numPositive = 0;
+    size_t numNegative = 0;
+    for(size_t i = 0; i < function.size(); i++) {
+        if (function[i] >= 0) {
+            positiveSTD += (function[i] * function[i]);
+            numPositive++;
+        }
+        else {
+            negativeSTD += (function[i] * function[i]);
+            numNegative++;
+        }
+    }
+    positiveSTD /= numPositive;
+    negativeSTD /= numNegative;
+
+    positiveSTD = std::sqrt(positiveSTD) * stdMultiplier;
+    negativeSTD = std::sqrt(negativeSTD) * stdMultiplier;
+
+    for(size_t i = 0; i < function.size(); i++) {
+        std::cout << function[i];
+        if (function[i] >= 0) {
+            if (function[i] > positiveSTD)
+                normalizedFunction[i] = 1;
+            else
+                normalizedFunction[i] = 0.5 + ((function[i] / positiveSTD) / 2.0);
+        }
+        else {
+            if (-function[i] > negativeSTD)
+                normalizedFunction[i] = 0;
+            else
+                normalizedFunction[i] = 0.5 - ((-function[i] / negativeSTD) / 2.0);
+        }
+        std::cout << " -> " << normalizedFunction[i] << std::endl;
+    }
+
+    return normalizedFunction;
 
 }
 
+}
 
 }

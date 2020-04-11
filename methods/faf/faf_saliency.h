@@ -3,15 +3,26 @@
 
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
 #include <cg3/libigl/curvature.h>
-#include <cg3/libigl/mesh_adjacencies.h>
-#include "faf_data.h"
-#include <cg3/viewer/drawable_objects/drawable_eigenmesh.h>
-#include <algorithm>
+
+#include <cg3/viewer/drawable_objects/drawable_eigenmesh.h> //Questo va cancellato (serve solo la eigenmesh)
 
 namespace FourAxisFabrication {
 
-void meshCurvature(cg3::DrawableEigenMesh& drawablePaintedMesh);
-void colorMeanCurvature(cg3::DrawableEigenMesh& drawablePaintedMesh);
+//Queste vanno cancellate, colori dall'interfaccia
+void colorByGaussianWeighted(cg3::DrawableEigenMesh& drawablePaintedMesh, const unsigned int nRing = 5);
+void colorByMeanCurvature(cg3::DrawableEigenMesh& drawablePaintedMesh, const unsigned int nRing = 5);
+void colorBySaliency(cg3::DrawableEigenMesh& drawablePaintedMesh, const unsigned int nRing = 5);
+
+//Dovrai fare questa!
+std::vector<bool> findDetailsBySaliency(
+        const cg3::EigenMesh& mesh,
+        const double limitValue,
+        const unsigned int nRing = 5);
+
+std::vector<double> gaussianWeightedSmoothing(
+        const cg3::EigenMesh& mesh,
+        const std::vector<double>& values,
+        unsigned int nRing = 5);
 
 }
 

@@ -66,7 +66,7 @@ CLIPPER {
 }
 
 HEADERS += \
-    GUI/paintingwindown.h \
+    GUI/paintingwindow.h \
     methods/faf/faf_saliency.h \
     methods/faf/faf_smoothlines.h \
     methods/fouraxisfabrication.h \
@@ -87,7 +87,7 @@ HEADERS += \
     methods/faf/faf_split.h \
 
 SOURCES += \
-    GUI/paintingwindown.cpp \
+    GUI/paintingwindow.cpp \
     main.cpp \
     methods/faf/faf_data.cpp \
     methods/faf/faf_optimalrotation.cpp \

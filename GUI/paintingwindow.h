@@ -1,5 +1,5 @@
-#ifndef PAINTINGWINDOWN_H
-#define PAINTINGWINDOWN_H
+#ifndef PAINTINGWINDOW_H
+#define PAINTINGWINDOW_H
 
 #include <QWidget>
 #include <QSlider>
@@ -14,22 +14,26 @@
 #include <cg3/viewer/utilities/loadersaver.h>
 #include <cg3/viewer/drawable_objects/drawable_eigenmesh.h>
 
-class PaintingWindow
+class PaintingWindow : public QObject
 {
+    Q_OBJECT
 
 public:
 
-    PaintingWindow(std::vector<bool> &paintedFaces, const cg3::DrawableEigenMesh &mesh);
+    PaintingWindow(std::vector<bool>& paintedFaces, const cg3::DrawableEigenMesh& mesh);
 
     void setInstance(std::string meshName);
 
     void showWindow();
 
-    QPushButton but_close;
-
     std::vector<std::vector<size_t>> partitions;
 
     std::vector<bool>& paintedFaces;
+
+
+Q_SIGNALS:
+
+    void paintedMesh();
 
 
 private:
@@ -53,12 +57,12 @@ private:
 
     void mergeCharts(std::set<uint>& currentChart);
 
-
-    QWidget     window;
-    QVBoxLayout layout;
-    cinolib::GLcanvas canvas;
-    QSlider sl_size;
-    QPushButton but_reset;
+    QWidget*     window;
+    QVBoxLayout* layout;
+    cinolib::GLcanvas* canvas;
+    QSlider* sl_size;
+    QPushButton* but_reset;
+    QPushButton* but_close;
     cg3::viewer::LoaderSaver    loaderSaverObj;
     cinolib::DrawableTrimesh<>  meshToPaint;
     const cg3::DrawableEigenMesh& drawablePaintedMesh;
@@ -67,4 +71,4 @@ private:
 
 };
 
-#endif // PAINTINGWINDOWN_H
+#endif // PAINTINGWINDOW_H

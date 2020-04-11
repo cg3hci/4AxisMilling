@@ -1,11 +1,17 @@
-#include "paintingwindown.h"
+#include "paintingwindow.h"
 
 PaintingWindow::PaintingWindow(std::vector<bool>& paintedFaces, const cg3::DrawableEigenMesh& mesh) :
     paintedFaces(paintedFaces),
     drawablePaintedMesh(mesh)
 {
-    setWindow(false);
+    window = new QWidget();
+    layout = new QVBoxLayout();
+    canvas = new cinolib::GLcanvas();
+    sl_size = new QSlider();
+    but_reset = new QPushButton();
+    but_close = new QPushButton();
 
+    setWindow(false);
 }
 
 void PaintingWindow::setInstance(std::string meshName){
@@ -14,28 +20,29 @@ void PaintingWindow::setInstance(std::string meshName){
 }
 
 void PaintingWindow::showWindow(){
-    window.show();
+    window->show();
 }
 
 void PaintingWindow::setWindow(bool show){
 
-    canvas.setParent(&window);
-    but_reset.setText("Reset");
-    but_reset.setParent(&window);
-    but_close.setText("Confirm and close");
-    but_close.setParent(&window);
-    sl_size.setOrientation(Qt::Horizontal);
-    sl_size.setParent(&window);
-    sl_size.setMaximum(100);
-    sl_size.setMinimum(0);
-    sl_size.setValue(10);
-    layout.addWidget(&sl_size);
-    layout.addWidget(&but_reset);
-    layout.addWidget(&but_close);
-    layout.addWidget(&canvas);
-    window.setLayout(&layout);
-    if(show) window.show();
-    window.resize(1024,1024);
+    canvas->setParent(window);
+    but_reset->setText("Reset");
+    but_reset->setParent(window);
+    but_close->setText("Confirm and close");
+    but_close->setParent(window);
+    sl_size->setOrientation(Qt::Horizontal);
+    sl_size->setParent(window);
+    sl_size->setMaximum(100);
+    sl_size->setMinimum(0);
+    sl_size->setValue(10);
+    layout->addWidget(sl_size);
+    layout->addWidget(but_reset);
+    layout->addWidget(but_close);
+    layout->addWidget(canvas);
+    window->setLayout(layout);
+    if(show)
+        window->show();
+    window->resize(1024,1024);
 }
 
 void PaintingWindow::loadMesh(std::string meshName){
@@ -68,16 +75,14 @@ void PaintingWindow::loadEigenMesh(){
 }
 
 void PaintingWindow::connectButtons(){
-    QPushButton::connect(&but_reset, &QPushButton::clicked, [&]()
+    QPushButton::connect(but_reset, &QPushButton::clicked, [&]()
     {
         meshToPaint.poly_set_color( cinolib::Color::WHITE());
 
-        canvas.updateGL();
+        canvas->updateGL();
     });
-
-    QPushButton::connect(&but_close, &QPushButton::clicked, [&]()
+    QPushButton::connect(but_close, &QPushButton::clicked, [&]()
     {
-
         //Create partition
         /*partitions.clear();
         std::cout << chartFaces.size() << std::endl;
@@ -89,31 +94,31 @@ void PaintingWindow::connectButtons(){
             partitions.push_back(currentChart);
         }*/
 
+        canvas->updateGL();
+        window->close();
 
-        canvas.updateGL();
-        window.close();
+        Q_EMIT paintedMesh();
     });
 
 
     // CMD+1 to show mesh controls.
-    cinolib::SurfaceMeshControlPanel< cinolib::DrawableTrimesh<>> panel(&meshToPaint, &canvas);
-    QApplication::connect(new QShortcut(QKeySequence(Qt::CTRL+Qt::Key_1), &canvas), &QShortcut::activated, [&](){panel.show();});
+    cinolib::SurfaceMeshControlPanel< cinolib::DrawableTrimesh<>> panel(&meshToPaint, canvas);
+    QApplication::connect(new QShortcut(QKeySequence(Qt::CTRL+Qt::Key_1), canvas), &QShortcut::activated, [&](){panel.show();});
 }
 
 void PaintingWindow::pushObjectCanvas(){
-    canvas.push_obj(&meshToPaint);
+    canvas->push_obj(&meshToPaint);
     meshToPaint.show_wireframe(false);
     meshToPaint.show_poly_color();
 
     compute_geodesics_amortized(meshToPaint, prefactored_matrices, {0});
-    canvas.callback_mouse_press = [&](cinolib::GLcanvas *c, QMouseEvent *e)
+    canvas->callback_mouse_press = [&](cinolib::GLcanvas *c, QMouseEvent *e)
     {
         cinolib::vec3d p;
 
         if (e->modifiers() == Qt::ControlModifier){
 
-            if(c->unproject(cinolib::vec2i(e->x(),e->y()), p))
-            {
+            if(c->unproject(cinolib::vec2i(e->x(),e->y()), p)) {
                 createChart(p, true);
                 meshToPaint.updateGL();
                 c->updateGL();
@@ -123,8 +128,7 @@ void PaintingWindow::pushObjectCanvas(){
 
         if (e->modifiers() == Qt::ShiftModifier){
 
-            if(c->unproject(cinolib::vec2i(e->x(),e->y()), p))
-            {
+            if(c->unproject(cinolib::vec2i(e->x(),e->y()), p)) {
                 createChart(p, false);
                 meshToPaint.updateGL();
                 c->updateGL();
@@ -134,7 +138,7 @@ void PaintingWindow::pushObjectCanvas(){
         return;
     };
 
-    canvas.updateGL();
+    canvas->updateGL();
 
 }
 
@@ -163,7 +167,7 @@ std::string PaintingWindow::generateModelPath(bool openDocumentFolder,
 void PaintingWindow::createChart(cinolib::vec3d p,
                                  bool paint){
 
-    float brush_size = static_cast<float>(sl_size.value())/100.f;
+    float brush_size = static_cast<float>(sl_size->value())/100.f;
     uint  vertexId = closest_vertex_paint(p);
     std::set<uint> currentChart;
     cinolib::ScalarField f = compute_geodesics_amortized(meshToPaint, prefactored_matrices, {vertexId});

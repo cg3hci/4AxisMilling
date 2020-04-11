@@ -22,7 +22,7 @@
 #include <QFrame>
 
 #include "methods/fouraxisfabrication.h"
-#include "../paintingwindown.h"
+#include "../paintingwindow.h"
 
 namespace Ui {
 class FAFManager;
@@ -39,7 +39,6 @@ public:
     explicit FAFManager(QWidget *parent = nullptr);
     ~FAFManager();
 
-    std::vector<std::vector<size_t>> partitions;
     std::vector<bool> paintedFaces;
 
 

@@ -78,6 +78,13 @@ void FAFManager::updateUI() {
     // ----- Four axis fabrication -----
     ui->fourAxisFabricationGroup->setEnabled(data.isMeshLoaded);
 
+    //Saliency
+    ui->saliencyCheckBox->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
+    ui->saliencyValueLabel->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
+    ui->saliencyValueSpinBox->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
+    ui->saliencyRingSpinBox->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
+    ui->saliencyRingSpinBox->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
+
     //Painting
     ui->paintModel->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
 
@@ -1908,19 +1915,25 @@ void FAFManager::on_paintModel_clicked(){
 
     paintingWindow.setInstance("");
     paintingWindow.showWindow();
-    QApplication::connect(&paintingWindow.but_close, SIGNAL(clicked()), this, SLOT(colorPaintedMesh()));
+    QApplication::connect(&paintingWindow, SIGNAL(paintedMesh()), this, SLOT(colorPaintedMesh()));
     //QApplication::connect(&paintingWindow ,SIGNAL(paintingWindow.paintedClosed()),this,SLOT(colorPaintedMesh()));
 
 }
 
 void FAFManager::colorPaintedMesh(){
-   for(uint faceId = 0; faceId < paintedFaces.size(); faceId++){
+   for(size_t faceId = 0; faceId < paintedFaces.size(); faceId++){
         if(paintedFaces[faceId])
             drawablePaintedMesh.setFaceColor(cg3::Color(128,0,0), faceId);
     }
 }
 
 void FAFManager::on_saliencyButton_clicked(){
-    FourAxisFabrication::meshCurvature(drawablePaintedMesh);
+    unsigned int nRing = ui->saliencyRingSpinBox->value();
+
+    //TODO CANCELLARE: colorare da interfaccia (da qui dal manager)
+//    FourAxisFabrication::colorByMeanCurvature(drawablePaintedMesh, nRing);
+//    FourAxisFabrication::colorByGaussianWeighted(drawablePaintedMesh, nRing);
+    FourAxisFabrication::colorBySaliency(drawablePaintedMesh, nRing);
+
     mainWindow.canvas.update();
 }
