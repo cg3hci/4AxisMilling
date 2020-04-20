@@ -39,8 +39,6 @@ public:
     explicit FAFManager(QWidget *parent = nullptr);
     ~FAFManager();
 
-    std::vector<bool> paintedFaces;
-
 
 private:    
 
@@ -52,6 +50,9 @@ private:
     /* Drawable objects */
 
     cg3::DrawableEigenMesh drawableOriginalMesh;
+
+    cg3::DrawableEigenMesh drawableDetailMesh;
+
     cg3::DrawableEigenMesh drawableSmoothedMesh;
     cg3::DrawableEigenMesh drawableStock;
 
@@ -81,7 +82,6 @@ private:
     cg3::viewer::LoaderSaver loaderSaverData;
 
     PaintingWindow paintingWindow;
-    cg3::DrawableEigenMesh drawablePaintedMesh;
 
 
     /* UI methods */
@@ -93,6 +93,7 @@ private:
     /* Computing methods */
 
     void scaleAndStock();
+    void findDetails();
     void smoothing();
     void optimalOrientation();
     void selectExtremes();
@@ -109,8 +110,9 @@ private:
     /* Visualization methods */
 
     void addDrawableMesh();
-    void addDrawableSmoothedMesh();
     void addDrawableStock();
+    void addDrawableDetailMesh();
+    void addDrawableSmoothedMesh();
     void addDrawableRestoredMesh();
     void addDrawableCutComponents();
     void addDrawableResults();
@@ -126,9 +128,9 @@ private:
     void initializeVisualizationSlider();
     void updateVisualization();
 
-
-
     void colorizeMesh();
+    void colorizeDetailMesh();
+    void colorizeDetailMeshBySaliency();
     void colorizeExtremes();
     void colorizeVisibility();
     void colorizeAssociation();
@@ -139,6 +141,8 @@ private:
             const std::vector<unsigned int>& nonVisibleFaces);
     void showResults();
     void showCurrentStatusDescription();
+
+    cg3::Color computeColorByNormalizedValue(const double value);
 
 
 private slots:
@@ -202,8 +206,9 @@ private slots:
     void on_scaleStockButton_clicked();
     void on_smoothLinesButton_clicked();
     void on_paintModel_clicked();
-    void colorPaintedMesh();
-    void on_saliencyButton_clicked();
+    void on_findDetailsButton_clicked();
+
+    void meshPainted();
 };
 
 #endif // FAFMANAGER_H

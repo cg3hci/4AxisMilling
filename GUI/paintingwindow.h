@@ -33,7 +33,7 @@ public:
 
 Q_SIGNALS:
 
-    void paintedMesh();
+    void meshPainted();
 
 
 private:

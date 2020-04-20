@@ -34,6 +34,7 @@ public:
     /* Flags */
     bool isMeshLoaded;
     bool isMeshScaledAndStockGenerated;
+    bool areDetailsSelected;
     bool isMeshSmoothed;
     bool isMeshOriented;
     bool areExtremesSelected;
@@ -49,6 +50,9 @@ public:
     /* Input meshes */
     cg3::EigenMesh originalMesh;
     cg3::EigenMesh originalSmoothedMesh;
+
+    /* Detail mesh */
+    std::vector<bool> detailFaces;
 
     /* Mesh and smoothed mesh to be processed */
     cg3::EigenMesh mesh;

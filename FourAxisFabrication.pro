@@ -67,7 +67,7 @@ CLIPPER {
 
 HEADERS += \
     GUI/paintingwindow.h \
-    methods/faf/faf_saliency.h \
+    methods/faf/faf_details.h \
     methods/faf/faf_smoothlines.h \
     methods/fouraxisfabrication.h \
     methods/faf/faf_data.h \
@@ -90,9 +90,9 @@ SOURCES += \
     GUI/paintingwindow.cpp \
     main.cpp \
     methods/faf/faf_data.cpp \
+    methods/faf/faf_details.cpp \
     methods/faf/faf_optimalrotation.cpp \
     methods/faf/faf_extremes.cpp \
-    methods/faf/faf_saliency.cpp \
     methods/faf/faf_smoothlines.cpp \
     methods/faf/faf_visibilitycheck.cpp \
     methods/faf/faf_frequencies.cpp \

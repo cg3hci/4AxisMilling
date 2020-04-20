@@ -56,8 +56,9 @@ void PaintingWindow::loadMesh(std::string meshName){
 void PaintingWindow::loadEigenMesh(){
 
     meshToPaint.clear();
-    paintedFaces.clear();
-    paintedFaces.resize(drawablePaintedMesh.numberFaces(), false);
+    //paintedFaces.clear();
+    if(paintedFaces.empty())
+        paintedFaces.resize(drawablePaintedMesh.numberFaces(), false);
 
     for(uint vertexId = 0; vertexId < drawablePaintedMesh.numberVertices(); vertexId++){
         meshToPaint.vert_add(cinolib::vec3d(drawablePaintedMesh.vertex(vertexId).x(), drawablePaintedMesh.vertex(vertexId).y(), drawablePaintedMesh.vertex(vertexId).z()));
@@ -77,7 +78,7 @@ void PaintingWindow::loadEigenMesh(){
 void PaintingWindow::connectButtons(){
     QPushButton::connect(but_reset, &QPushButton::clicked, [&]()
     {
-        meshToPaint.poly_set_color( cinolib::Color::WHITE());
+        meshToPaint.poly_set_color( cinolib::Color(0.5,0.5,0.5));
 
         canvas->updateGL();
     });
@@ -97,7 +98,7 @@ void PaintingWindow::connectButtons(){
         canvas->updateGL();
         window->close();
 
-        Q_EMIT paintedMesh();
+        Q_EMIT meshPainted();
     });
 
 
@@ -169,7 +170,7 @@ void PaintingWindow::createChart(cinolib::vec3d p,
 
     float brush_size = static_cast<float>(sl_size->value())/100.f;
     uint  vertexId = closest_vertex_paint(p);
-    std::set<uint> currentChart;
+    //std::set<uint> currentChart;
     cinolib::ScalarField f = compute_geodesics_amortized(meshToPaint, prefactored_matrices, {vertexId});
 
     for(uint faceId=0; faceId<meshToPaint.num_polys(); ++faceId)
@@ -191,16 +192,12 @@ void PaintingWindow::createChart(cinolib::vec3d p,
             //if(val<0) val = 0.f;
             if(paint){
                 meshToPaint.poly_data(faceId).color = cinolib::Color(1,0,0);
-                //drawablePaintedMesh.setFaceColor(cg3::Color(255,0,0), faceId);
                 paintedFaces[faceId] = paint;
             } else {
                 meshToPaint.poly_data(faceId).color = cinolib::Color(1,1,1);
-                //drawablePaintedMesh.setFaceColor(cg3::Color(255,255,255), faceId);
                 paintedFaces[faceId] = paint;
             }
-
-
-            currentChart.insert(faceId);
+            //currentChart.insert(faceId);
         }
     }
 }

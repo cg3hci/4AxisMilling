@@ -16,6 +16,12 @@
 
 #include <cg3/libigl/mesh_distance.h>
 
+#include <cg3/algorithms/normalization.h>
+
+#include <cg3/algorithms/saliency.h>
+
+#define NSCALES 5
+
 
 
 /* ----- CONSTRUCTORS/DESTRUCTOR ------ */
@@ -28,7 +34,7 @@ FAFManager::FAFManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FAFManager),
     mainWindow((cg3::viewer::MainWindow&)*parent),
-    paintingWindow(paintedFaces, drawablePaintedMesh)
+    paintingWindow(data.detailFaces, drawableDetailMesh)
 {
     ui->setupUi(this);
 
@@ -78,15 +84,7 @@ void FAFManager::updateUI() {
     // ----- Four axis fabrication -----
     ui->fourAxisFabricationGroup->setEnabled(data.isMeshLoaded);
 
-    //Saliency
-    ui->saliencyCheckBox->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
-    ui->saliencyValueLabel->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
-    ui->saliencyValueSpinBox->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
-    ui->saliencyRingSpinBox->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
-    ui->saliencyRingSpinBox->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
-
     //Painting
-    ui->paintModel->setEnabled(data.isMeshLoaded && !data.isMeshScaledAndStockGenerated);
 
     //Scale and stock generation
     ui->scaleStockButton->setEnabled(!data.isMeshScaledAndStockGenerated);
@@ -96,6 +94,18 @@ void FAFManager::updateUI() {
     ui->stockDiameterSpinBox->setEnabled(!data.isMeshScaledAndStockGenerated);
     ui->modelScaleCheckBox->setEnabled(!data.isMeshScaledAndStockGenerated);
     ui->modelLengthSpinBox->setEnabled(!data.isMeshScaledAndStockGenerated);
+
+    //Saliency and details
+    ui->saliencyCheckBox->setEnabled(!data.areDetailsSelected);
+    ui->saliencyDetailOffsetLabel->setEnabled(!data.areDetailsSelected);
+    ui->saliencyDetailOffsetSpinBox->setEnabled(!data.areDetailsSelected);
+    ui->saliencyRingLabel->setEnabled(!data.areDetailsSelected);
+    ui->saliencyRingSpinBox->setEnabled(!data.areDetailsSelected);
+    ui->saliencyUnitScaleCheckBox->setEnabled(!data.areDetailsSelected);
+    ui->findDetailsButton->setEnabled(!data.areDetailsSelected);
+
+    //Detail painting
+    ui->paintModel->setEnabled(data.areDetailsSelected && !data.isMeshSmoothed);
 
     //Smoothing
     ui->smoothingButton->setEnabled(!data.isMeshSmoothed);
@@ -134,8 +144,8 @@ void FAFManager::updateUI() {
     ui->getAssociationButton->setEnabled(!data.isAssociationComputed);
     ui->getAssociationDataSigmaSpinBox->setEnabled(!data.isAssociationComputed);
     ui->getAssociationDataSigmaLabel->setEnabled(!data.isAssociationComputed);
-    ui->getAssociationSmoothSigmaSpinBox->setEnabled(!data.isAssociationComputed);
-    ui->getAssociationSmoothSigmaLabel->setEnabled(!data.isAssociationComputed);
+    ui->getAssociationDetailMultiplierSpinBox->setEnabled(!data.isAssociationComputed);
+    ui->getAssociationDetailMultiplierLabel->setEnabled(!data.isAssociationComputed);
     ui->getAssociationCompactnessLabel->setEnabled(!data.isAssociationComputed);
     ui->getAssociationCompactnessSpinBox->setEnabled(!data.isAssociationComputed);
     ui->getAssociationFixExtremesCheckBox->setEnabled(!data.isAssociationComputed);
@@ -253,11 +263,41 @@ void FAFManager::scaleAndStock() {
 }
 
 /**
+ * @brief Find details
+ */
+void FAFManager::findDetails() {
+    if (!data.areDetailsSelected) {
+        scaleAndStock();
+
+        //Get UI data
+        bool computeBySaliency = ui->saliencyCheckBox->isChecked();
+        bool unitScale = ui->saliencyUnitScaleCheckBox->isChecked();
+        unsigned int nRing = ui->saliencyRingSpinBox->value();
+        double limitValue = ui->saliencyDetailOffsetSpinBox->value();
+
+        cg3::Timer t(std::string("Saliency details"));
+
+        //Find details
+        FourAxisFabrication::findDetails(data, limitValue, unitScale, nRing, NSCALES, computeBySaliency);
+
+        t.stopAndPrint();
+
+        data.areDetailsSelected = true;
+
+        addDrawableDetailMesh();
+        colorizeDetailMesh();
+        if (computeBySaliency) {
+            colorizeDetailMeshBySaliency();
+        }
+    }
+}
+
+/**
  * @brief Compute smoothing
  */
 void FAFManager::smoothing() {
     if (!data.isMeshSmoothed) {
-        scaleAndStock();
+        findDetails();
 
         //Get UI data
         int iterations = ui->smoothingIterationsSpinBox->value();
@@ -343,7 +383,6 @@ void FAFManager::selectExtremes() {
 
         t.stopAndPrint();
 
-
         data.areExtremesSelected = true;
     }
 }
@@ -396,7 +435,7 @@ void FAFManager::getAssociation() {
 
         //Get UI data
         double dataSigma = ui->getAssociationDataSigmaSpinBox->value();
-        double smoothSigma = ui->getAssociationSmoothSigmaSpinBox->value();
+        double detailMultiplier = ui->getAssociationDetailMultiplierSpinBox->value();
         double compactness = ui->getAssociationCompactnessSpinBox->value();
         bool fixExtremes = ui->getAssociationFixExtremesCheckBox->isChecked();
 
@@ -406,7 +445,7 @@ void FAFManager::getAssociation() {
         FourAxisFabrication::getAssociation(
                     data.smoothedMesh,
                     dataSigma,
-                    smoothSigma,
+                    detailMultiplier,
                     compactness,
                     fixExtremes,
                     data);
@@ -627,24 +666,8 @@ void FAFManager::addDrawableMesh() {
     //Add drawable meshes to the canvas
     drawableOriginalMesh = cg3::DrawableEigenMesh(data.mesh);
     drawableOriginalMesh.setFlatShading();
-    drawablePaintedMesh = cg3::DrawableEigenMesh(data.mesh);
-    drawablePaintedMesh.setFlatShading();
 
-    mainWindow.pushDrawableObject(&drawableOriginalMesh, "Mesh", false);
-    mainWindow.pushDrawableObject(&drawablePaintedMesh, "Painted mesh");
-}
-
-/**
- * @brief Add drawable smoothed mesh
- */
-void FAFManager::addDrawableSmoothedMesh() {
-    drawableSmoothedMesh = cg3::DrawableEigenMesh(data.smoothedMesh);
-    drawableSmoothedMesh.setFlatShading();
-
-    mainWindow.pushDrawableObject(&drawableSmoothedMesh, "Smoothed mesh");
-
-    mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
-    mainWindow.setDrawableObjectVisibility(&drawablePaintedMesh, false);
+    mainWindow.pushDrawableObject(&drawableOriginalMesh, "Mesh", true);
 }
 
 /**
@@ -657,6 +680,31 @@ void FAFManager::addDrawableStock() {
     mainWindow.pushDrawableObject(&drawableStock, "Stock");
 
     mainWindow.setDrawableObjectVisibility(&drawableStock, false);
+}
+
+/**
+ * @brief Add detail mesh
+ */
+void FAFManager::addDrawableDetailMesh() {
+    drawableDetailMesh = cg3::DrawableEigenMesh(data.mesh);
+    drawableDetailMesh.setFlatShading();
+
+    mainWindow.pushDrawableObject(&drawableDetailMesh, "Detail mesh");
+
+    mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
+}
+
+/**
+ * @brief Add drawable smoothed mesh
+ */
+void FAFManager::addDrawableSmoothedMesh() {
+    drawableSmoothedMesh = cg3::DrawableEigenMesh(data.smoothedMesh);
+    drawableSmoothedMesh.setFlatShading();
+
+    mainWindow.pushDrawableObject(&drawableSmoothedMesh, "Smoothed mesh");
+
+    mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, false);
+    mainWindow.setDrawableObjectVisibility(&drawableDetailMesh, false);
 }
 
 /**
@@ -805,76 +853,77 @@ void FAFManager::deleteDrawableObjects() {
     if (data.isMeshLoaded) {
         //Delete meshes
         mainWindow.deleteDrawableObject(&drawableOriginalMesh);
-        mainWindow.deleteDrawableObject(&drawablePaintedMesh);
-        mainWindow.deleteDrawableObject(&drawableSmoothedMesh);
-        mainWindow.deleteDrawableObject(&drawableStock);
-
-        drawablePaintedMesh.clear();
         drawableOriginalMesh.clear();
-        drawableSmoothedMesh.clear();
+    }
+
+    if (data.areDetailsSelected) {
+        mainWindow.deleteDrawableObject(&drawableDetailMesh);
+        drawableDetailMesh.clear();
+    }
+
+    if (data.isMeshScaledAndStockGenerated) {
+        mainWindow.deleteDrawableObject(&drawableStock);
         drawableStock.clear();
+    }
 
-        if (data.areFrequenciesRestored) {
-            //Delete restored mesh
-            mainWindow.deleteDrawableObject(&drawableRestoredMesh);
+    if (data.isMeshSmoothed) {
+        mainWindow.deleteDrawableObject(&drawableSmoothedMesh);
+        drawableSmoothedMesh.clear();
+    }
 
-            drawableRestoredMesh.clear();
+    if (data.areFrequenciesRestored) {
+        mainWindow.deleteDrawableObject(&drawableRestoredMesh);
+        drawableRestoredMesh.clear();
+    }
 
-            //Delete cut components
-            if (data.areComponentsCut) {
-                mainWindow.deleteDrawableObject(&drawableFourAxisComponent);                
-                drawableFourAxisComponent.clear();
+    if (data.areComponentsCut) {
+        mainWindow.deleteDrawableObject(&drawableFourAxisComponent);
+        drawableFourAxisComponent.clear();
 
-                if (data.minComponent.numberFaces() > 0) {
-                    mainWindow.deleteDrawableObject(&drawableMinComponent);
-                    drawableMinComponent.clear();
-                }
-                if (data.maxComponent.numberFaces() > 0) {
-                    mainWindow.deleteDrawableObject(&drawableMaxComponent);
-                    drawableMaxComponent.clear();
-                }
-
-
-                //Delete results
-                if (data.areResultsExtracted) {
-                    //Delete boxes
-                    for (cg3::DrawableEigenMesh& box : drawableBoxes) {
-                        mainWindow.deleteDrawableObject(&box);
-                    }
-                    drawableBoxes.clear();
-
-                    //Delete stocks
-                    for (cg3::DrawableEigenMesh& st : drawableStocks) {
-                        mainWindow.deleteDrawableObject(&st);
-                    }
-                    drawableStocks.clear();
-
-                    //Delete results
-
-                    for (cg3::DrawableEigenMesh& res : drawableResults) {
-                        mainWindow.deleteDrawableObject(&res);
-                    }
-                    drawableResults.clear();
-
-                    if (data.minResult.numberFaces() > 0) {
-                        mainWindow.deleteDrawableObject(&drawableMinResult);
-                        drawableMinResult.clear();
-                    }
-                    if (data.maxResult.numberFaces() > 0) {
-                        mainWindow.deleteDrawableObject(&drawableMaxResult);
-                        drawableMaxResult.clear();
-                    }
-
-                    mainWindow.deleteDrawableObject(&drawableMinSupport);
-                    drawableMinSupport.clear();
-                    mainWindow.deleteDrawableObject(&drawableMaxSupport);
-                    drawableMaxSupport.clear();
-                }
-            }
-
+        if (data.minComponent.numberFaces() > 0) {
+            mainWindow.deleteDrawableObject(&drawableMinComponent);
+            drawableMinComponent.clear();
         }
-    }    
+        if (data.maxComponent.numberFaces() > 0) {
+            mainWindow.deleteDrawableObject(&drawableMaxComponent);
+            drawableMaxComponent.clear();
+        }
+    }
 
+    if (data.areResultsExtracted) {
+        //Delete boxes
+        for (cg3::DrawableEigenMesh& box : drawableBoxes) {
+            mainWindow.deleteDrawableObject(&box);
+        }
+        drawableBoxes.clear();
+
+        //Delete stocks
+        for (cg3::DrawableEigenMesh& st : drawableStocks) {
+            mainWindow.deleteDrawableObject(&st);
+        }
+        drawableStocks.clear();
+
+        //Delete results
+
+        for (cg3::DrawableEigenMesh& res : drawableResults) {
+            mainWindow.deleteDrawableObject(&res);
+        }
+        drawableResults.clear();
+
+        if (data.minResult.numberFaces() > 0) {
+            mainWindow.deleteDrawableObject(&drawableMinResult);
+            drawableMinResult.clear();
+        }
+        if (data.maxResult.numberFaces() > 0) {
+            mainWindow.deleteDrawableObject(&drawableMaxResult);
+            drawableMaxResult.clear();
+        }
+
+        mainWindow.deleteDrawableObject(&drawableMinSupport);
+        drawableMinSupport.clear();
+        mainWindow.deleteDrawableObject(&drawableMaxSupport);
+        drawableMaxSupport.clear();
+    }
 }
 
 
@@ -984,6 +1033,60 @@ void FAFManager::colorizeMesh() {
     ui->descriptionLabel->setText(""); //Empty description text
 }
 
+/**
+ * @brief Colorize detail mesh
+ */
+void FAFManager::colorizeDetailMesh()
+{
+    drawableDetailMesh.setFaceColor(cg3::Color(128,128,128));
+    if (!data.detailFaces.empty()) {
+        for(size_t faceId = 0; faceId < data.detailFaces.size(); faceId++){
+            if (data.detailFaces[faceId]) {
+                drawableDetailMesh.setFaceColor(cg3::Color(128,0,0), faceId);
+            }
+        }
+    }
+
+    mainWindow.canvas.update();
+}
+
+/**
+ * @brief Colorize detail by saliency
+ */
+void FAFManager::colorizeDetailMeshBySaliency() {
+    //Get UI data
+    bool computeBySaliency = ui->saliencyCheckBox->isChecked();
+    bool unitScale = ui->saliencyUnitScaleCheckBox->isChecked();
+    unsigned int nRing = ui->saliencyRingSpinBox->value();
+
+    if (computeBySaliency) {
+        std::vector<double> saliency;
+        cg3::EigenMesh scaledMesh = data.mesh;
+
+        if (unitScale) {
+            double scaleFactor = 1 / data.mesh.boundingBox().diag();
+
+            cg3::Vec3d translateVec = -scaledMesh.boundingBox().center();
+            scaledMesh.translate(translateVec);
+
+            const cg3::Vec3d scaleVec(scaleFactor, scaleFactor, scaleFactor);
+            scaledMesh.scale(scaleVec);
+
+            scaledMesh.updateBoundingBox();
+        }
+
+        saliency = cg3::computeSaliencyMultiScale(scaledMesh, nRing, NSCALES);
+
+        std::vector<double> saliencyVarianceNormalized = cg3::linearNormalization(saliency);
+
+        for(size_t vId = 0; vId < drawableDetailMesh.numberVertices(); vId++) {
+            cg3::Color color = computeColorByNormalizedValue(saliencyVarianceNormalized[vId]);
+            drawableDetailMesh.setVertexColor(color, vId);
+        }
+    }
+
+    mainWindow.canvas.update();
+}
 
 /**
  * @brief Colorize the min and max extremes
@@ -1221,6 +1324,26 @@ void FAFManager::showCurrentStatusDescription()
         std::string description = ss.str();
         ui->descriptionLabel->setText(QString::fromStdString(description));
     }
+}
+
+cg3::Color FAFManager::computeColorByNormalizedValue(const double value)
+{
+    cg3::Color color(0,0,0);
+
+    assert(value >= 0 && value <= 1);
+
+    if (value <= 0.5f) {
+        double normalizedValue = value * 2.0;
+        color.setRed(static_cast<unsigned int>(std::round(255 * (1.0 - normalizedValue))));
+        color.setGreen(static_cast<unsigned int>(std::round(255 * normalizedValue)));
+    }
+    else {
+        double normalizedValue = (value - 0.5) * 2.0;
+        color.setGreen(static_cast<unsigned int>(std::round(255 * (1.0 - normalizedValue))));
+        color.setBlue(static_cast<unsigned int>(std::round(255 * normalizedValue)));
+    }
+
+    return color;
 }
 
 
@@ -1505,9 +1628,6 @@ void FAFManager::on_scaleStockButton_clicked()
     //Scale and stock generation
     scaleAndStock();
 
-    mainWindow.setDrawableObjectVisibility(&drawableOriginalMesh, true);
-    mainWindow.setDrawableObjectVisibility(&drawablePaintedMesh, false);
-
     //Update canvas and fit the scene
     mainWindow.canvas.update();
     mainWindow.canvas.fitScene();
@@ -1519,6 +1639,20 @@ void FAFManager::on_scaleStockButton_clicked()
     updateUI();
 }
 
+void FAFManager::on_findDetailsButton_clicked(){
+    //Find details by saliency
+    findDetails();
+
+    //Update canvas and fit the scene
+    mainWindow.canvas.update();
+    mainWindow.canvas.fitScene();
+
+    //Visualize mesh
+    ui->meshRadio->setChecked(true);
+    initializeVisualizationSlider();
+
+    updateUI();
+}
 
 void FAFManager::on_smoothingButton_clicked() {
     //Get optimal mesh orientation
@@ -1911,29 +2045,14 @@ void FAFManager::on_visualizationSlider_valueChanged(int value) {
     }
 }
 
-void FAFManager::on_paintModel_clicked(){
-
+void FAFManager::on_paintModel_clicked()
+{
     paintingWindow.setInstance("");
     paintingWindow.showWindow();
-    QApplication::connect(&paintingWindow, SIGNAL(paintedMesh()), this, SLOT(colorPaintedMesh()));
-    //QApplication::connect(&paintingWindow ,SIGNAL(paintingWindow.paintedClosed()),this,SLOT(colorPaintedMesh()));
-
+    QApplication::connect(&paintingWindow, SIGNAL(meshPainted()), this, SLOT(meshPainted()));
 }
 
-void FAFManager::colorPaintedMesh(){
-   for(size_t faceId = 0; faceId < paintedFaces.size(); faceId++){
-        if(paintedFaces[faceId])
-            drawablePaintedMesh.setFaceColor(cg3::Color(128,0,0), faceId);
-    }
-}
-
-void FAFManager::on_saliencyButton_clicked(){
-    unsigned int nRing = ui->saliencyRingSpinBox->value();
-
-    //TODO CANCELLARE: colorare da interfaccia (da qui dal manager)
-//    FourAxisFabrication::colorByMeanCurvature(drawablePaintedMesh, nRing);
-//    FourAxisFabrication::colorByGaussianWeighted(drawablePaintedMesh, nRing);
-    FourAxisFabrication::colorBySaliency(drawablePaintedMesh, nRing);
-
-    mainWindow.canvas.update();
+void FAFManager::meshPainted()
+{
+    colorizeDetailMesh();
 }
