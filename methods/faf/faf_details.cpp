@@ -1,6 +1,6 @@
 #include "faf_details.h"
 
-#include <cg3/algorithms/gaussian_weighted_smoothing.h>
+#include <cg3/algorithms/mesh_function_smoothing.h>
 #include <cg3/algorithms/saliency.h>
 #include <cg3/algorithms/laplacian_smoothing.h>
 
