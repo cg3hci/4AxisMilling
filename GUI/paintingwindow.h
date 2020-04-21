@@ -7,28 +7,28 @@
 #include <QPushButton>
 #include <QColor>
 #include <QApplication>
+#include <QMainWindow>
 #include <cinolib/gui/qt/qt_gui_tools.h>
 #include <cinolib/meshes/meshes.h>
 #include <cinolib/geodesics.h>
 
 #include <cg3/viewer/utilities/loadersaver.h>
-#include <cg3/viewer/drawable_objects/drawable_eigenmesh.h>
+#include <cg3/meshes/eigenmesh/eigenmesh.h>
 
-class PaintingWindow : public QObject
+#define MAXSALIENCY 100.0
+
+class PaintingWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
 
-    PaintingWindow(std::vector<bool>& paintedFaces, const cg3::DrawableEigenMesh& mesh);
-
-    void setInstance(std::string meshName);
+    PaintingWindow(QWidget* parent = nullptr);
 
     void showWindow();
 
-    std::vector<std::vector<size_t>> partitions;
-
-    std::vector<bool>& paintedFaces;
+    void loadData(const cg3::EigenMesh* mesh, std::vector<double>* faceSaliency, double minSaliency, double maxSaliency);
+    void clearData();
 
 
 Q_SIGNALS:
@@ -39,35 +39,34 @@ Q_SIGNALS:
 private:
 
     void setWindow(bool show);
-
-    void loadMesh(std::string meshName);
-
-    void loadEigenMesh();
-
+    void initGeodesics();
     void connectButtons();
 
-    void pushObjectCanvas();
+    uint closest_vertex_paint(const cinolib::vec3d& p);
 
-    std::string generateModelPath(bool openDocumentFolder,
-                                  std::string meshName);
+    void createChart(
+            const cinolib::vec3d& p,
+            const bool selectMode);
 
-    uint closest_vertex_paint(const cinolib::vec3d & p);
+    void colorizeFacesBySaliency();
+    cinolib::Color getColorBySaliency(const double value);
 
-    void createChart(cinolib::vec3d p, bool paint);
-
-    void mergeCharts(std::set<uint>& currentChart);
+    const cg3::EigenMesh* mesh;
+    std::vector<double>* faceSaliency;
+    double minSaliency;
+    double maxSaliency;
 
     QWidget*     window;
     QVBoxLayout* layout;
     cinolib::GLcanvas* canvas;
     QSlider* sl_size;
-    QPushButton* but_reset;
-    QPushButton* but_close;
-    cg3::viewer::LoaderSaver    loaderSaverObj;
+    QPushButton* but_confirm;
     cinolib::DrawableTrimesh<>  meshToPaint;
-    const cg3::DrawableEigenMesh& drawablePaintedMesh;
     cinolib::GeodesicsCache     prefactored_matrices;
-    std::vector<std::set<uint>> chartFaces;
+
+public:
+
+    void closeEvent(QCloseEvent *event);
 
 };
 

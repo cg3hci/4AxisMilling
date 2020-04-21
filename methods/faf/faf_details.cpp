@@ -10,17 +10,17 @@ namespace FourAxisFabrication {
 
 void findDetails(
         Data& data,
-        const double limitValue,
         const bool unitScale,
         const unsigned int nRing,
         const unsigned int nScales,
         const bool computeBySaliency)
 {
-    data.detailFaces.clear();
-    data.detailFaces.resize(data.mesh.numberFaces(), false);
+    data.faceSaliency.clear();
+    data.faceSaliency.resize(data.mesh.numberFaces(), 0.0);
+    data.saliency.clear();
+    data.saliency.resize(data.mesh.numberVertices(), 0.0);
 
     if (computeBySaliency) {
-        std::vector<double> saliency;
         cg3::EigenMesh scaledMesh = data.mesh;
 
         scaledMesh.updateBoundingBox();
@@ -41,15 +41,35 @@ void findDetails(
         std::vector<std::vector<int>> vvAdj = cg3::libigl::vertexToVertexAdjacencies(scaledMesh);
 
         //Compute saliency
-        saliency = cg3::computeSaliencyMultiScale(scaledMesh, vvAdj, nRing, nScales);
+        data.saliency = cg3::computeSaliencyMultiScale(scaledMesh, vvAdj, nRing, nScales);
+
+        const double maxSmoothingIterations = 5;
+        const double laplacianSmoothingIterations = 20;
+
+        for (unsigned int it = 0; it < maxSmoothingIterations; it++) {
+            std::vector<double> lastValues = data.saliency;
+
+            for(unsigned int vId = 0; vId < scaledMesh.numberVertices(); vId++) {
+                double maxValue = lastValues[vId];
+
+                for(size_t j = 0; j < vvAdj[vId].size(); j++) {
+                    unsigned int adjId = vvAdj[vId][j];
+
+                    maxValue = std::max(maxValue, lastValues[adjId]);
+                }
+
+                data.saliency[vId] = maxValue;
+            }
+        }
+
+        data.saliency = cg3::vertexFunctionLaplacianSmoothing(scaledMesh, data.saliency, laplacianSmoothingIterations, 0.5, vvAdj);
 
         for (size_t fId = 0; fId < scaledMesh.numberFaces(); fId++) {
-            if (saliency[scaledMesh.face(fId).x()] >= limitValue &&
-                saliency[scaledMesh.face(fId).y()] >= limitValue &&
-                saliency[scaledMesh.face(fId).z()] >= limitValue)
-            {
-                data.detailFaces[fId] = true;
-            }
+            data.faceSaliency[fId] = (
+                data.saliency[scaledMesh.face(fId).x()] +
+                data.saliency[scaledMesh.face(fId).y()] +
+                data.saliency[scaledMesh.face(fId).z()]
+            ) / 3;
         }
     }
 }

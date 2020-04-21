@@ -130,7 +130,6 @@ private:
 
     void colorizeMesh();
     void colorizeDetailMesh();
-    void colorizeDetailMeshBySaliency();
     void colorizeExtremes();
     void colorizeVisibility();
     void colorizeAssociation();

@@ -34,9 +34,11 @@ FAFManager::FAFManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FAFManager),
     mainWindow((cg3::viewer::MainWindow&)*parent),
-    paintingWindow(data.detailFaces, drawableDetailMesh)
+    paintingWindow(parent)
 {
     ui->setupUi(this);
+
+    QApplication::connect(&paintingWindow, &PaintingWindow::meshPainted, this, &FAFManager::meshPainted);
 
     initialize();
 }
@@ -96,16 +98,14 @@ void FAFManager::updateUI() {
     ui->modelLengthSpinBox->setEnabled(!data.isMeshScaledAndStockGenerated);
 
     //Saliency and details
-    ui->saliencyCheckBox->setEnabled(!data.areDetailsSelected);
-    ui->saliencyDetailOffsetLabel->setEnabled(!data.areDetailsSelected);
-    ui->saliencyDetailOffsetSpinBox->setEnabled(!data.areDetailsSelected);
-    ui->saliencyRingLabel->setEnabled(!data.areDetailsSelected);
-    ui->saliencyRingSpinBox->setEnabled(!data.areDetailsSelected);
-    ui->saliencyUnitScaleCheckBox->setEnabled(!data.areDetailsSelected);
-    ui->findDetailsButton->setEnabled(!data.areDetailsSelected);
+    ui->saliencyCheckBox->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyRingLabel->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyRingSpinBox->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyUnitScaleCheckBox->setEnabled(!data.isSaliencyComputed);
+    ui->findDetailsButton->setEnabled(!data.isSaliencyComputed);
 
     //Detail painting
-    ui->paintModel->setEnabled(data.areDetailsSelected && !data.isMeshSmoothed);
+    ui->paintModel->setEnabled(data.isSaliencyComputed && !data.isMeshSmoothed);
 
     //Smoothing
     ui->smoothingButton->setEnabled(!data.isMeshSmoothed);
@@ -266,29 +266,24 @@ void FAFManager::scaleAndStock() {
  * @brief Find details
  */
 void FAFManager::findDetails() {
-    if (!data.areDetailsSelected) {
+    if (!data.isSaliencyComputed) {
         scaleAndStock();
 
         //Get UI data
         bool computeBySaliency = ui->saliencyCheckBox->isChecked();
         bool unitScale = ui->saliencyUnitScaleCheckBox->isChecked();
         unsigned int nRing = ui->saliencyRingSpinBox->value();
-        double limitValue = ui->saliencyDetailOffsetSpinBox->value();
-
         cg3::Timer t(std::string("Saliency details"));
 
         //Find details
-        FourAxisFabrication::findDetails(data, limitValue, unitScale, nRing, NSCALES, computeBySaliency);
+        FourAxisFabrication::findDetails(data, unitScale, nRing, NSCALES, computeBySaliency);
 
         t.stopAndPrint();
 
-        data.areDetailsSelected = true;
+        data.isSaliencyComputed = true;
 
         addDrawableDetailMesh();
         colorizeDetailMesh();
-        if (computeBySaliency) {
-            colorizeDetailMeshBySaliency();
-        }
     }
 }
 
@@ -856,7 +851,7 @@ void FAFManager::deleteDrawableObjects() {
         drawableOriginalMesh.clear();
     }
 
-    if (data.areDetailsSelected) {
+    if (data.isSaliencyComputed) {
         mainWindow.deleteDrawableObject(&drawableDetailMesh);
         drawableDetailMesh.clear();
     }
@@ -1039,48 +1034,35 @@ void FAFManager::colorizeMesh() {
 void FAFManager::colorizeDetailMesh()
 {
     drawableDetailMesh.setFaceColor(cg3::Color(128,128,128));
-    if (!data.detailFaces.empty()) {
-        for(size_t faceId = 0; faceId < data.detailFaces.size(); faceId++){
-            if (data.detailFaces[faceId]) {
-                drawableDetailMesh.setFaceColor(cg3::Color(128,0,0), faceId);
+    drawableDetailMesh.setVertexColor(cg3::Color(128,128,128));
+
+    if (data.isSaliencyComputed) {
+        double minSaliency = data.saliency[0];
+        double maxSaliency = data.saliency[0];
+        for (const double& value : data.saliency) {
+            if (value < MAXSALIENCY) {
+                minSaliency = std::min(minSaliency, value);
+                maxSaliency = std::max(maxSaliency, value);
             }
         }
-    }
+        std::cout << "Saliency min: " << minSaliency << std::endl;
+        std::cout << "Saliency max: " << maxSaliency << std::endl;
 
-    mainWindow.canvas.update();
-}
+        std::vector<double> saliencyNormalized = cg3::linearNormalization(data.saliency, minSaliency, maxSaliency);
+        std::vector<double> faceSaliencyNormalized = cg3::linearNormalization(data.faceSaliency, minSaliency, maxSaliency);
 
-/**
- * @brief Colorize detail by saliency
- */
-void FAFManager::colorizeDetailMeshBySaliency() {
-    //Get UI data
-    bool computeBySaliency = ui->saliencyCheckBox->isChecked();
-    bool unitScale = ui->saliencyUnitScaleCheckBox->isChecked();
-    unsigned int nRing = ui->saliencyRingSpinBox->value();
+//        std::vector<double> saliencyNormalized = cg3::varianceNormalization(data.saliency, 1.0);
+//        std::vector<double> faceSaliencyNormalized = cg3::varianceNormalization(data.faceSaliency, 1.0);
 
-    if (computeBySaliency) {
-        std::vector<double> saliency;
-        cg3::EigenMesh scaledMesh = data.mesh;
-
-        if (unitScale) {
-            double scaleFactor = 1 / data.mesh.boundingBox().diag();
-
-            cg3::Vec3d translateVec = -scaledMesh.boundingBox().center();
-            scaledMesh.translate(translateVec);
-
-            const cg3::Vec3d scaleVec(scaleFactor, scaleFactor, scaleFactor);
-            scaledMesh.scale(scaleVec);
-
-            scaledMesh.updateBoundingBox();
+        for(size_t fId = 0; fId < data.faceSaliency.size(); fId++){
+            if (data.faceSaliency[fId]) {
+                cg3::Color color = computeColorByNormalizedValue(faceSaliencyNormalized[fId]);
+                drawableDetailMesh.setFaceColor(color, fId);
+            }
         }
 
-        saliency = cg3::computeSaliencyMultiScale(scaledMesh, nRing, NSCALES);
-
-        std::vector<double> saliencyVarianceNormalized = cg3::linearNormalization(saliency);
-
         for(size_t vId = 0; vId < drawableDetailMesh.numberVertices(); vId++) {
-            cg3::Color color = computeColorByNormalizedValue(saliencyVarianceNormalized[vId]);
+            cg3::Color color = computeColorByNormalizedValue(saliencyNormalized[vId]);
             drawableDetailMesh.setVertexColor(color, vId);
         }
     }
@@ -1328,19 +1310,23 @@ void FAFManager::showCurrentStatusDescription()
 
 cg3::Color FAFManager::computeColorByNormalizedValue(const double value)
 {
-    cg3::Color color(0,0,0);
+    cg3::Color color(0.0, 0.0, 0.0);
 
-    assert(value >= 0 && value <= 1);
-
-    if (value <= 0.5f) {
+    if (value <= 0) {
+        color.setRedF(1.0);
+    }
+    else if (value >= 1) {
+        color.setBlueF(1.0);
+    }
+    else if (value <= 0.5f) {
         double normalizedValue = value * 2.0;
-        color.setRed(static_cast<unsigned int>(std::round(255 * (1.0 - normalizedValue))));
-        color.setGreen(static_cast<unsigned int>(std::round(255 * normalizedValue)));
+        color.setRedF(1.0 - normalizedValue);
+        color.setGreenF(normalizedValue);
     }
     else {
         double normalizedValue = (value - 0.5) * 2.0;
-        color.setGreen(static_cast<unsigned int>(std::round(255 * (1.0 - normalizedValue))));
-        color.setBlue(static_cast<unsigned int>(std::round(255 * normalizedValue)));
+        color.setGreenF(1.0 - normalizedValue);
+        color.setBlueF(normalizedValue);
     }
 
     return color;
@@ -1561,6 +1547,10 @@ void FAFManager::on_loadDataButton_clicked()
 
     if (data.isMeshScaledAndStockGenerated) {
         addDrawableStock();
+    }
+
+    if (data.isSaliencyComputed) {
+        addDrawableDetailMesh();
     }
 
     if (data.isMeshSmoothed) {
@@ -2047,9 +2037,16 @@ void FAFManager::on_visualizationSlider_valueChanged(int value) {
 
 void FAFManager::on_paintModel_clicked()
 {
-    paintingWindow.setInstance("");
+    double minSaliency = data.saliency[0];
+    double maxSaliency = data.saliency[0];
+    for (const double& value : data.saliency) {
+        if (value < MAXSALIENCY) {
+            minSaliency = std::min(minSaliency, value);
+            maxSaliency = std::max(maxSaliency, value);
+        }
+    }
+    paintingWindow.loadData(&data.mesh, &data.faceSaliency, minSaliency, maxSaliency);
     paintingWindow.showWindow();
-    QApplication::connect(&paintingWindow, SIGNAL(meshPainted()), this, SLOT(meshPainted()));
 }
 
 void FAFManager::meshPainted()

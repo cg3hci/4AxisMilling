@@ -10,7 +10,6 @@ namespace FourAxisFabrication {
 
 void findDetails(
         Data& data,
-        const double limitValue,
         const bool unitScale = true,
         const unsigned int nRing = 5,
         const unsigned int nScales = 5,

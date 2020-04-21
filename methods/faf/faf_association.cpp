@@ -22,7 +22,7 @@ namespace internal {
 
 struct SmoothData {
     const cg3::EigenMesh& mesh;
-    std::vector<bool>& detailFaces;
+    std::vector<double>& faceSaliency;
     double detailMultiplier;
     double compactness;
 };
@@ -105,7 +105,7 @@ void getAssociation(
 
         gc->setDataCost(dataCost.data());
         //Set smooth cost
-        internal::SmoothData smoothData = {mesh, data.detailFaces, detailMultiplier, compactness};
+        internal::SmoothData smoothData = {mesh, data.faceSaliency, detailMultiplier, compactness};
         gc->setSmoothCost(internal::getSmoothTerm, (void*) &smoothData);
 
         //Set adjacencies
@@ -330,17 +330,14 @@ float getSmoothTerm(
 {
     SmoothData* smoothData = (SmoothData*) extra_data;
     const cg3::EigenMesh& mesh = smoothData->mesh;
-    const std::vector<bool>& detailFaces = smoothData->detailFaces;
+    const std::vector<double>& faceSaliency = smoothData->faceSaliency;
     float detailMultiplier = smoothData->detailMultiplier;
     float compactness = smoothData->compactness;
 
     if (l1 == l2)
         return 0.f;
 
-    double multiplier = 1;
-    if (detailFaces[f1] && detailFaces[f2]) {
-        multiplier = detailMultiplier;
-    }
+    double avgSaliency = (faceSaliency[f1] + faceSaliency[f2]) / 2.0;
 
     cg3::Vec3d faceNormal1 = mesh.faceNormal(f1);
     cg3::Vec3d faceNormal2 = mesh.faceNormal(f2);
@@ -350,7 +347,7 @@ float getSmoothTerm(
     if (dot < 0) {
         return 0.0f;
     }
-    return compactness * multiplier;
+    return compactness + (avgSaliency * detailMultiplier);
 
 
 //    if (l1 == l2)
