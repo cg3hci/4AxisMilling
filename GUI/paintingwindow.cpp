@@ -1,7 +1,7 @@
 #include "paintingwindow.h"
 
 PaintingWindow::PaintingWindow(QWidget* parent) :
-    QMainWindow(parent)
+    QWidget(parent)
 {
     window = new QWidget();
     layout = new QVBoxLayout();
@@ -9,7 +9,7 @@ PaintingWindow::PaintingWindow(QWidget* parent) :
     sl_size = new QSlider();
     but_confirm = new QPushButton();
 
-    setWindow(false);
+    buildUi();
     connectButtons();
 
     canvas->push_obj(&meshToPaint);
@@ -21,7 +21,7 @@ PaintingWindow::PaintingWindow(QWidget* parent) :
 
 void PaintingWindow::showWindow()
 {
-    window->show();
+    window->showMaximized();
 }
 
 void PaintingWindow::loadData(const cg3::EigenMesh* mesh, std::vector<double>* faceSaliency, double minSaliency, double maxSaliency)
@@ -59,23 +59,27 @@ void PaintingWindow::clearData()
     canvas->updateGL();
 }
 
-void PaintingWindow::setWindow(bool show){
-
+void PaintingWindow::buildUi()
+{
     canvas->setParent(window);
+
     but_confirm->setText("Confirm");
     but_confirm->setParent(window);
+
     sl_size->setOrientation(Qt::Horizontal);
     sl_size->setParent(window);
     sl_size->setMaximum(100);
     sl_size->setMinimum(0);
     sl_size->setValue(8);
+
     layout->addWidget(sl_size);
     layout->addWidget(but_confirm);
     layout->addWidget(canvas);
     window->setLayout(layout);
-    if(show)
-        window->show();
+
     window->resize(1024,1024);
+    window->setWindowState(Qt::WindowMaximized); //Maximizes the window
+    window->setWindowFlags(Qt::WindowTitleHint | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint); //Hide X button
 }
 
 void PaintingWindow::connectButtons(){
@@ -199,13 +203,4 @@ cinolib::Color PaintingWindow::getColorBySaliency(const double value)
     }
 
     return color;
-}
-
-void PaintingWindow::closeEvent(QCloseEvent *event)
-{
-    canvas->updateGL();
-
-    Q_EMIT meshPainted();
-
-    event->accept();
 }

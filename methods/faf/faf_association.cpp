@@ -338,16 +338,18 @@ float getSmoothTerm(
         return 0.f;
 
     double avgSaliency = (faceSaliency[f1] + faceSaliency[f2]) / 2.0;
+    double saliencyCost = avgSaliency * detailMultiplier;
 
-    cg3::Vec3d faceNormal1 = mesh.faceNormal(f1);
-    cg3::Vec3d faceNormal2 = mesh.faceNormal(f2);
+//    cg3::Vec3d faceNormal1 = mesh.faceNormal(f1);
+//    cg3::Vec3d faceNormal2 = mesh.faceNormal(f2);
 
-    float dot = faceNormal1.dot(faceNormal2);
+//    float dot = faceNormal1.dot(faceNormal2);
 
-    if (dot < 0) {
-        return 0.0f;
-    }
-    return compactness + (avgSaliency * detailMultiplier);
+//    if (dot < 0) {
+//        return 0.0f;
+//    }
+
+    return compactness + saliencyCost;
 
 
 //    if (l1 == l2)

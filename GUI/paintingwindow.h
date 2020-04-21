@@ -17,7 +17,7 @@
 
 #define MAXSALIENCY 100.0
 
-class PaintingWindow : public QMainWindow
+class PaintingWindow : public QWidget
 {
     Q_OBJECT
 
@@ -38,7 +38,7 @@ Q_SIGNALS:
 
 private:
 
-    void setWindow(bool show);
+    void buildUi();
     void initGeodesics();
     void connectButtons();
 
@@ -63,10 +63,6 @@ private:
     QPushButton* but_confirm;
     cinolib::DrawableTrimesh<>  meshToPaint;
     cinolib::GeodesicsCache     prefactored_matrices;
-
-public:
-
-    void closeEvent(QCloseEvent *event);
 
 };
 

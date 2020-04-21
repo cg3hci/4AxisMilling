@@ -34,7 +34,7 @@ FAFManager::FAFManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FAFManager),
     mainWindow((cg3::viewer::MainWindow&)*parent),
-    paintingWindow(parent)
+    paintingWindow(this)
 {
     ui->setupUi(this);
 
