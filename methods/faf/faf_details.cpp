@@ -42,6 +42,9 @@ void findDetails(
 
         //Compute saliency
         data.saliency = cg3::computeSaliencyMultiScale(scaledMesh, vvAdj, nRing, nScales);
+        for(unsigned int vId = 0; vId < scaledMesh.numberVertices(); vId++) {
+            data.saliency[vId] /= nScales;
+        }
 
         const double maxSmoothingIterations = 5;
         const double laplacianSmoothingIterations = 20;
