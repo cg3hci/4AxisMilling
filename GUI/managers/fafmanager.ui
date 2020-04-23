@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>631</width>
-    <height>2286</height>
+    <width>556</width>
+    <height>1294</height>
    </rect>
   </property>
   <property name="maximumSize">
@@ -25,8 +25,8 @@
   <property name="frameShadow">
    <enum>QFrame::Raised</enum>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
     <widget class="QGroupBox" name="meshGroup">
      <property name="maximumSize">
       <size>
@@ -45,31 +45,10 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="reloadMeshButton">
-        <property name="text">
-         <string>Reload mesh</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="3">
        <widget class="QPushButton" name="clearMeshButton">
         <property name="text">
          <string>Clear mesh</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="4">
-       <widget class="QPushButton" name="saveResultsButton">
-        <property name="text">
-         <string>Save result</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="saveDataButton">
-        <property name="text">
-         <string>Save data</string>
         </property>
        </widget>
       </item>
@@ -80,23 +59,1103 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="reloadMeshButton">
+        <property name="text">
+         <string>Reload mesh</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="saveDataButton">
+        <property name="text">
+         <string>Save data</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QPushButton" name="saveResultsButton">
+        <property name="text">
+         <string>Save result</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
-   <item row="10" column="0">
-    <spacer name="verticalSpacer">
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="title">
+      <string>Four axis fabrication</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_12">
+      <item row="1" column="2">
+       <widget class="QPushButton" name="getAssociationButton">
+        <property name="text">
+         <string>Association</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="smoothingButton">
+        <property name="text">
+         <string>Taubin</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="restoreFrequenciesButton">
+        <property name="text">
+         <string>Frequencies</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="selectExtremesButton">
+        <property name="text">
+         <string>Extremes</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="checkVisibilityButton">
+        <property name="text">
+         <string>Visibility</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="scaleStockButton">
+        <property name="text">
+         <string>Scale/Stock</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QPushButton" name="cutComponentsButton">
+        <property name="text">
+         <string>Cutting</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="smoothLinesButton">
+        <property name="text">
+         <string>Smooth lines</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QPushButton" name="optimizationButton">
+        <property name="text">
+         <string>Optimization</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QPushButton" name="extractResultsButton">
+        <property name="text">
+         <string>Extraction</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="saliencyFindDetailsButton">
+        <property name="text">
+         <string>Find details</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QPushButton" name="optimalOrientationButton">
+        <property name="text">
+         <string>Orientation</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="horizontalSpacer">
      <property name="orientation">
-      <enum>Qt::Vertical</enum>
+      <enum>Qt::Horizontal</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>20</width>
-       <height>40</height>
+       <width>40</width>
+       <height>20</height>
       </size>
      </property>
     </spacer>
    </item>
-   <item row="4" column="0">
+   <item>
+    <widget class="QTabWidget" name="fourAxisFabricationGroup">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="fourAxisFabricationGroupPage1">
+      <attribute name="title">
+       <string>Main parameters</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="5" column="0">
+        <widget class="QFrame" name="smoothLinesFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_11">
+          <item>
+           <widget class="QCheckBox" name="smoothLinesCheckBox">
+            <property name="text">
+             <string>Smooth edge lines</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QFrame" name="smoothingFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QLabel" name="smoothingIterationsLabel">
+            <property name="text">
+             <string>Smooth iter:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="smoothingIterationsSpinBox">
+            <property name="maximum">
+             <number>10000</number>
+            </property>
+            <property name="singleStep">
+             <number>50</number>
+            </property>
+            <property name="value">
+             <number>500</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <widget class="QFrame" name="paintingFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="0" column="0" colspan="3">
+           <widget class="QCheckBox" name="saliencyCheckBox">
+            <property name="text">
+             <string>Details with saliency</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="paintingSizeLabel">
+            <property name="text">
+             <string>Brush size:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QSlider" name="paintingSizeSlider">
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="5">
+           <widget class="QRadioButton" name="paintingFreeRadioBox">
+            <property name="text">
+             <string>Free</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QRadioButton" name="paintingFillRadioBox">
+            <property name="text">
+             <string>Fill</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="8">
+           <widget class="QRadioButton" name="paintingResetRadioBox">
+            <property name="text">
+             <string>Reset</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="8">
+           <widget class="QDoubleSpinBox" name="paintingFillValueSpinBox">
+            <property name="maximum">
+             <double>100.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>100.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3" colspan="3">
+           <widget class="QLabel" name="paintingFillValueLabel">
+            <property name="text">
+             <string>Painting fill value:</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QFrame" name="restoreFrequenciesFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_12">
+          <item>
+           <widget class="QLabel" name="restoreFrequenciesIterationsLabel">
+            <property name="text">
+             <string>Restore iterations:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="restoreFrequenciesIterationsSpinBox">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>1000</number>
+            </property>
+            <property name="value">
+             <number>50</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="restoreFrequenciesRecheckCheckBox">
+            <property name="text">
+             <string>Recheck</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QFrame" name="scaleStockFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QCheckBox" name="modelScaleCheckBox">
+            <property name="text">
+             <string>Scale</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="stockLengthSpinBox">
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>100.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="stockLengthLabel">
+            <property name="text">
+             <string>Length:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="modelLengthSpinBox">
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>60.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="stockDiameterLabel">
+            <property name="text">
+             <string>Diameter:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="stockDiameterSpinBox">
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>60.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="3" column="0" colspan="2">
+        <widget class="QFrame" name="getAssociationFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
+           <widget class="QLabel" name="getAssociationCompactnessLabel">
+            <property name="text">
+             <string>Compactness:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="getAssociationCompactnessSpinBox">
+            <property name="maximum">
+             <double>1000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>30.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="getAssociationDetailMultiplierLabel">
+            <property name="text">
+             <string>Detail multiplier:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="getAssociationDetailMultiplierSpinBox">
+            <property name="maximum">
+             <double>1000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.500000000000000</double>
+            </property>
+            <property name="value">
+             <double>25.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QFrame" name="optimizationFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_10">
+          <item>
+           <widget class="QCheckBox" name="optimizationRelaxHolesCheckBox">
+            <property name="text">
+             <string>Relax holes</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="optimizationLoseHolesCheckBox">
+            <property name="text">
+             <string>Delete holes</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="optimizationMinChartAreaLabel">
+            <property name="text">
+             <string>Min chart area:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="optimizationMinChartAreaSpinBox">
+            <property name="decimals">
+             <number>4</number>
+            </property>
+            <property name="maximum">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.001000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.010000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="6" column="0" colspan="2">
+        <widget class="QFrame" name="extractResultsFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_10">
+          <item row="2" column="0">
+           <widget class="QLabel" name="extractResultsFirstLayerAngleLabel">
+            <property name="text">
+             <string>First angle:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QCheckBox" name="extractResultsMinFirstCheckBox">
+            <property name="text">
+             <string>Min first</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QDoubleSpinBox" name="extractResultsFirstLayerOffsetSpinBox">
+            <property name="value">
+             <double>3.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QLabel" name="extractResultsFirstLayerOffsetLabel">
+            <property name="text">
+             <string>First offset:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QLabel" name="extractResultsSecondLayerStepWidthLabel">
+            <property name="text">
+             <string>Step height:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="extractResultsSecondLayerStepWidthSpinBox">
+            <property name="maximum">
+             <double>90.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>5.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="3">
+           <widget class="QDoubleSpinBox" name="extractResultsSecondLayerStepHeightSpinBox">
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>15.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="extractResultsSecondLayerStepHeightLabel">
+            <property name="text">
+             <string>Step width:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="cutComponentsCheckBox">
+            <property name="text">
+             <string>Cut extremes</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QDoubleSpinBox" name="extractResultsFirstLayerAngleSpinBox">
+            <property name="maximum">
+             <double>90.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>20.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="extractResultsXDirectionsOrderLabel">
+            <property name="text">
+             <string>X directions:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QFrame" name="extractResultsXDirectionsOrderFrame">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QRadioButton" name="extractResultsXDirectionsAfterRadio">
+               <property name="text">
+                <string>After</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="extractResultsXDirectionsBeforeRadio">
+               <property name="text">
+                <string>Before</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QFrame" name="optimalOrientationFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_11">
+          <item row="0" column="2">
+           <widget class="QLabel" name="checkVisibilityDirectionsLabel">
+            <property name="text">
+             <string>Directions:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QSpinBox" name="checkVisibilityDirectionsSpinBox">
+            <property name="maximum">
+             <number>360</number>
+            </property>
+            <property name="singleStep">
+             <number>2</number>
+            </property>
+            <property name="value">
+             <number>120</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="optimalOrientationOrientationsLabel">
+            <property name="text">
+             <string>Orientations:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="optimalOrientationOrientationsSpinBox">
+            <property name="minimum">
+             <number>4</number>
+            </property>
+            <property name="maximum">
+             <number>50000</number>
+            </property>
+            <property name="value">
+             <number>2000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>Advanced parameters</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_13">
+       <item row="5" column="2">
+        <widget class="QDoubleSpinBox" name="optimalOrientationBBWeightSpinBox">
+         <property name="maximum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QDoubleSpinBox" name="heightfieldAngleSpinBox">
+         <property name="minimum">
+          <double>0.010000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>90.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>90.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="3" colspan="2">
+        <widget class="QCheckBox" name="extractResultsRotateCheckBox">
+         <property name="text">
+          <string>Rotate results</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="4">
+        <widget class="QDoubleSpinBox" name="optimalOrientationExtremeWeightSpinBox">
+         <property name="maximum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="3">
+        <widget class="QLabel" name="checkVisibilityResolutionLabel">
+         <property name="text">
+          <string>GL resolution:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="4">
+        <widget class="QDoubleSpinBox" name="smoothingMuSpinBox">
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="minimum">
+          <double>-1.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>0.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.010000000000000</double>
+         </property>
+         <property name="value">
+          <double>-0.890000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1" colspan="2">
+        <widget class="QCheckBox" name="getAssociationFixExtremesCheckBox">
+         <property name="text">
+          <string>Fix extremes on association</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="3">
+        <widget class="QLabel" name="optimalOrientationExtremeWeightLabel">
+         <property name="text">
+          <string>Extreme weight:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLabel" name="optimalOrientationBBWeightLabel">
+         <property name="text">
+          <string>BB x-length weight:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2">
+        <widget class="QDoubleSpinBox" name="smoothingLambdaSpinBox">
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="maximum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.010000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.900000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="3" colspan="2">
+        <widget class="QCheckBox" name="checkVisibilityXDirectionsCheckBox">
+         <property name="text">
+          <string>Include +x/-x on association</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="saliencyRingLabel">
+         <property name="text">
+          <string>Saliency ring:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="2">
+        <widget class="QSpinBox" name="extractResultsFirstLayerSmoothingIterationsSpinBox">
+         <property name="maximum">
+          <number>300</number>
+         </property>
+         <property name="value">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="4">
+        <widget class="QDoubleSpinBox" name="saliencyEpsSpinBox">
+         <property name="decimals">
+          <number>4</number>
+         </property>
+         <property name="minimum">
+          <double>0.000100000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.003000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLabel" name="smoothingLambdaLabel">
+         <property name="text">
+          <string>Taubin Lambda:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="saliencyScalesLabel">
+         <property name="text">
+          <string>Saliency scales:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="3">
+        <widget class="QLabel" name="smoothingMuLabel">
+         <property name="text">
+          <string>Taubin Mu:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="1" colspan="4">
+        <widget class="QCheckBox" name="restoreFrequenciesReassignNonVisibleCheckBox">
+         <property name="text">
+          <string>Reassing non-visible triangles to adjacent chart after restore</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="heightfieldAngleLabel">
+         <property name="text">
+          <string>Height-field angle:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="2">
+        <widget class="QDoubleSpinBox" name="getAssociationDataSigmaSpinBox">
+         <property name="minimum">
+          <double>0.050000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>100.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="3" colspan="2">
+        <widget class="QCheckBox" name="saliencyUnitScaleCheckBox">
+         <property name="text">
+          <string>Saliency scale to unit</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QSpinBox" name="saliencyScalesSpinBox">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="value">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="4">
+        <widget class="QSpinBox" name="checkVisibilityResolutionSpinBox">
+         <property name="minimum">
+          <number>1024</number>
+         </property>
+         <property name="maximum">
+          <number>65536</number>
+         </property>
+         <property name="singleStep">
+          <number>2048</number>
+         </property>
+         <property name="value">
+          <number>16384</number>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1" colspan="2">
+        <widget class="QFrame" name="checkVisibilityMethodFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QRadioButton" name="checkVisibilityGLRadio">
+            <property name="text">
+             <string>GL</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="checkVisibilityRayRadio">
+            <property name="text">
+             <string>Ray</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="checkVisibilityProjectionRadio">
+            <property name="text">
+             <string>Pro</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QSpinBox" name="saliencyRingSpinBox">
+         <property name="maximum">
+          <number>100</number>
+         </property>
+         <property name="value">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="1">
+        <widget class="QLabel" name="extractResultsFirstLayerSmoothingWeightLabel">
+         <property name="text">
+          <string>Offset smooth weight:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="1">
+        <widget class="QLabel" name="extractResultsFirstLayerSmoothingIterationsLabel">
+         <property name="text">
+          <string>Offset smooth iter:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QLabel" name="saliencyEpsLabel">
+         <property name="text">
+          <string>Saliency eps:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1" colspan="2">
+        <widget class="QCheckBox" name="optimalOrientationDeterministicCheckBox">
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="text">
+          <string>Deterministic orientation</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
+        <widget class="QLabel" name="getAssociationDataSigmaLabel">
+         <property name="text">
+          <string>Association data sigma:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="2">
+        <widget class="QDoubleSpinBox" name="extractResultsFirstLayerSmoothingWeightSpinBox">
+         <property name="maximum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.800000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1" colspan="2">
+        <widget class="QCheckBox" name="extractResultsSecondLayerSideSubdivisionCheckBox">
+         <property name="text">
+          <string>Second layer side subdivision</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLabel" name="saliencyMaxSmoothingLabel">
+         <property name="text">
+          <string>Saliency max smooth:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QSpinBox" name="saliencyMaxSmoothingSpinBox">
+         <property name="value">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="4">
+        <widget class="QSpinBox" name="saliencyLaplacianSmoothingSpinBox">
+         <property name="value">
+          <number>20</number>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="3">
+        <widget class="QLabel" name="saliencyLaplacianSmoothingLabel">
+         <property name="text">
+          <string>Saliency laplacian smooth:</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <spacer name="horizontalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
     <widget class="QGroupBox" name="visualizationGroup">
      <property name="maximumSize">
       <size>
@@ -190,20 +1249,7 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="6" column="0">
+   <item>
     <spacer name="horizontalSpacer_3">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -216,24 +1262,11 @@
      </property>
     </spacer>
    </item>
-   <item row="3" column="0">
-    <spacer name="horizontalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="7" column="0">
+   <item>
     <widget class="QGroupBox" name="transformationGroup">
      <property name="maximumSize">
       <size>
-       <width>16777215</width>
+       <width>550</width>
        <height>16777215</height>
       </size>
      </property>
@@ -249,8 +1282,14 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="currentIndex">
-         <number>2</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="translateTab">
          <attribute name="title">
@@ -468,6 +1507,13 @@
           <string>Scale</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_6">
+          <item row="2" column="1">
+           <widget class="QPushButton" name="inverseScaleButton">
+            <property name="text">
+             <string>Inverse Scale</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="2">
            <widget class="QLabel" name="scaleZLabel">
             <property name="text">
@@ -485,53 +1531,6 @@
             </property>
             <property name="value">
              <double>1.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QDoubleSpinBox" name="scaleYSpinBox">
-            <property name="decimals">
-             <number>6</number>
-            </property>
-            <property name="maximum">
-             <double>100000.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>1.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="scaleXLabel">
-            <property name="text">
-             <string>x:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLabel" name="scaleYLabel">
-            <property name="text">
-             <string>y:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QDoubleSpinBox" name="scaleZSpinBox">
-            <property name="decimals">
-             <number>6</number>
-            </property>
-            <property name="maximum">
-             <double>1000000.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>1.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QPushButton" name="inverseScaleButton">
-            <property name="text">
-             <string>Inverse Scale</string>
             </property>
            </widget>
           </item>
@@ -555,6 +1554,46 @@
             </property>
            </spacer>
           </item>
+          <item row="1" column="2">
+           <widget class="QDoubleSpinBox" name="scaleZSpinBox">
+            <property name="decimals">
+             <number>6</number>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="scaleXLabel">
+            <property name="text">
+             <string>x:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="scaleYLabel">
+            <property name="text">
+             <string>y:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="scaleYSpinBox">
+            <property name="decimals">
+             <number>6</number>
+            </property>
+            <property name="maximum">
+             <double>100000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </widget>
@@ -562,798 +1601,113 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QGroupBox" name="fourAxisFabricationGroup">
-     <property name="maximumSize">
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
       <size>
-       <width>16777215</width>
-       <height>16777215</height>
+       <width>20</width>
+       <height>40</height>
       </size>
      </property>
-     <property name="title">
-      <string>Four Axis Fabrication</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="12" column="3">
-       <widget class="QCheckBox" name="optimalOrientationDeterministicCheckBox">
-        <property name="layoutDirection">
-         <enum>Qt::LeftToRight</enum>
-        </property>
-        <property name="text">
-         <string>Deterministic</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLabel" name="stockDiameterLabel">
-        <property name="text">
-         <string>Stock diameter:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="QPushButton" name="scaleStockButton">
-        <property name="text">
-         <string>Scale/Stock</string>
-        </property>
-       </widget>
-      </item>
-      <item row="39" column="1">
-       <widget class="QLabel" name="extractResultsFirstLayerSmoothingIterationsLabel">
-        <property name="text">
-         <string>Smoothing it:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="28" column="1" colspan="2">
-       <widget class="QCheckBox" name="smoothLinesCheckBox">
-        <property name="text">
-         <string>Smooth edge lines</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="42" column="5">
-       <widget class="QPushButton" name="extractResultsButton">
-        <property name="text">
-         <string>Extraction</string>
-        </property>
-       </widget>
-      </item>
-      <item row="30" column="5">
-       <widget class="QPushButton" name="recheckVisibilityButton">
-        <property name="text">
-         <string>Recheck</string>
-        </property>
-       </widget>
-      </item>
-      <item row="23" column="3">
-       <widget class="QCheckBox" name="getAssociationFixExtremesCheckBox">
-        <property name="text">
-         <string>Fix extremes</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="5">
-       <widget class="QPushButton" name="findDetailsButton">
-        <property name="text">
-         <string>Find details</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="5">
-       <widget class="QPushButton" name="smoothingButton">
-        <property name="text">
-         <string>Taubin</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="modelScaleCheckBox">
-        <property name="text">
-         <string>Scale</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="40" column="3">
-       <widget class="QLabel" name="extractResultsSecondLayerStepWidthLabel">
-        <property name="text">
-         <string>Step height:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="26" column="1">
-       <widget class="QCheckBox" name="optimizationRelaxHolesCheckBox">
-        <property name="text">
-         <string>Relax holes</string>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="21" column="1">
-       <widget class="QLabel" name="getAssociationDataSigmaLabel">
-        <property name="text">
-         <string>Data sigma:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="31" column="1">
-       <widget class="QCheckBox" name="cutComponentsCheckBox">
-        <property name="text">
-         <string>Cut</string>
-        </property>
-       </widget>
-      </item>
-      <item row="17" column="4">
-       <widget class="QSpinBox" name="checkVisibilityResolutionSpinBox">
-        <property name="minimum">
-         <number>1024</number>
-        </property>
-        <property name="maximum">
-         <number>65536</number>
-        </property>
-        <property name="singleStep">
-         <number>2048</number>
-        </property>
-        <property name="value">
-         <number>16384</number>
-        </property>
-       </widget>
-      </item>
-      <item row="17" column="5">
-       <widget class="QPushButton" name="checkVisibilityButton">
-        <property name="text">
-         <string>Visibility</string>
-        </property>
-       </widget>
-      </item>
-      <item row="17" column="3">
-       <widget class="QLabel" name="checkVisibilityResolutionLabel">
-        <property name="text">
-         <string>GL resolution:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="31" column="5">
-       <widget class="QPushButton" name="cutComponentsButton">
-        <property name="text">
-         <string>Cutting</string>
-        </property>
-       </widget>
-      </item>
-      <item row="30" column="1">
-       <widget class="QCheckBox" name="recheckVisibilityCheckBox">
-        <property name="text">
-         <string>Recheck</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="29" column="1">
-       <widget class="QLabel" name="restoreFrequenciesIterationsLabel">
-        <property name="text">
-         <string>Iterations:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="15" column="4">
-       <widget class="QSpinBox" name="checkVisibilityDirectionsSpinBox">
-        <property name="maximum">
-         <number>360</number>
-        </property>
-        <property name="singleStep">
-         <number>2</number>
-        </property>
-        <property name="value">
-         <number>120</number>
-        </property>
-       </widget>
-      </item>
-      <item row="42" column="1">
-       <widget class="QLabel" name="extractResultsXDirectionsOrderLabel">
-        <property name="text">
-         <string>X directions:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="4">
-       <widget class="QDoubleSpinBox" name="optimalOrientationBBWeightSpinBox">
-        <property name="maximum">
-         <double>1.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="42" column="2" colspan="2">
-       <widget class="QFrame" name="extractResultsXDirectionsOrderFrame">
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
-          <widget class="QRadioButton" name="extractResultsXDirectionsAfterRadio">
-           <property name="text">
-            <string>After</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="extractResultsXDirectionsBeforeRadio">
-           <property name="text">
-            <string>Before</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="38" column="3">
-       <widget class="QLabel" name="extractResultsFirstLayerOffsetLabel">
-        <property name="text">
-         <string>First offset:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="23" column="2">
-       <widget class="QDoubleSpinBox" name="getAssociationCompactnessSpinBox">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>30.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="26" column="5">
-       <widget class="QPushButton" name="optimizationButton">
-        <property name="text">
-         <string>Optimization</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QDoubleSpinBox" name="stockDiameterSpinBox">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>60.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="4">
-       <widget class="QCheckBox" name="saliencyUnitScaleCheckBox">
-        <property name="text">
-         <string>Unit scale</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="21" column="3">
-       <widget class="QLabel" name="getAssociationDetailMultiplierLabel">
-        <property name="text">
-         <string>Detail multiplier:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="38" column="2">
-       <widget class="QDoubleSpinBox" name="extractResultsFirstLayerAngleSpinBox">
-        <property name="maximum">
-         <double>90.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>20.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="23" column="5">
-       <widget class="QPushButton" name="getAssociationButton">
-        <property name="text">
-         <string>Association</string>
-        </property>
-       </widget>
-      </item>
-      <item row="38" column="5">
-       <widget class="QCheckBox" name="extractResultsMinFirstCheckBox">
-        <property name="text">
-         <string>Min first</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="4">
-       <widget class="QDoubleSpinBox" name="stockLengthSpinBox">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>100.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="15" column="3">
-       <widget class="QLabel" name="checkVisibilityDirectionsLabel">
-        <property name="text">
-         <string>Directions:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="40" column="4">
-       <widget class="QDoubleSpinBox" name="extractResultsSecondLayerStepHeightSpinBox">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>15.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="1">
-       <widget class="QLabel" name="smoothingLambdaLabel">
-        <property name="text">
-         <string>Lambda:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="2">
-       <widget class="QDoubleSpinBox" name="smoothingLambdaSpinBox">
-        <property name="decimals">
-         <number>3</number>
-        </property>
-        <property name="maximum">
-         <double>1.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.010000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.900000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="28" column="5">
-       <widget class="QPushButton" name="smoothLinesButton">
-        <property name="text">
-         <string>Smooth lines</string>
-        </property>
-       </widget>
-      </item>
-      <item row="26" column="2">
-       <widget class="QCheckBox" name="optimizationLoseHolesCheckBox">
-        <property name="text">
-         <string>Delete holes</string>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="3">
-       <widget class="QLabel" name="optimalOrientationBBWeightLabel">
-        <property name="text">
-         <string>BB x-length w:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="23" column="4">
-       <widget class="QCheckBox" name="checkVisibilityXDirectionsCheckBox">
-        <property name="text">
-         <string>Include +x/-x</string>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="38" column="4">
-       <widget class="QDoubleSpinBox" name="extractResultsFirstLayerOffsetSpinBox">
-        <property name="value">
-         <double>3.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="15" column="5">
-       <widget class="QPushButton" name="selectExtremesButton">
-        <property name="text">
-         <string>Extremes</string>
-        </property>
-       </widget>
-      </item>
-      <item row="15" column="1">
-       <widget class="QLabel" name="selectExtremesHeightfieldAngleLabel">
-        <property name="text">
-         <string>HF angle:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="26" column="3">
-       <widget class="QLabel" name="optimizationMinChartAreaLabel">
-        <property name="text">
-         <string>Min chart area:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="40" column="1">
-       <widget class="QLabel" name="extractResultsSecondLayerStepHeightLabel">
-        <property name="text">
-         <string>Step width:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="3">
-       <widget class="QLabel" name="smoothingMuLabel">
-        <property name="text">
-         <string>Mu:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="40" column="5">
-       <widget class="QCheckBox" name="extractResultsSecondLayerSideSubdivisionCheckBox">
-        <property name="text">
-         <string>Side subd</string>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="1">
-       <widget class="QLabel" name="optimalOrientationOrientationsLabel">
-        <property name="text">
-         <string>Orientations:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="38" column="1">
-       <widget class="QLabel" name="extractResultsFirstLayerAngleLabel">
-        <property name="text">
-         <string>First angle:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="30" column="2" colspan="3">
-       <widget class="QCheckBox" name="recheckVisibilityReassignNonVisibleCheckBox">
-        <property name="text">
-         <string>Reassing non-visible triangles to adjacent chart</string>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="40" column="2">
-       <widget class="QDoubleSpinBox" name="extractResultsSecondLayerStepWidthSpinBox">
-        <property name="maximum">
-         <double>90.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>5.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="39" column="3">
-       <widget class="QLabel" name="extractResultsFirstLayerSmoothingWeightLabel">
-        <property name="text">
-         <string>Weight:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QDoubleSpinBox" name="modelLengthSpinBox">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>60.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="29" column="2">
-       <widget class="QSpinBox" name="restoreFrequenciesIterationsSpinBox">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="maximum">
-         <number>1000</number>
-        </property>
-        <property name="value">
-         <number>50</number>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="2">
-       <widget class="QSpinBox" name="optimalOrientationOrientationsSpinBox">
-        <property name="minimum">
-         <number>4</number>
-        </property>
-        <property name="maximum">
-         <number>50000</number>
-        </property>
-        <property name="value">
-         <number>2000</number>
-        </property>
-       </widget>
-      </item>
-      <item row="15" column="2">
-       <widget class="QDoubleSpinBox" name="selectExtremesHeightfieldAngleSpinBox">
-        <property name="minimum">
-         <double>0.010000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>90.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>90.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="23" column="1">
-       <widget class="QLabel" name="getAssociationCompactnessLabel">
-        <property name="text">
-         <string>Compactness:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="42" column="4">
-       <widget class="QCheckBox" name="extractResultsRotateCheckBox">
-        <property name="text">
-         <string>Rotate</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="26" column="4">
-       <widget class="QDoubleSpinBox" name="optimizationMinChartAreaSpinBox">
-        <property name="decimals">
-         <number>4</number>
-        </property>
-        <property name="maximum">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.001000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.010000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="29" column="5">
-       <widget class="QPushButton" name="restoreFrequenciesButton">
-        <property name="text">
-         <string>Frequencies</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="3">
-       <widget class="QLabel" name="stockLengthLabel">
-        <property name="text">
-         <string>Stock length:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="39" column="2">
-       <widget class="QSpinBox" name="extractResultsFirstLayerSmoothingIterationsSpinBox">
-        <property name="maximum">
-         <number>300</number>
-        </property>
-        <property name="value">
-         <number>5</number>
-        </property>
-       </widget>
-      </item>
-      <item row="39" column="4">
-       <widget class="QDoubleSpinBox" name="extractResultsFirstLayerSmoothingWeightSpinBox">
-        <property name="maximum">
-         <double>1.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.800000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="3">
-       <widget class="QCheckBox" name="saliencyCheckBox">
-        <property name="text">
-         <string>Use saliency</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="4">
-       <widget class="QDoubleSpinBox" name="smoothingMuSpinBox">
-        <property name="decimals">
-         <number>3</number>
-        </property>
-        <property name="minimum">
-         <double>-1.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>0.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.010000000000000</double>
-        </property>
-        <property name="value">
-         <double>-0.890000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="21" column="4">
-       <widget class="QDoubleSpinBox" name="getAssociationDetailMultiplierSpinBox">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.500000000000000</double>
-        </property>
-        <property name="value">
-         <double>25.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="5">
-       <widget class="QPushButton" name="optimalOrientationButton">
-        <property name="text">
-         <string>Orientation</string>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="2">
-       <widget class="QDoubleSpinBox" name="optimalOrientationExtremeWeightSpinBox">
-        <property name="maximum">
-         <double>1.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="17" column="1" colspan="2">
-       <widget class="QFrame" name="checkVisibilityMethodFrame">
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QRadioButton" name="checkVisibilityGLRadio">
-           <property name="text">
-            <string>GL</string>
-           </property>
-           <property name="checked">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="checkVisibilityRayRadio">
-           <property name="text">
-            <string>Ray</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="checkVisibilityProjectionRadio">
-           <property name="text">
-            <string>Pro</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="3" column="5">
-       <widget class="QPushButton" name="paintModel">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Open painting</string>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="1">
-       <widget class="QLabel" name="optimalOrientationExtremeWeightLabel">
-        <property name="text">
-         <string>Extreme w:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="21" column="2">
-       <widget class="QDoubleSpinBox" name="getAssociationDataSigmaSpinBox">
-        <property name="minimum">
-         <double>0.050000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>100.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.500000000000000</double>
-        </property>
-        <property name="value">
-         <double>1.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QLabel" name="saliencyRingLabel">
-        <property name="text">
-         <string>Saliency ring:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QSpinBox" name="saliencyRingSpinBox">
-        <property name="maximum">
-         <number>100</number>
-        </property>
-        <property name="value">
-         <number>5</number>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="3">
-       <widget class="QLabel" name="smoothingIterationsLabel">
-        <property name="text">
-         <string>Smooth Iterations:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="4">
-       <widget class="QSpinBox" name="smoothingIterationsSpinBox">
-        <property name="maximum">
-         <number>10000</number>
-        </property>
-        <property name="singleStep">
-         <number>50</number>
-        </property>
-        <property name="value">
-         <number>500</number>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
+    </spacer>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>loadMeshButton</tabstop>
+  <tabstop>reloadMeshButton</tabstop>
+  <tabstop>clearMeshButton</tabstop>
+  <tabstop>saveResultsButton</tabstop>
+  <tabstop>loadDataButton</tabstop>
+  <tabstop>saveDataButton</tabstop>
+  <tabstop>fourAxisFabricationGroup</tabstop>
+  <tabstop>scaleStockButton</tabstop>
+  <tabstop>saliencyFindDetailsButton</tabstop>
+  <tabstop>smoothingButton</tabstop>
+  <tabstop>optimalOrientationButton</tabstop>
+  <tabstop>selectExtremesButton</tabstop>
+  <tabstop>checkVisibilityButton</tabstop>
+  <tabstop>getAssociationButton</tabstop>
+  <tabstop>optimizationButton</tabstop>
+  <tabstop>smoothLinesButton</tabstop>
+  <tabstop>restoreFrequenciesButton</tabstop>
+  <tabstop>cutComponentsButton</tabstop>
+  <tabstop>extractResultsButton</tabstop>
+  <tabstop>modelScaleCheckBox</tabstop>
+  <tabstop>stockLengthSpinBox</tabstop>
+  <tabstop>modelLengthSpinBox</tabstop>
+  <tabstop>stockDiameterSpinBox</tabstop>
+  <tabstop>smoothingIterationsSpinBox</tabstop>
+  <tabstop>optimalOrientationOrientationsSpinBox</tabstop>
+  <tabstop>checkVisibilityDirectionsSpinBox</tabstop>
+  <tabstop>getAssociationCompactnessSpinBox</tabstop>
+  <tabstop>getAssociationDetailMultiplierSpinBox</tabstop>
+  <tabstop>optimizationRelaxHolesCheckBox</tabstop>
+  <tabstop>optimizationLoseHolesCheckBox</tabstop>
+  <tabstop>optimizationMinChartAreaSpinBox</tabstop>
+  <tabstop>smoothLinesCheckBox</tabstop>
+  <tabstop>restoreFrequenciesIterationsSpinBox</tabstop>
+  <tabstop>restoreFrequenciesRecheckCheckBox</tabstop>
+  <tabstop>cutComponentsCheckBox</tabstop>
+  <tabstop>extractResultsXDirectionsAfterRadio</tabstop>
+  <tabstop>extractResultsXDirectionsBeforeRadio</tabstop>
+  <tabstop>extractResultsMinFirstCheckBox</tabstop>
+  <tabstop>extractResultsFirstLayerAngleSpinBox</tabstop>
+  <tabstop>extractResultsFirstLayerOffsetSpinBox</tabstop>
+  <tabstop>extractResultsSecondLayerStepWidthSpinBox</tabstop>
+  <tabstop>extractResultsSecondLayerStepHeightSpinBox</tabstop>
+  <tabstop>meshRadio</tabstop>
+  <tabstop>extremesRadio</tabstop>
+  <tabstop>visibilityRadio</tabstop>
+  <tabstop>associationRadio</tabstop>
+  <tabstop>resultsRadio</tabstop>
+  <tabstop>visualizationSlider</tabstop>
+  <tabstop>showNonVisibleCheck</tabstop>
+  <tabstop>moveCameraCheckBox</tabstop>
+  <tabstop>resetCameraButton</tabstop>
+  <tabstop>transformationTab</tabstop>
+  <tabstop>axisXSpinBox</tabstop>
+  <tabstop>angleSpinBox</tabstop>
+  <tabstop>axisYSpinBox</tabstop>
+  <tabstop>axisZSpinBox</tabstop>
+  <tabstop>rotateButton</tabstop>
+  <tabstop>heightfieldAngleSpinBox</tabstop>
+  <tabstop>saliencyRingSpinBox</tabstop>
+  <tabstop>saliencyUnitScaleCheckBox</tabstop>
+  <tabstop>smoothingLambdaSpinBox</tabstop>
+  <tabstop>smoothingMuSpinBox</tabstop>
+  <tabstop>optimalOrientationBBWeightSpinBox</tabstop>
+  <tabstop>optimalOrientationExtremeWeightSpinBox</tabstop>
+  <tabstop>optimalOrientationDeterministicCheckBox</tabstop>
+  <tabstop>checkVisibilityGLRadio</tabstop>
+  <tabstop>checkVisibilityRayRadio</tabstop>
+  <tabstop>checkVisibilityProjectionRadio</tabstop>
+  <tabstop>checkVisibilityResolutionSpinBox</tabstop>
+  <tabstop>getAssociationDataSigmaSpinBox</tabstop>
+  <tabstop>getAssociationFixExtremesCheckBox</tabstop>
+  <tabstop>checkVisibilityXDirectionsCheckBox</tabstop>
+  <tabstop>restoreFrequenciesReassignNonVisibleCheckBox</tabstop>
+  <tabstop>extractResultsSecondLayerSideSubdivisionCheckBox</tabstop>
+  <tabstop>extractResultsRotateCheckBox</tabstop>
+  <tabstop>extractResultsFirstLayerSmoothingIterationsSpinBox</tabstop>
+  <tabstop>extractResultsFirstLayerSmoothingWeightSpinBox</tabstop>
+  <tabstop>scaleZSpinBox</tabstop>
+  <tabstop>scaleYSpinBox</tabstop>
+  <tabstop>minusYButton</tabstop>
+  <tabstop>scaleButton</tabstop>
+  <tabstop>inverseScaleButton</tabstop>
+  <tabstop>minusXButton</tabstop>
+  <tabstop>plusXButton</tabstop>
+  <tabstop>centerOnOriginButton</tabstop>
+  <tabstop>plusYButton</tabstop>
+  <tabstop>plusZButton</tabstop>
+  <tabstop>stepSpinBox</tabstop>
+  <tabstop>scaleXSpinBox</tabstop>
+  <tabstop>minusZButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

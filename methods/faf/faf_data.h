@@ -43,7 +43,6 @@ public:
     bool isAssociationOptimized;
     bool isLineSmoothed;
     bool areFrequenciesRestored;
-    bool isVisibilityRecheckedAfterRestore;
     bool areComponentsCut;
     bool areResultsExtracted;
 

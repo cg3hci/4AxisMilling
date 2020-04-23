@@ -17,11 +17,7 @@
 #include <cg3/libigl/mesh_distance.h>
 
 #include <cg3/algorithms/normalization.h>
-
 #include <cg3/algorithms/saliency.h>
-
-#define NSCALES 5
-
 
 
 /* ----- CONSTRUCTORS/DESTRUCTOR ------ */
@@ -33,12 +29,9 @@
 FAFManager::FAFManager(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::FAFManager),
-    mainWindow((cg3::viewer::MainWindow&)*parent),
-    paintingWindow(this)
+    mainWindow((cg3::viewer::MainWindow&)*parent)
 {
     ui->setupUi(this);
-
-    QApplication::connect(&paintingWindow, &PaintingWindow::meshPainted, this, &FAFManager::meshPainted);
 
     initialize();
 }
@@ -64,6 +57,11 @@ void FAFManager::initialize() {
     loaderSaverData.addSupportedExtension("faf");
 
     mainWindow.canvas.setOrthographicCamera();
+
+    QObject::connect(
+            &mainWindow.canvas, SIGNAL(objectPicked(const cg3::PickableObject*, unsigned int)),
+            this, SLOT(facePicked(const cg3::PickableObject*, unsigned int)));
+    mainWindow.canvas.setMouseBinding(Qt::ControlModifier, Qt::LeftButton, cg3::viewer::GLCanvas::SELECT);
 
     clearData();
 
@@ -97,15 +95,29 @@ void FAFManager::updateUI() {
     ui->modelScaleCheckBox->setEnabled(!data.isMeshScaledAndStockGenerated);
     ui->modelLengthSpinBox->setEnabled(!data.isMeshScaledAndStockGenerated);
 
-    //Saliency and details
+    //Saliency
+    ui->saliencyFindDetailsButton->setEnabled(!data.isSaliencyComputed);
     ui->saliencyCheckBox->setEnabled(!data.isSaliencyComputed);
     ui->saliencyRingLabel->setEnabled(!data.isSaliencyComputed);
     ui->saliencyRingSpinBox->setEnabled(!data.isSaliencyComputed);
     ui->saliencyUnitScaleCheckBox->setEnabled(!data.isSaliencyComputed);
-    ui->findDetailsButton->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyScalesLabel->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyScalesSpinBox->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyEpsLabel->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyEpsSpinBox->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyLaplacianSmoothingLabel->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyLaplacianSmoothingSpinBox->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyMaxSmoothingLabel->setEnabled(!data.isSaliencyComputed);
+    ui->saliencyMaxSmoothingSpinBox->setEnabled(!data.isSaliencyComputed);
 
     //Detail painting
-    ui->paintModel->setEnabled(data.isSaliencyComputed && !data.isMeshSmoothed);
+    ui->paintingSizeLabel->setEnabled(data.isSaliencyComputed && !data.isMeshSmoothed);
+    ui->paintingSizeSlider->setEnabled(data.isSaliencyComputed && !data.isMeshSmoothed);
+    ui->paintingFillRadioBox->setEnabled(data.isSaliencyComputed && !data.isMeshSmoothed);
+    ui->paintingFreeRadioBox->setEnabled(data.isSaliencyComputed && !data.isMeshSmoothed);
+    ui->paintingResetRadioBox->setEnabled(data.isSaliencyComputed && !data.isMeshSmoothed);
+    ui->paintingFillValueLabel->setEnabled(data.isSaliencyComputed && !data.isMeshSmoothed);
+    ui->paintingFillValueSpinBox->setEnabled(data.isSaliencyComputed && !data.isMeshSmoothed);
 
     //Smoothing
     ui->smoothingButton->setEnabled(!data.isMeshSmoothed);
@@ -127,9 +139,9 @@ void FAFManager::updateUI() {
     ui->optimalOrientationBBWeightSpinBox->setEnabled(!data.isMeshOriented);
 
     //Select extremes
+    ui->heightfieldAngleLabel->setEnabled(!data.areExtremesSelected);
+    ui->heightfieldAngleSpinBox->setEnabled(!data.areExtremesSelected);
     ui->selectExtremesButton->setEnabled(!data.areExtremesSelected);
-    ui->selectExtremesHeightfieldAngleLabel->setEnabled(!data.areExtremesSelected);
-    ui->selectExtremesHeightfieldAngleSpinBox->setEnabled(!data.areExtremesSelected);
 
     //Check visibility
     ui->checkVisibilityButton->setEnabled(!data.isVisibilityChecked);
@@ -165,11 +177,8 @@ void FAFManager::updateUI() {
     ui->restoreFrequenciesButton->setEnabled(!data.areFrequenciesRestored);
     ui->restoreFrequenciesIterationsLabel->setEnabled(!data.areFrequenciesRestored);
     ui->restoreFrequenciesIterationsSpinBox->setEnabled(!data.areFrequenciesRestored);
-
-    //Recheck visibility after restore
-    ui->recheckVisibilityCheckBox->setEnabled(!data.isVisibilityRecheckedAfterRestore);
-    ui->recheckVisibilityReassignNonVisibleCheckBox->setEnabled(!data.isVisibilityRecheckedAfterRestore);
-    ui->recheckVisibilityButton->setEnabled(!data.isVisibilityRecheckedAfterRestore);
+    ui->restoreFrequenciesRecheckCheckBox->setEnabled(!data.areFrequenciesRestored);
+    ui->restoreFrequenciesReassignNonVisibleCheckBox->setEnabled(!data.areFrequenciesRestored);
 
     //Cut components
     ui->cutComponentsButton->setEnabled(!data.areComponentsCut);
@@ -190,11 +199,10 @@ void FAFManager::updateUI() {
     ui->extractResultsSecondLayerStepHeightLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsSecondLayerStepHeightSpinBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsSecondLayerSideSubdivisionCheckBox->setEnabled(!data.areResultsExtracted);
+    ui->extractResultsRotateCheckBox->setEnabled(!data.areResultsExtracted);
     ui->extractResultsXDirectionsOrderLabel->setEnabled(!data.areResultsExtracted);
     ui->extractResultsXDirectionsOrderFrame->setEnabled(!data.areResultsExtracted);
     ui->extractResultsMinFirstCheckBox->setEnabled(!data.areResultsExtracted);
-    ui->extractResultsRotateCheckBox->setEnabled(!data.areResultsExtracted);
-
 
 
 
@@ -211,6 +219,8 @@ void FAFManager::updateUI() {
 
     // ----- Transformations -----
     ui->transformationGroup->setEnabled(data.isMeshLoaded);
+
+    ui->modelScaleCheckBox->setFocus();
 }
 
 /**
@@ -273,10 +283,15 @@ void FAFManager::findDetails() {
         bool computeBySaliency = ui->saliencyCheckBox->isChecked();
         bool unitScale = ui->saliencyUnitScaleCheckBox->isChecked();
         unsigned int nRing = ui->saliencyRingSpinBox->value();
+        unsigned int nScales = ui->saliencyScalesSpinBox->value();
+        double eps = ui->saliencyEpsSpinBox->value();
+        unsigned int maxIterations = ui->saliencyMaxSmoothingSpinBox->value();
+        unsigned int laplacianIterations = ui->saliencyLaplacianSmoothingSpinBox->value();
+
         cg3::Timer t(std::string("Saliency details"));
 
         //Find details
-        FourAxisFabrication::findDetails(data, unitScale, nRing, NSCALES, computeBySaliency);
+        FourAxisFabrication::findDetails(data, unitScale, nRing, nScales, eps, computeBySaliency, maxIterations, laplacianIterations);
 
         t.stopAndPrint();
 
@@ -369,7 +384,7 @@ void FAFManager::selectExtremes() {
         optimalOrientation();
 
         //Get UI data
-        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        double heightfieldAngle = ui->heightfieldAngleSpinBox->value() / 180.0 * M_PI;
 
         cg3::Timer t(std::string("Select extremes"));
 
@@ -390,7 +405,7 @@ void FAFManager::checkVisibility() {
         selectExtremes();
 
         //Get UI data
-        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        double heightfieldAngle = ui->heightfieldAngleSpinBox->value() / 180.0 * M_PI;
         unsigned int nDirections = (unsigned int) ui->checkVisibilityDirectionsSpinBox->value();
         unsigned int resolution = (unsigned int) ui->checkVisibilityResolutionSpinBox->value();
         bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
@@ -521,8 +536,21 @@ void FAFManager::restoreFrequencies() {
         smoothLines();
 
         //Get UI data
-        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        double heightfieldAngle = ui->heightfieldAngleSpinBox->value() / 180.0 * M_PI;
         unsigned int nIterations = (unsigned int) ui->restoreFrequenciesIterationsSpinBox->value();
+
+        //Get UI data
+        unsigned int resolution = (unsigned int) ui->checkVisibilityResolutionSpinBox->value();
+        bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
+        bool recheck = ui->restoreFrequenciesRecheckCheckBox->isChecked();
+        bool reassign = ui->restoreFrequenciesReassignNonVisibleCheckBox->isChecked();
+        FourAxisFabrication::CheckMode checkMode =
+                (ui->checkVisibilityGLRadio->isChecked() ?
+                     FourAxisFabrication::OPENGL :
+                     ui->checkVisibilityRayRadio->isChecked() ?
+                         FourAxisFabrication::RAYSHOOTING :
+                         FourAxisFabrication::PROJECTION);
+
 
         double haussDistance = cg3::libigl::hausdorffDistance(data.mesh, data.smoothedMesh);
         cg3::BoundingBox3 originalMeshBB = data.mesh.boundingBox();
@@ -537,38 +565,14 @@ void FAFManager::restoreFrequencies() {
 
         t.stopAndPrint();
 
+
+
         haussDistance = cg3::libigl::hausdorffDistance(data.mesh, data.restoredMesh);
         originalMeshBB = data.mesh.boundingBox();
         haussDistanceBB = haussDistance/originalMeshBB.diag();
 
         std::cout << "Restored -> Haussdorff distance: " << haussDistance << " (w.r.t. bounding box: " << haussDistanceBB << ")" << std::endl;
 
-        data.areFrequenciesRestored = true;
-
-        addDrawableRestoredMesh();
-    }
-}
-
-
-/**
- * @brief Recheck visibility after frequencies are restored
- */
-void FAFManager::recheckVisibilityAfterRestore() {
-    if (!data.isVisibilityRecheckedAfterRestore) {
-        restoreFrequencies();
-
-        //Get UI data
-        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
-        unsigned int resolution = (unsigned int) ui->checkVisibilityResolutionSpinBox->value();
-        bool includeXDirections = ui->checkVisibilityXDirectionsCheckBox->isChecked();
-        bool recheck = ui->recheckVisibilityCheckBox->isChecked();
-        bool reassign = ui->recheckVisibilityReassignNonVisibleCheckBox->isChecked();
-        FourAxisFabrication::CheckMode checkMode =
-                (ui->checkVisibilityGLRadio->isChecked() ?
-                     FourAxisFabrication::OPENGL :
-                     ui->checkVisibilityRayRadio->isChecked() ?
-                         FourAxisFabrication::RAYSHOOTING :
-                         FourAxisFabrication::PROJECTION);
 
 
         cg3::Timer tCheck("Recheck visibility after frequencies have been restored");
@@ -580,20 +584,20 @@ void FAFManager::recheckVisibilityAfterRestore() {
 
         std::cout << "Non-visible triangles after recheck: " << data.restoredMeshNonVisibleFaces.size() << std::endl;
 
-        data.isVisibilityRecheckedAfterRestore = true;
 
-        updateDrawableRestoredMesh();
+
+        data.areFrequenciesRestored = true;
+
+        addDrawableRestoredMesh();
     }
 }
-
-
 
 /**
  * @brief Cut components
  */
 void FAFManager::cutComponents() {
     if (!data.areComponentsCut) {
-        recheckVisibilityAfterRestore();
+        restoreFrequencies();
 
         //Get UI data
         bool cutComponents = ui->cutComponentsCheckBox->isChecked();
@@ -621,7 +625,7 @@ void FAFManager::extractResults() {
         cutComponents();
 
         //Get UI data
-        double heightfieldAngle = ui->selectExtremesHeightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        double heightfieldAngle = ui->heightfieldAngleSpinBox->value() / 180.0 * M_PI;
         double stockLength = ui->stockLengthSpinBox->value();
         double stockDiameter = ui->stockDiameterSpinBox->value();
         double firstLayerAngle = ui->extractResultsFirstLayerAngleSpinBox->value() / 180.0 * M_PI;
@@ -683,6 +687,8 @@ void FAFManager::addDrawableStock() {
 void FAFManager::addDrawableDetailMesh() {
     drawableDetailMesh = cg3::DrawableEigenMesh(data.mesh);
     drawableDetailMesh.setFlatShading();
+
+    cg3::libigl::heatGeodesicsPrecomputeData(drawableDetailMesh, detailMeshGeodesicsData);
 
     mainWindow.pushDrawableObject(&drawableDetailMesh, "Detail mesh");
 
@@ -1040,29 +1046,40 @@ void FAFManager::colorizeDetailMesh()
         double minSaliency = data.saliency[0];
         double maxSaliency = data.saliency[0];
         for (const double& value : data.saliency) {
-            if (value < MAXSALIENCY) {
+            if (value >= 0 && value <= 1) {
                 minSaliency = std::min(minSaliency, value);
                 maxSaliency = std::max(maxSaliency, value);
             }
         }
+
         std::cout << "Saliency min: " << minSaliency << std::endl;
         std::cout << "Saliency max: " << maxSaliency << std::endl;
 
-        std::vector<double> saliencyNormalized = cg3::linearNormalization(data.saliency, minSaliency, maxSaliency);
-        std::vector<double> faceSaliencyNormalized = cg3::linearNormalization(data.faceSaliency, minSaliency, maxSaliency);
+        for(size_t fId = 0; fId < data.faceSaliency.size(); fId++) {
+            double normalizedValue;
 
-//        std::vector<double> saliencyNormalized = cg3::varianceNormalization(data.saliency, 1.0);
-//        std::vector<double> faceSaliencyNormalized = cg3::varianceNormalization(data.faceSaliency, 1.0);
+            if (data.faceSaliency[fId] > maxSaliency)
+                normalizedValue = 1.0;
+            else if (maxSaliency - minSaliency == 0 || data.faceSaliency[fId] < 0)
+                normalizedValue = 0.0;
+            else
+                normalizedValue = (data.faceSaliency[fId] - minSaliency) / (maxSaliency - minSaliency);
 
-        for(size_t fId = 0; fId < data.faceSaliency.size(); fId++){
-            if (data.faceSaliency[fId]) {
-                cg3::Color color = computeColorByNormalizedValue(faceSaliencyNormalized[fId]);
-                drawableDetailMesh.setFaceColor(color, fId);
-            }
+            cg3::Color color = computeColorByNormalizedValue(normalizedValue);
+            drawableDetailMesh.setFaceColor(color, fId);
         }
 
         for(size_t vId = 0; vId < drawableDetailMesh.numberVertices(); vId++) {
-            cg3::Color color = computeColorByNormalizedValue(saliencyNormalized[vId]);
+            double normalizedValue;
+
+            if (data.saliency[vId] > maxSaliency)
+                normalizedValue = 1.0;
+            else if (maxSaliency - minSaliency == 0 || data.saliency[vId] < 0)
+                normalizedValue = 0.0;
+            else
+                normalizedValue = (data.saliency[vId] - minSaliency) / (maxSaliency - minSaliency);
+
+            cg3::Color color = computeColorByNormalizedValue(normalizedValue);
             drawableDetailMesh.setVertexColor(color, vId);
         }
     }
@@ -1299,7 +1316,7 @@ void FAFManager::showCurrentStatusDescription()
         ss << " Non-visible: " << data.nonVisibleFaces.size() << ".";
         if (data.isAssociationOptimized)
             ss << " Ass: " << data.associationNonVisibleFaces.size() << ".";
-        if (data.isVisibilityRecheckedAfterRestore)
+        if (data.areFrequenciesRestored)
             ss << " Freq: "<<  data.restoredMeshNonVisibleFaces.size() << ".";
 
         //Update description label
@@ -1629,7 +1646,7 @@ void FAFManager::on_scaleStockButton_clicked()
     updateUI();
 }
 
-void FAFManager::on_findDetailsButton_clicked(){
+void FAFManager::on_saliencyFindDetailsButton_clicked(){
     //Find details by saliency
     findDetails();
 
@@ -1769,22 +1786,6 @@ void FAFManager::on_restoreFrequenciesButton_clicked() {
     updateUI();
 }
 
-void FAFManager::on_recheckVisibilityButton_clicked()
-{
-    //Recheck visibility
-    recheckVisibilityAfterRestore();
-
-    //Visualize association
-    ui->associationRadio->setChecked(true);
-    initializeVisualizationSlider();
-
-    //Update canvas and fit the scene
-    mainWindow.canvas.update();
-    mainWindow.canvas.fitScene();
-
-    updateUI();
-}
-
 void FAFManager::on_cutComponentsButton_clicked() {
     //Cut components
     cutComponents();
@@ -1896,8 +1897,6 @@ void FAFManager::on_minusZButton_clicked() {
     }
 }
 
-
-
 void FAFManager::on_rotateButton_clicked() {
     if (data.isMeshLoaded){
         //Rotation of the mesh
@@ -1914,9 +1913,6 @@ void FAFManager::on_rotateButton_clicked() {
         mainWindow.canvas.fitScene();
     }
 }
-
-
-
 
 void FAFManager::on_scaleButton_clicked() {
     if (data.isMeshLoaded){
@@ -2035,21 +2031,57 @@ void FAFManager::on_visualizationSlider_valueChanged(int value) {
     }
 }
 
-void FAFManager::on_paintModel_clicked()
-{
-    double minSaliency = data.saliency[0];
-    double maxSaliency = data.saliency[0];
-    for (const double& value : data.saliency) {
-        if (value < MAXSALIENCY) {
-            minSaliency = std::min(minSaliency, value);
-            maxSaliency = std::max(maxSaliency, value);
-        }
-    }
-    paintingWindow.loadData(&data.mesh, &data.faceSaliency, minSaliency, maxSaliency);
-    paintingWindow.showWindow();
-}
-
 void FAFManager::meshPainted()
 {
     colorizeDetailMesh();
+}
+
+void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
+{
+    if (obj == static_cast<cg3::PickableObject*>(&drawableDetailMesh)) {
+        if (data.isSaliencyComputed && !data.isMeshSmoothed) {
+            const double brushSize = static_cast<float>(ui->paintingSizeSlider->value()) * (drawableDetailMesh.boundingBox().diag() / 100.f);
+            const double fillValue = static_cast<float>(ui->paintingFillValueSpinBox->value());
+
+            std::vector<unsigned int> sourceVertices(3);
+            sourceVertices[0] = drawableDetailMesh.face(f).x();
+            sourceVertices[1] = drawableDetailMesh.face(f).y();
+            sourceVertices[2] = drawableDetailMesh.face(f).z();
+
+            std::vector<double> vertexGeodesics;
+
+//            cg3::libigl::exactGeodesics(
+//                        drawableDetailMesh,
+//                        sourceVertices,
+//                        vertexGeodesics);
+
+            vertexGeodesics = cg3::libigl::heatGeodesics(
+                        detailMeshGeodesicsData,
+                        sourceVertices);
+
+            for(uint fId = 0; fId < drawableDetailMesh.numberFaces(); ++fId) {
+                double dist = vertexGeodesics[drawableDetailMesh.face(fId).x()];
+                dist = std::max(dist, vertexGeodesics[drawableDetailMesh.face(fId).y()]);
+                dist = std::max(dist, vertexGeodesics[drawableDetailMesh.face(fId).z()]);
+
+                if (fId == f || dist <= brushSize) {
+                    if (ui->paintingFillRadioBox->isChecked()) {
+                        data.faceSaliency[fId] = fillValue;
+                    }
+                    else if (ui->paintingFreeRadioBox->isChecked()) {
+                        data.faceSaliency[fId] = 0.0;
+                    }
+                    else if (ui->paintingResetRadioBox->isChecked()) {
+                        data.faceSaliency[fId] = (
+                            data.saliency[drawableDetailMesh.face(fId).x()] +
+                            data.saliency[drawableDetailMesh.face(fId).y()] +
+                            data.saliency[drawableDetailMesh.face(fId).z()]
+                        ) / 3;
+                    }
+                }
+            }
+
+            colorizeDetailMesh();
+        }
+    }
 }

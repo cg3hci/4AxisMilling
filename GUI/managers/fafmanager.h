@@ -12,8 +12,11 @@
 #include <cg3/viewer/interfaces/drawable_object.h>
 #include <cg3/viewer/interfaces/drawable_container.h>
 #include <cg3/viewer/drawable_objects/drawable_eigenmesh.h>
+#include <cg3/viewer/pickable_objects/pickable_eigenmesh.h>
 
 #include <cg3/data_structures/arrays/array2d.h>
+
+#include <cg3/libigl/geodesics.h>
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -22,7 +25,6 @@
 #include <QFrame>
 
 #include "methods/fouraxisfabrication.h"
-#include "../paintingwindow.h"
 
 namespace Ui {
 class FAFManager;
@@ -51,7 +53,8 @@ private:
 
     cg3::DrawableEigenMesh drawableOriginalMesh;
 
-    cg3::DrawableEigenMesh drawableDetailMesh;
+    cg3::PickableEigenMesh drawableDetailMesh;
+    cg3::libigl::HeatGeodesicsData detailMeshGeodesicsData;
 
     cg3::DrawableEigenMesh drawableSmoothedMesh;
     cg3::DrawableEigenMesh drawableStock;
@@ -81,8 +84,6 @@ private:
     cg3::viewer::LoaderSaver loaderSaverObj;
     cg3::viewer::LoaderSaver loaderSaverData;
 
-    PaintingWindow paintingWindow;
-
 
     /* UI methods */
 
@@ -102,7 +103,6 @@ private:
     void optimizeAssociation();
     void smoothLines();
     void restoreFrequencies();
-    void recheckVisibilityAfterRestore();
     void cutComponents();
     void extractResults();
 
@@ -161,17 +161,18 @@ private slots:
 
     /* UI slots Four Axis Fabrication */
 
+    void on_scaleStockButton_clicked();
+    void on_saliencyFindDetailsButton_clicked();
     void on_smoothingButton_clicked();
     void on_optimalOrientationButton_clicked();
     void on_selectExtremesButton_clicked();
     void on_checkVisibilityButton_clicked();
     void on_getAssociationButton_clicked();
     void on_optimizationButton_clicked();
+    void on_smoothLinesButton_clicked();
     void on_restoreFrequenciesButton_clicked();
-    void on_recheckVisibilityButton_clicked();
     void on_cutComponentsButton_clicked();
     void on_extractResultsButton_clicked();
-
 
     /* UI slots Transformations */
 
@@ -202,12 +203,9 @@ private slots:
     void on_showNonVisibleCheck_clicked();
     void on_resetCameraButton_clicked();
     void on_visualizationSlider_valueChanged(int value);
-    void on_scaleStockButton_clicked();
-    void on_smoothLinesButton_clicked();
-    void on_paintModel_clicked();
-    void on_findDetailsButton_clicked();
 
     void meshPainted();
+    void facePicked(const cg3::PickableObject* obj, unsigned int f);
 };
 
 #endif // FAFMANAGER_H

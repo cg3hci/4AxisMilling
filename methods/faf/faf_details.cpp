@@ -13,7 +13,10 @@ void findDetails(
         const bool unitScale,
         const unsigned int nRing,
         const unsigned int nScales,
-        const bool computeBySaliency)
+        const double eps,
+        const bool computeBySaliency,
+        const double maxSmoothingIterations,
+        const double laplacianSmoothingIterations)
 {
     data.faceSaliency.clear();
     data.faceSaliency.resize(data.mesh.numberFaces(), 0.0);
@@ -41,13 +44,10 @@ void findDetails(
         std::vector<std::vector<int>> vvAdj = cg3::libigl::vertexToVertexAdjacencies(scaledMesh);
 
         //Compute saliency
-        data.saliency = cg3::computeSaliencyMultiScale(scaledMesh, vvAdj, nRing, nScales);
+        data.saliency = cg3::computeSaliencyMultiScale(scaledMesh, vvAdj, nRing, nScales, eps);
         for(unsigned int vId = 0; vId < scaledMesh.numberVertices(); vId++) {
             data.saliency[vId] /= nScales;
         }
-
-        const double maxSmoothingIterations = 5;
-        const double laplacianSmoothingIterations = 20;
 
         for (unsigned int it = 0; it < maxSmoothingIterations; it++) {
             std::vector<double> lastValues = data.saliency;

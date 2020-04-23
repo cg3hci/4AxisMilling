@@ -13,7 +13,10 @@ void findDetails(
         const bool unitScale = true,
         const unsigned int nRing = 5,
         const unsigned int nScales = 5,
-        const bool computeBySaliency = true);
+        const double eps = 0.003,
+        const bool computeBySaliency = true,
+        const double maxSmoothingIterations = 5,
+        const double laplacianSmoothingIterations = 20);
 
 }
 

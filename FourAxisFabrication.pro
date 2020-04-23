@@ -22,11 +22,6 @@ CONFIG += CLIPPER
 CONFIG += CG3_CORE CG3_DATA_STRUCTURES CG3_MESHES CG3_ALGORITHMS CG3_CGAL CG3_LIBIGL CG3_VIEWER CG3_VCGLIB
 include(cg3lib/cg3.pri)
 
-INCLUDEPATH    += $$PWD/cinolib/include
-DEFINES        += CINOLIB_USES_OPENGL
-DEFINES        += CINOLIB_USES_QT
-
-
 message(Included modules: $$MODULES)
 FINAL_RELEASE {
     message(Final Release!)
@@ -66,7 +61,6 @@ CLIPPER {
 }
 
 HEADERS += \
-    GUI/paintingwindow.h \
     methods/faf/faf_details.h \
     methods/faf/faf_smoothlines.h \
     methods/fouraxisfabrication.h \
@@ -87,7 +81,6 @@ HEADERS += \
     methods/faf/faf_split.h \
 
 SOURCES += \
-    GUI/paintingwindow.cpp \
     main.cpp \
     methods/faf/faf_data.cpp \
     methods/faf/faf_details.cpp \
