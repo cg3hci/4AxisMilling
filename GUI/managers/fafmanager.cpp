@@ -1385,6 +1385,7 @@ void FAFManager::on_loadMeshButton_clicked()
                 std::cout << std::endl;
 
                 std::cout << "Original: \"" << meshName << "\" " << "(" << data.mesh.numberFaces() << " F / " << data.mesh.numberVertices() << " V)" << std::endl;
+
             }
             else {
                 clearData();
@@ -2085,3 +2086,132 @@ void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
         }
     }
 }
+
+/**
+ * @brief FAFManager::on_generateResults_clicked
+ * Need 2 folders inside di buil folder, saliency and associations
+ */
+void FAFManager::on_generateResults_clicked()
+{
+    //Details UI parameter
+    bool computeBySaliency = ui->saliencyCheckBox->isChecked();
+    bool unitScale = ui->saliencyUnitScaleCheckBox->isChecked();
+    unsigned int nRing = ui->saliencyRingSpinBox->value();
+    unsigned int nScales = ui->saliencyScalesSpinBox->value();
+    double eps = ui->saliencyEpsSpinBox->value();
+    unsigned int laplacianIterations = ui->saliencyLaplacianSmoothingSpinBox->value();
+    int iterations = ui->smoothingIterationsSpinBox->value();
+
+    //Association UI parameter
+    double dataSigma = ui->getAssociationDataSigmaSpinBox->value();
+    bool fixExtremes = ui->getAssociationFixExtremesCheckBox->isChecked();
+
+    /* Results Parameter */
+    std::string meshName = "egea";
+    size_t maxSmoothingIterations = 5;
+    size_t maxCompactness = 50;
+    size_t maxDetailsMultiplier = 50;
+    size_t minCompactness = 10;
+    size_t minDetailsMultiplier = 10;
+    size_t stepCompDet = 5;
+    size_t stepSmoothingIteration = 1;
+    bool saveMesh = true;
+    bool saveSnapshot = false;
+
+    std::cout << "Start generation results" << std::endl;
+
+    for(size_t smooothingIteration = 0; smooothingIteration <=maxSmoothingIterations; smooothingIteration+=stepSmoothingIteration){
+        bool saveSaliency = true;
+
+        for(size_t compactness = minCompactness, detailsMultiplier = minDetailsMultiplier; compactness <= maxCompactness && detailsMultiplier <= maxDetailsMultiplier; compactness+=stepCompDet, detailsMultiplier+=stepCompDet){
+
+            /* Scale and stock mesh */
+            scaleAndStock();
+
+            /* Compute mesh details */
+            FourAxisFabrication::findDetails(data, unitScale, nRing, nScales, eps, computeBySaliency, smooothingIteration, laplacianIterations);
+
+            data.isSaliencyComputed = true;
+
+            /* Save the saliency mesh and snapshot*/
+            if(saveSaliency){
+                addDrawableDetailMesh();
+                colorizeDetailMesh();
+                if(saveMesh)
+                    drawableDetailMesh.saveOnObj("./" + meshName +
+                                                 "/saliency/" +
+                                                 meshName + "_" +
+                                                 std::to_string(iterations) + "_" +
+                                                 std::to_string(compactness) + "_" +
+                                                 std::to_string(detailsMultiplier) + "_" +
+                                                 std::to_string(smooothingIteration) + "_" +
+                                                 "saliency.obj");
+
+                if(saveSnapshot){
+                    mainWindow.canvas.updateGL();
+                    mainWindow.canvas.fitScene();
+
+                    ui->meshRadio->setChecked(true);
+                    initializeVisualizationSlider();
+                    updateUI();
+
+                    mainWindow.canvas.saveSnapshot("./" + meshName +
+                                                   "/saliency/" +
+                                                   meshName + "_" +
+                                                   std::to_string(iterations) + "_" +
+                                                   std::to_string(compactness) + "_" +
+                                                   std::to_string(detailsMultiplier) + "_" +
+                                                   std::to_string(smooothingIteration) + "_" +
+                                                   "saliency", true);
+                }
+                saveSaliency = false;
+            }
+
+            /* Check visibility */
+            checkVisibility();
+
+            /* Compute face association */
+            FourAxisFabrication::getAssociation(
+                       data.smoothedMesh,
+                       dataSigma,
+                       compactness,
+                       detailsMultiplier,
+                       fixExtremes,
+                       data);
+
+            data.isAssociationComputed = true;
+            colorizeAssociation(drawableSmoothedMesh, data.association, data.targetDirections, data.associationNonVisibleFaces);
+
+            /* Save association mesh and snapshot */
+            if(saveMesh)
+                drawableSmoothedMesh.saveOnObj("./" + meshName +
+                                               "/associations/" +
+                                               meshName + "_" +
+                                               std::to_string(iterations) + "_" +
+                                               std::to_string(compactness) + "_" +
+                                               std::to_string(detailsMultiplier) + "_" +
+                                               std::to_string(smooothingIteration) + "_" +
+                                               "association.obj");
+
+            if(saveSnapshot){
+                mainWindow.canvas.updateGL();
+                mainWindow.canvas.fitScene();
+                mainWindow.canvas.saveSnapshot("./" + meshName +
+                                               "/associations/" +
+                                               meshName + "_" +
+                                               std::to_string(iterations) + "_" +
+                                               std::to_string(compactness) + "_" +
+                                               std::to_string(detailsMultiplier) + "_" +
+                                               std::to_string(smooothingIteration) + "_" +
+                                               "association", true);
+            }
+
+            /* Reset data for next iteration */
+            on_reloadMeshButton_clicked();
+        }
+    }
+
+    std::cout << "Finish generation results" << std::endl;
+}
+
+
