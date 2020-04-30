@@ -2095,7 +2095,6 @@ void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
 void FAFManager::on_generateResultsButton_clicked()
 {
     /* Results Parameter */
-    std::string meshName = "egea";
     int iterations = 500;
     size_t maxSmoothingIterations = 5;
     size_t maxCompactness = 50;
@@ -2129,14 +2128,14 @@ void FAFManager::on_generateResultsButton_clicked()
         if(saveMesh)
             drawableDetailMesh.saveOnObj(
                 outputFolder.toStdString() + "/" +
-                meshName + "_saliency_" +
+                "saliency_" +
                 std::to_string(iterations) + "_" +
                 std::to_string(mi) + ".obj");
 
         if(saveSnapshot){
             mainWindow.canvas.saveSnapshot(
                 outputFolder.toStdString() + "/" +
-                meshName + "_saliency_" +
+                "saliency_" +
                 std::to_string(iterations) + "_" +
                 std::to_string(mi),
                 true);
@@ -2149,7 +2148,7 @@ void FAFManager::on_generateResultsButton_clicked()
 
             mainWindow.canvas.saveSnapshot(
                 outputFolder.toStdString() + "/" +
-                meshName + "_saliency_" +
+                "saliency_" +
                 std::to_string(iterations) + "_" +
                 std::to_string(mi) + "_back",
                 true);
@@ -2175,7 +2174,7 @@ void FAFManager::on_generateResultsButton_clicked()
                 if(saveMesh)
                     drawableSmoothedMesh.saveOnObj(
                         outputFolder.toStdString() + "/" +
-                        meshName + "_association_" +
+                        "association_" +
                         std::to_string(iterations) + "_" +
                         std::to_string(mi) + "_" +
                         std::to_string(co) + "_" +
@@ -2184,7 +2183,7 @@ void FAFManager::on_generateResultsButton_clicked()
                 if(saveSnapshot) {
                     mainWindow.canvas.saveSnapshot(
                         outputFolder.toStdString() + "/" +
-                        meshName + "_association_" +
+                        "association_" +
                         std::to_string(iterations) + "_" +
                         std::to_string(mi) + "_" +
                         std::to_string(co) + "_" +
@@ -2199,7 +2198,7 @@ void FAFManager::on_generateResultsButton_clicked()
 
                     mainWindow.canvas.saveSnapshot(
                         outputFolder.toStdString() + "/" +
-                        meshName + "_association_" +
+                        "association_" +
                         std::to_string(iterations) + "_" +
                         std::to_string(mi) + "_" +
                         std::to_string(co) + "_" +
