@@ -2113,73 +2113,74 @@ void FAFManager::on_generateResults_clicked()
 
         bool saveSaliency = true;
 
-        for(size_t compactness = minCompactness, detailsMultiplier = minDetailsMultiplier; compactness <= maxCompactness && detailsMultiplier <= maxDetailsMultiplier; compactness+=stepCompDet, detailsMultiplier+=stepCompDet){
+        for(size_t compactness = minCompactness; compactness <= maxCompactness ; compactness+=stepCompDet){
+            for(size_t detailsMultiplier = minDetailsMultiplier; detailsMultiplier <= maxDetailsMultiplier; detailsMultiplier+=stepCompDet){
+                /* Compute mesh details */
+                ui->smoothingIterationsSpinBox->setValue(smooothingIteration);
+                on_saliencyFindDetailsButton_clicked();
 
-            /* Compute mesh details */
-            ui->smoothingIterationsSpinBox->setValue(smooothingIteration);
-            on_saliencyFindDetailsButton_clicked();
+                //Update canvas and fit the scene
+                mainWindow.canvas.updateGL();
+                mainWindow.canvas.fitScene();
 
-            //Update canvas and fit the scene
-            mainWindow.canvas.updateGL();
-            mainWindow.canvas.fitScene();
+                /* Save the saliency mesh and snapshot*/
+                if(saveSaliency){
+                    if(saveMesh)
+                        drawableDetailMesh.saveOnObj("./" + meshName +
+                                                     "/saliency/" +
+                                                     meshName + "_" +
+                                                     std::to_string(iterations) + "_" +
+                                                     std::to_string(compactness) + "_" +
+                                                     std::to_string(detailsMultiplier) + "_" +
+                                                     std::to_string(smooothingIteration) + "_" +
+                                                     "saliency.obj");
 
-            /* Save the saliency mesh and snapshot*/
-            if(saveSaliency){
+                    if(saveSnapshot){
+                        mainWindow.canvas.saveSnapshot("./" + meshName +
+                                                       "/saliency/" +
+                                                       meshName + "_" +
+                                                       std::to_string(iterations) + "_" +
+                                                       std::to_string(compactness) + "_" +
+                                                       std::to_string(detailsMultiplier) + "_" +
+                                                       std::to_string(smooothingIteration) + "_" +
+                                                       "saliency", true);
+                    }
+                    saveSaliency = false;
+                }
+
+                ui->getAssociationDetailMultiplierSpinBox->setValue(detailsMultiplier);
+                ui->getAssociationCompactnessSpinBox->setValue(compactness);
+                on_getAssociationButton_clicked();
+
+                //Update canvas and fit the scene
+                mainWindow.canvas.updateGL();
+                mainWindow.canvas.fitScene();
+
+                /* Save association mesh and snapshot */
                 if(saveMesh)
-                    drawableDetailMesh.saveOnObj("./" + meshName +
-                                                 "/saliency/" +
-                                                 meshName + "_" +
-                                                 std::to_string(iterations) + "_" +
-                                                 std::to_string(compactness) + "_" +
-                                                 std::to_string(detailsMultiplier) + "_" +
-                                                 std::to_string(smooothingIteration) + "_" +
-                                                 "saliency.obj");
-
-                if(saveSnapshot){                   
-                    mainWindow.canvas.saveSnapshot("./" + meshName +
-                                                   "/saliency/" +
+                    drawableSmoothedMesh.saveOnObj("./" + meshName +
+                                                   "/associations/" +
                                                    meshName + "_" +
                                                    std::to_string(iterations) + "_" +
                                                    std::to_string(compactness) + "_" +
                                                    std::to_string(detailsMultiplier) + "_" +
                                                    std::to_string(smooothingIteration) + "_" +
-                                                   "saliency", true);
+                                                   "association.obj");
+
+                if(saveSnapshot){
+                    mainWindow.canvas.saveSnapshot("./" + meshName +
+                                                   "/associations/" +
+                                                   meshName + "_" +
+                                                   std::to_string(iterations) + "_" +
+                                                   std::to_string(compactness) + "_" +
+                                                   std::to_string(detailsMultiplier) + "_" +
+                                                   std::to_string(smooothingIteration) + "_" +
+                                                   "association", true);
                 }
-                saveSaliency = false;
+
+                /* Reset data for next iteration */
+                on_reloadMeshButton_clicked();
             }
-
-            ui->getAssociationDetailMultiplierSpinBox->setValue(detailsMultiplier);
-            ui->getAssociationCompactnessSpinBox->setValue(compactness);
-            on_getAssociationButton_clicked();
-
-            //Update canvas and fit the scene
-            mainWindow.canvas.updateGL();
-            mainWindow.canvas.fitScene();
-
-            /* Save association mesh and snapshot */
-            if(saveMesh)
-                drawableSmoothedMesh.saveOnObj("./" + meshName +
-                                               "/associations/" +
-                                               meshName + "_" +
-                                               std::to_string(iterations) + "_" +
-                                               std::to_string(compactness) + "_" +
-                                               std::to_string(detailsMultiplier) + "_" +
-                                               std::to_string(smooothingIteration) + "_" +
-                                               "association.obj");
-
-            if(saveSnapshot){                
-                mainWindow.canvas.saveSnapshot("./" + meshName +
-                                               "/associations/" +
-                                               meshName + "_" +
-                                               std::to_string(iterations) + "_" +
-                                               std::to_string(compactness) + "_" +
-                                               std::to_string(detailsMultiplier) + "_" +
-                                               std::to_string(smooothingIteration) + "_" +
-                                               "association", true);
-            }
-
-            /* Reset data for next iteration */
-            on_reloadMeshButton_clicked();
         }
 
     }
