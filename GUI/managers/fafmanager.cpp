@@ -2106,6 +2106,11 @@ void FAFManager::on_generateResults_clicked()
     bool saveMesh = false;
     bool saveSnapshot = true;
 
+    QString outputFolder = QFileDialog::getExistingDirectory(0, ("Select output folder"), QDir::currentPath());
+
+    if (outputFolder.isEmpty())
+        return;
+
     std::cout << "Start generation results" << std::endl;
 
     for(size_t it = 0; it <= maxSmoothingIterations; it += stepSmoothingIteration) {
@@ -2122,17 +2127,17 @@ void FAFManager::on_generateResults_clicked()
         /* Save the saliency mesh and snapshot*/
         if(saveMesh)
             drawableDetailMesh.saveOnObj(
-                "./" + meshName +
-                 "/saliency_" +
-                 meshName + "_" +
-                 std::to_string(iterations) + "_" +
-                 std::to_string(it) + ".obj");
+                outputFolder.toStdString() +
+                meshName +
+                "_saliency_" +
+                std::to_string(iterations) + "_" +
+                std::to_string(it) + ".obj");
 
         if(saveSnapshot){
             mainWindow.canvas.saveSnapshot(
-                "./" + meshName +
-                "/saliency_" +
-                meshName + "_" +
+                outputFolder.toStdString() +
+                meshName +
+                "_saliency_" +
                 std::to_string(iterations) + "_" +
                 std::to_string(it) + "_front",
                 true);
@@ -2144,9 +2149,9 @@ void FAFManager::on_generateResults_clicked()
             mainWindow.canvas.fitScene();
 
             mainWindow.canvas.saveSnapshot(
-                "./" + meshName +
-                "/saliency_" +
-                meshName + "_" +
+                outputFolder.toStdString() +
+                meshName +
+                "_saliency_" +
                 std::to_string(iterations) + "_" +
                 std::to_string(it) + "_back",
                 true);
@@ -2171,24 +2176,24 @@ void FAFManager::on_generateResults_clicked()
                 /* Save association mesh and snapshot */
                 if(saveMesh)
                     drawableSmoothedMesh.saveOnObj(
-                        "./" + meshName +
-                         "/association_" +
-                         meshName + "_" +
-                         std::to_string(iterations) + "_" +
-                         std::to_string(it) + "_" +
-                         std::to_string(co) + "_" +
-                         std::to_string(dm) + ".obj");
+                        outputFolder.toStdString() +
+                        meshName +
+                        "_association_" +
+                        std::to_string(iterations) + "_" +
+                        std::to_string(it) + "_" +
+                        std::to_string(co) + "_" +
+                        std::to_string(dm) + ".obj");
 
                 if(saveSnapshot) {
                     mainWindow.canvas.saveSnapshot(
-                        "./" + meshName +
-                         "/association_" +
-                         meshName + "_" +
-                         std::to_string(iterations) + "_" +
-                         std::to_string(it) + "_" +
-                         std::to_string(co) + "_" +
-                         std::to_string(dm) + "_front",
-                         true);
+                        outputFolder.toStdString() +
+                        meshName +
+                        "_association_" +
+                        std::to_string(iterations) + "_" +
+                        std::to_string(it) + "_" +
+                        std::to_string(co) + "_" +
+                        std::to_string(dm) + "_front",
+                        true);
 
                     drawableDetailMesh.rotate(cg3::rotationMatrix(cg3::Vec3d(0,1,0), M_PI));
 
@@ -2197,14 +2202,14 @@ void FAFManager::on_generateResults_clicked()
                     mainWindow.canvas.fitScene();
 
                     mainWindow.canvas.saveSnapshot(
-                        "./" + meshName +
-                         "/saliency_" +
-                         meshName + "_" +
-                         std::to_string(iterations) + "_" +
-                         std::to_string(it) + "_" +
-                         std::to_string(co) + "_" +
-                         std::to_string(dm) + "_back",
-                         true);
+                        outputFolder.toStdString() +
+                        meshName +
+                        "_association_" +
+                        std::to_string(iterations) + "_" +
+                        std::to_string(it) + "_" +
+                        std::to_string(co) + "_" +
+                        std::to_string(dm) + "_back",
+                        true);
                 }
 
                 /* Reset data for next iteration */
