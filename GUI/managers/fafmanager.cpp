@@ -2093,18 +2093,8 @@ void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
  */
 void FAFManager::on_generateResults_clicked()
 {
-    //Details UI parameter
-    bool computeBySaliency = ui->saliencyCheckBox->isChecked();
-    bool unitScale = ui->saliencyUnitScaleCheckBox->isChecked();
-    unsigned int nRing = ui->saliencyRingSpinBox->value();
-    unsigned int nScales = ui->saliencyScalesSpinBox->value();
-    double eps = ui->saliencyEpsSpinBox->value();
-    unsigned int laplacianIterations = ui->saliencyLaplacianSmoothingSpinBox->value();
-    int iterations = ui->smoothingIterationsSpinBox->value();
 
-    //Association UI parameter
-    double dataSigma = ui->getAssociationDataSigmaSpinBox->value();
-    bool fixExtremes = ui->getAssociationFixExtremesCheckBox->isChecked();
+    int iterations = ui->smoothingIterationsSpinBox->value();
 
     /* Results Parameter */
     std::string meshName = "egea";
@@ -2115,28 +2105,28 @@ void FAFManager::on_generateResults_clicked()
     size_t minDetailsMultiplier = 10;
     size_t stepCompDet = 5;
     size_t stepSmoothingIteration = 1;
-    bool saveMesh = true;
-    bool saveSnapshot = false;
+    bool saveMesh = false;
+    bool saveSnapshot = true;
 
     std::cout << "Start generation results" << std::endl;
 
     for(size_t smooothingIteration = 0; smooothingIteration <=maxSmoothingIterations; smooothingIteration+=stepSmoothingIteration){
+
         bool saveSaliency = true;
 
         for(size_t compactness = minCompactness, detailsMultiplier = minDetailsMultiplier; compactness <= maxCompactness && detailsMultiplier <= maxDetailsMultiplier; compactness+=stepCompDet, detailsMultiplier+=stepCompDet){
 
-            /* Scale and stock mesh */
-            scaleAndStock();
-
             /* Compute mesh details */
-            FourAxisFabrication::findDetails(data, unitScale, nRing, nScales, eps, computeBySaliency, smooothingIteration, laplacianIterations);
+            //FourAxisFabrication::findDetails(data, unitScale, nRing, nScales, eps, computeBySaliency, smooothingIteration, laplacianIterations);
+            ui->smoothingIterationsSpinBox->setValue(smooothingIteration);
+            on_saliencyFindDetailsButton_clicked();
 
-            data.isSaliencyComputed = true;
+            //Update canvas and fit the scene
+            mainWindow.canvas.updateGL();
+            mainWindow.canvas.fitScene();
 
             /* Save the saliency mesh and snapshot*/
             if(saveSaliency){
-                addDrawableDetailMesh();
-                colorizeDetailMesh();
                 if(saveMesh)
                     drawableDetailMesh.saveOnObj("./" + meshName +
                                                  "/saliency/" +
@@ -2147,14 +2137,7 @@ void FAFManager::on_generateResults_clicked()
                                                  std::to_string(smooothingIteration) + "_" +
                                                  "saliency.obj");
 
-                if(saveSnapshot){
-                    mainWindow.canvas.updateGL();
-                    mainWindow.canvas.fitScene();
-
-                    ui->meshRadio->setChecked(true);
-                    initializeVisualizationSlider();
-                    updateUI();
-
+                if(saveSnapshot){                   
                     mainWindow.canvas.saveSnapshot("./" + meshName +
                                                    "/saliency/" +
                                                    meshName + "_" +
@@ -2167,20 +2150,13 @@ void FAFManager::on_generateResults_clicked()
                 saveSaliency = false;
             }
 
-            /* Check visibility */
-            checkVisibility();
+            ui->getAssociationDetailMultiplierSpinBox->setValue(detailsMultiplier);
+            ui->getAssociationCompactnessSpinBox->setValue(compactness);
+            on_getAssociationButton_clicked();
 
-            /* Compute face association */
-            FourAxisFabrication::getAssociation(
-                       data.smoothedMesh,
-                       dataSigma,
-                       compactness,
-                       detailsMultiplier,
-                       fixExtremes,
-                       data);
-
-            data.isAssociationComputed = true;
-            colorizeAssociation(drawableSmoothedMesh, data.association, data.targetDirections, data.associationNonVisibleFaces);
+            //Update canvas and fit the scene
+            mainWindow.canvas.updateGL();
+            mainWindow.canvas.fitScene();
 
             /* Save association mesh and snapshot */
             if(saveMesh)
@@ -2193,9 +2169,7 @@ void FAFManager::on_generateResults_clicked()
                                                std::to_string(smooothingIteration) + "_" +
                                                "association.obj");
 
-            if(saveSnapshot){
-                mainWindow.canvas.updateGL();
-                mainWindow.canvas.fitScene();
+            if(saveSnapshot){                
                 mainWindow.canvas.saveSnapshot("./" + meshName +
                                                "/associations/" +
                                                meshName + "_" +
@@ -2209,9 +2183,11 @@ void FAFManager::on_generateResults_clicked()
             /* Reset data for next iteration */
             on_reloadMeshButton_clicked();
         }
+
     }
 
     std::cout << "Finish generation results" << std::endl;
 }
+
 
 
