@@ -2095,14 +2095,20 @@ void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
 void FAFManager::on_generateResultsButton_clicked()
 {
     /* Results Parameter */
-    int iterations = 500;
-    size_t maxSmoothingIterations = 5;
-    size_t maxCompactness = 50;
-    size_t maxDetailsMultiplier = 50;
-    size_t minCompactness = 10;
-    size_t minDetailsMultiplier = 10;
-    size_t stepCompDet = 5;
-    size_t stepSmoothingIteration = 1;
+    unsigned int taubinIterations = ui->smoothingIterationsSpinBox->value();
+
+    unsigned int minSmoothingIterations = 0;
+    unsigned int maxSmoothingIterations = 5;
+    unsigned int stepSmoothingIteration = 1;
+
+    unsigned int minCompactness = 10;
+    unsigned int maxCompactness = 50;
+    unsigned int stepCompactness = 5;
+
+    unsigned int minDetailsMultiplier = 10;
+    unsigned int maxDetailsMultiplier = 50;
+    unsigned int stepDetailsMultiplier = 5;
+
     bool saveMesh = false;
     bool saveSnapshot = true;
 
@@ -2113,7 +2119,7 @@ void FAFManager::on_generateResultsButton_clicked()
 
     std::cout << "Start generation results" << std::endl;
 
-    for(size_t mi = 0; mi <= maxSmoothingIterations; mi += stepSmoothingIteration) {
+    for(unsigned int mi = minSmoothingIterations; mi <= maxSmoothingIterations; mi += stepSmoothingIteration) {
         /* Setting parameter */
         ui->saliencyMaxSmoothingSpinBox->setValue(mi);
 
@@ -2129,14 +2135,14 @@ void FAFManager::on_generateResultsButton_clicked()
             drawableDetailMesh.saveOnObj(
                 outputFolder.toStdString() + "/" +
                 "saliency_" +
-                std::to_string(iterations) + "_" +
+                std::to_string(taubinIterations) + "_" +
                 std::to_string(mi) + ".obj");
 
         if(saveSnapshot){
             mainWindow.canvas.saveSnapshot(
                 outputFolder.toStdString() + "/" +
                 "saliency_" +
-                std::to_string(iterations) + "_" +
+                std::to_string(taubinIterations) + "_" +
                 std::to_string(mi),
                 true);
 
@@ -2149,7 +2155,7 @@ void FAFManager::on_generateResultsButton_clicked()
             mainWindow.canvas.saveSnapshot(
                 outputFolder.toStdString() + "/" +
                 "saliency_" +
-                std::to_string(iterations) + "_" +
+                std::to_string(taubinIterations) + "_" +
                 std::to_string(mi) + "_back",
                 true);
         }
@@ -2157,8 +2163,8 @@ void FAFManager::on_generateResultsButton_clicked()
         /* Reset data */
         on_reloadMeshButton_clicked();
 
-        for(size_t co = minCompactness; co <= maxCompactness ; co+=stepCompDet) {
-            for(size_t dm = minDetailsMultiplier; dm <= maxDetailsMultiplier; dm+=stepCompDet) {
+        for(unsigned int co = minCompactness; co <= maxCompactness ; co += stepCompactness) {
+            for(unsigned int dm = minDetailsMultiplier; dm <= maxDetailsMultiplier; dm += stepDetailsMultiplier) {
                 /* Setting parameters */
                 ui->getAssociationDetailMultiplierSpinBox->setValue(dm);
                 ui->getAssociationCompactnessSpinBox->setValue(co);
@@ -2175,7 +2181,7 @@ void FAFManager::on_generateResultsButton_clicked()
                     drawableSmoothedMesh.saveOnObj(
                         outputFolder.toStdString() + "/" +
                         "association_" +
-                        std::to_string(iterations) + "_" +
+                        std::to_string(taubinIterations) + "_" +
                         std::to_string(mi) + "_" +
                         std::to_string(co) + "_" +
                         std::to_string(dm) + ".obj");
@@ -2184,7 +2190,7 @@ void FAFManager::on_generateResultsButton_clicked()
                     mainWindow.canvas.saveSnapshot(
                         outputFolder.toStdString() + "/" +
                         "association_" +
-                        std::to_string(iterations) + "_" +
+                        std::to_string(taubinIterations) + "_" +
                         std::to_string(mi) + "_" +
                         std::to_string(co) + "_" +
                         std::to_string(dm),
@@ -2199,7 +2205,7 @@ void FAFManager::on_generateResultsButton_clicked()
                     mainWindow.canvas.saveSnapshot(
                         outputFolder.toStdString() + "/" +
                         "association_" +
-                        std::to_string(iterations) + "_" +
+                        std::to_string(taubinIterations) + "_" +
                         std::to_string(mi) + "_" +
                         std::to_string(co) + "_" +
                         std::to_string(dm) + "_back",
