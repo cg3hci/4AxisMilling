@@ -2141,7 +2141,7 @@ void FAFManager::on_generateResultsButton_clicked()
                 std::to_string(mi),
                 true);
 
-            drawableDetailMesh.rotate(cg3::rotationMatrix(cg3::Vec3d(0,1,0), M_PI));
+            drawableDetailMesh.rotate(cg3::rotationMatrix(cg3::Vec3d(1,0,0), M_PI));
 
             //Update canvas and fit the scene
             mainWindow.canvas.updateGL();
