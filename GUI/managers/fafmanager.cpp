@@ -79,6 +79,7 @@ void FAFManager::updateUI() {
     ui->saveResultsButton->setEnabled(data.isMeshLoaded);
     ui->loadDataButton->setEnabled(!data.isMeshLoaded);
     ui->saveDataButton->setEnabled(data.isMeshLoaded);
+    ui->generateResultsButton->setEnabled(data.isMeshLoaded);
 
 
     // ----- Four axis fabrication -----
