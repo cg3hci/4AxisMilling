@@ -2093,7 +2093,6 @@ void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
  */
 void FAFManager::on_generateResults_clicked()
 {
-
     /* Results Parameter */
     std::string meshName = "egea";
     int iterations = 500;
@@ -2109,47 +2108,60 @@ void FAFManager::on_generateResults_clicked()
 
     std::cout << "Start generation results" << std::endl;
 
-    for(size_t smooothingIteration = 0; smooothingIteration <=maxSmoothingIterations; smooothingIteration+=stepSmoothingIteration){
+    for(size_t it = 0; it <= maxSmoothingIterations; it += stepSmoothingIteration) {
+        /* Setting parameter */
+        ui->saliencyMaxSmoothingSpinBox->setValue(it);
 
-        bool saveSaliency = true;
+        /* Compute saliency */
+        on_saliencyFindDetailsButton_clicked();
 
-        for(size_t compactness = minCompactness; compactness <= maxCompactness ; compactness+=stepCompDet){
-            for(size_t detailsMultiplier = minDetailsMultiplier; detailsMultiplier <= maxDetailsMultiplier; detailsMultiplier+=stepCompDet){
-                /* Compute mesh details */
-                ui->smoothingIterationsSpinBox->setValue(smooothingIteration);
-                on_saliencyFindDetailsButton_clicked();
+        //Update canvas and fit the scene
+        mainWindow.canvas.updateGL();
+        mainWindow.canvas.fitScene();
 
-                //Update canvas and fit the scene
-                mainWindow.canvas.updateGL();
-                mainWindow.canvas.fitScene();
+        /* Save the saliency mesh and snapshot*/
+        if(saveMesh)
+            drawableDetailMesh.saveOnObj(
+                "./" + meshName +
+                 "/saliency_" +
+                 meshName + "_" +
+                 std::to_string(iterations) + "_" +
+                 std::to_string(it) + ".obj");
 
-                /* Save the saliency mesh and snapshot*/
-                if(saveSaliency){
-                    if(saveMesh)
-                        drawableDetailMesh.saveOnObj("./" + meshName +
-                                                     "/saliency/" +
-                                                     meshName + "_" +
-                                                     std::to_string(iterations) + "_" +
-                                                     std::to_string(compactness) + "_" +
-                                                     std::to_string(detailsMultiplier) + "_" +
-                                                     std::to_string(smooothingIteration) + "_" +
-                                                     "saliency.obj");
+        if(saveSnapshot){
+            mainWindow.canvas.saveSnapshot(
+                "./" + meshName +
+                "/saliency_" +
+                meshName + "_" +
+                std::to_string(iterations) + "_" +
+                std::to_string(it) + "_front",
+                true);
 
-                    if(saveSnapshot){
-                        mainWindow.canvas.saveSnapshot("./" + meshName +
-                                                       "/saliency/" +
-                                                       meshName + "_" +
-                                                       std::to_string(iterations) + "_" +
-                                                       std::to_string(compactness) + "_" +
-                                                       std::to_string(detailsMultiplier) + "_" +
-                                                       std::to_string(smooothingIteration) + "_" +
-                                                       "saliency", true);
-                    }
-                    saveSaliency = false;
-                }
+            drawableDetailMesh.rotate(cg3::rotationMatrix(cg3::Vec3d(0,1,0), M_PI));
 
-                ui->getAssociationDetailMultiplierSpinBox->setValue(detailsMultiplier);
-                ui->getAssociationCompactnessSpinBox->setValue(compactness);
+            //Update canvas and fit the scene
+            mainWindow.canvas.updateGL();
+            mainWindow.canvas.fitScene();
+
+            mainWindow.canvas.saveSnapshot(
+                "./" + meshName +
+                "/saliency_" +
+                meshName + "_" +
+                std::to_string(iterations) + "_" +
+                std::to_string(it) + "_back",
+                true);
+        }
+
+        /* Reset data */
+        on_reloadMeshButton_clicked();
+
+        for(size_t co = minCompactness; co <= maxCompactness ; co+=stepCompDet) {
+            for(size_t dm = minDetailsMultiplier; dm <= maxDetailsMultiplier; dm+=stepCompDet) {
+                /* Setting parameters */
+                ui->getAssociationDetailMultiplierSpinBox->setValue(dm);
+                ui->getAssociationCompactnessSpinBox->setValue(co);
+
+                /* Compute association */
                 on_getAssociationButton_clicked();
 
                 //Update canvas and fit the scene
@@ -2158,24 +2170,41 @@ void FAFManager::on_generateResults_clicked()
 
                 /* Save association mesh and snapshot */
                 if(saveMesh)
-                    drawableSmoothedMesh.saveOnObj("./" + meshName +
-                                                   "/associations/" +
-                                                   meshName + "_" +
-                                                   std::to_string(iterations) + "_" +
-                                                   std::to_string(compactness) + "_" +
-                                                   std::to_string(detailsMultiplier) + "_" +
-                                                   std::to_string(smooothingIteration) + "_" +
-                                                   "association.obj");
+                    drawableSmoothedMesh.saveOnObj(
+                        "./" + meshName +
+                         "/association_" +
+                         meshName + "_" +
+                         std::to_string(iterations) + "_" +
+                         std::to_string(it) + "_" +
+                         std::to_string(co) + "_" +
+                         std::to_string(dm) + ".obj");
 
-                if(saveSnapshot){
-                    mainWindow.canvas.saveSnapshot("./" + meshName +
-                                                   "/associations/" +
-                                                   meshName + "_" +
-                                                   std::to_string(iterations) + "_" +
-                                                   std::to_string(compactness) + "_" +
-                                                   std::to_string(detailsMultiplier) + "_" +
-                                                   std::to_string(smooothingIteration) + "_" +
-                                                   "association", true);
+                if(saveSnapshot) {
+                    mainWindow.canvas.saveSnapshot(
+                        "./" + meshName +
+                         "/association_" +
+                         meshName + "_" +
+                         std::to_string(iterations) + "_" +
+                         std::to_string(it) + "_" +
+                         std::to_string(co) + "_" +
+                         std::to_string(dm) + "_front",
+                         true);
+
+                    drawableDetailMesh.rotate(cg3::rotationMatrix(cg3::Vec3d(0,1,0), M_PI));
+
+                    //Update canvas and fit the scene
+                    mainWindow.canvas.updateGL();
+                    mainWindow.canvas.fitScene();
+
+                    mainWindow.canvas.saveSnapshot(
+                        "./" + meshName +
+                         "/saliency_" +
+                         meshName + "_" +
+                         std::to_string(iterations) + "_" +
+                         std::to_string(it) + "_" +
+                         std::to_string(co) + "_" +
+                         std::to_string(dm) + "_back",
+                         true);
                 }
 
                 /* Reset data for next iteration */
