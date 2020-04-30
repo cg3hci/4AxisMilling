@@ -2114,9 +2114,9 @@ void FAFManager::on_generateResultsButton_clicked()
 
     std::cout << "Start generation results" << std::endl;
 
-    for(size_t it = 0; it <= maxSmoothingIterations; it += stepSmoothingIteration) {
+    for(size_t mi = 0; mi <= maxSmoothingIterations; mi += stepSmoothingIteration) {
         /* Setting parameter */
-        ui->saliencyMaxSmoothingSpinBox->setValue(it);
+        ui->saliencyMaxSmoothingSpinBox->setValue(mi);
 
         /* Compute saliency */
         on_saliencyFindDetailsButton_clicked();
@@ -2128,19 +2128,17 @@ void FAFManager::on_generateResultsButton_clicked()
         /* Save the saliency mesh and snapshot*/
         if(saveMesh)
             drawableDetailMesh.saveOnObj(
-                outputFolder.toStdString() +
-                meshName +
-                "_saliency_" +
+                outputFolder.toStdString() + "/" +
+                meshName + "_saliency_" +
                 std::to_string(iterations) + "_" +
-                std::to_string(it) + ".obj");
+                std::to_string(mi) + ".obj");
 
         if(saveSnapshot){
             mainWindow.canvas.saveSnapshot(
-                outputFolder.toStdString() +
-                meshName +
-                "_saliency_" +
+                outputFolder.toStdString() + "/" +
+                meshName + "_saliency_" +
                 std::to_string(iterations) + "_" +
-                std::to_string(it) + "_front",
+                std::to_string(mi) + "_front",
                 true);
 
             drawableDetailMesh.rotate(cg3::rotationMatrix(cg3::Vec3d(0,1,0), M_PI));
@@ -2150,11 +2148,10 @@ void FAFManager::on_generateResultsButton_clicked()
             mainWindow.canvas.fitScene();
 
             mainWindow.canvas.saveSnapshot(
-                outputFolder.toStdString() +
-                meshName +
-                "_saliency_" +
+                outputFolder.toStdString() + "/" +
+                meshName + "_saliency_" +
                 std::to_string(iterations) + "_" +
-                std::to_string(it) + "_back",
+                std::to_string(mi) + "_back",
                 true);
         }
 
@@ -2177,37 +2174,34 @@ void FAFManager::on_generateResultsButton_clicked()
                 /* Save association mesh and snapshot */
                 if(saveMesh)
                     drawableSmoothedMesh.saveOnObj(
-                        outputFolder.toStdString() +
-                        meshName +
-                        "_association_" +
+                        outputFolder.toStdString() + "/" +
+                        meshName + "_association_" +
                         std::to_string(iterations) + "_" +
-                        std::to_string(it) + "_" +
+                        std::to_string(mi) + "_" +
                         std::to_string(co) + "_" +
                         std::to_string(dm) + ".obj");
 
                 if(saveSnapshot) {
                     mainWindow.canvas.saveSnapshot(
-                        outputFolder.toStdString() +
-                        meshName +
-                        "_association_" +
+                        outputFolder.toStdString() + "/" +
+                        meshName + "_association_" +
                         std::to_string(iterations) + "_" +
-                        std::to_string(it) + "_" +
+                        std::to_string(mi) + "_" +
                         std::to_string(co) + "_" +
                         std::to_string(dm) + "_front",
                         true);
 
-                    drawableDetailMesh.rotate(cg3::rotationMatrix(cg3::Vec3d(0,1,0), M_PI));
+                    drawableSmoothedMesh.rotate(cg3::rotationMatrix(cg3::Vec3d(0,1,0), M_PI));
 
                     //Update canvas and fit the scene
                     mainWindow.canvas.updateGL();
                     mainWindow.canvas.fitScene();
 
                     mainWindow.canvas.saveSnapshot(
-                        outputFolder.toStdString() +
-                        meshName +
-                        "_association_" +
+                        outputFolder.toStdString() + "/" +
+                        meshName + "_association_" +
                         std::to_string(iterations) + "_" +
-                        std::to_string(it) + "_" +
+                        std::to_string(mi) + "_" +
                         std::to_string(co) + "_" +
                         std::to_string(dm) + "_back",
                         true);
