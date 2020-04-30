@@ -2089,10 +2089,10 @@ void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
 }
 
 /**
- * @brief FAFManager::on_generateResults_clicked
+ * @brief FAFManager::on_generateResultsButton_clicked
  * Need 2 folders inside di buil folder, saliency and associations
  */
-void FAFManager::on_generateResults_clicked()
+void FAFManager::on_generateResultsButton_clicked()
 {
     /* Results Parameter */
     std::string meshName = "egea";

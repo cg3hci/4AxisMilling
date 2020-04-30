@@ -207,7 +207,7 @@ private slots:
     void meshPainted();
     void facePicked(const cg3::PickableObject* obj, unsigned int f);
 
-    void on_generateResults_clicked();
+    void on_generateResultsButton_clicked();
 };
 
 #endif // FAFMANAGER_H
