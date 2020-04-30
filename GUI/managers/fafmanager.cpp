@@ -2094,10 +2094,9 @@ void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
 void FAFManager::on_generateResults_clicked()
 {
 
-    int iterations = ui->smoothingIterationsSpinBox->value();
-
     /* Results Parameter */
     std::string meshName = "egea";
+    int iterations = 500;
     size_t maxSmoothingIterations = 5;
     size_t maxCompactness = 50;
     size_t maxDetailsMultiplier = 50;
@@ -2117,7 +2116,6 @@ void FAFManager::on_generateResults_clicked()
         for(size_t compactness = minCompactness, detailsMultiplier = minDetailsMultiplier; compactness <= maxCompactness && detailsMultiplier <= maxDetailsMultiplier; compactness+=stepCompDet, detailsMultiplier+=stepCompDet){
 
             /* Compute mesh details */
-            //FourAxisFabrication::findDetails(data, unitScale, nRing, nScales, eps, computeBySaliency, smooothingIteration, laplacianIterations);
             ui->smoothingIterationsSpinBox->setValue(smooothingIteration);
             on_saliencyFindDetailsButton_clicked();
 
