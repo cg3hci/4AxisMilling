@@ -19,6 +19,12 @@
 #include <cg3/algorithms/normalization.h>
 #include <cg3/algorithms/saliency.h>
 
+#define DEFAULTCOLOR cg3::Color(128,128,128)
+#define MINCOLOR cg3::Color(200,50,50)
+#define MAXCOLOR cg3::Color(50,50,200)
+#define NONVISIBLECOLOR cg3::Color(20,20,20)
+#define SCATTERSAT static_cast<int>(255 * 0.4)
+#define SCATTERVAL static_cast<int>(255 * 0.90)
 
 /* ----- CONSTRUCTORS/DESTRUCTOR ------ */
 
@@ -1026,11 +1032,11 @@ void FAFManager::updateVisualization() {
  */
 void FAFManager::colorizeMesh() {
     //Set default color
-    drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
-    drawableRestoredMesh.setFaceColor(cg3::Color(128,128,128));
-    drawableMinComponent.setFaceColor(cg3::Color(128,128,128));
-    drawableMaxComponent.setFaceColor(cg3::Color(128,128,128));
-    drawableFourAxisComponent.setFaceColor(cg3::Color(128,128,128));
+    drawableSmoothedMesh.setFaceColor(DEFAULTCOLOR);
+    drawableRestoredMesh.setFaceColor(DEFAULTCOLOR);
+    drawableMinComponent.setFaceColor(DEFAULTCOLOR);
+    drawableMaxComponent.setFaceColor(DEFAULTCOLOR);
+    drawableFourAxisComponent.setFaceColor(DEFAULTCOLOR);
 
     ui->descriptionLabel->setText(""); //Empty description text
 }
@@ -1040,8 +1046,8 @@ void FAFManager::colorizeMesh() {
  */
 void FAFManager::colorizeDetailMesh()
 {
-    drawableDetailMesh.setFaceColor(cg3::Color(128,128,128));
-    drawableDetailMesh.setVertexColor(cg3::Color(128,128,128));
+    drawableDetailMesh.setFaceColor(DEFAULTCOLOR);
+    drawableDetailMesh.setVertexColor(DEFAULTCOLOR);
 
     if (data.isSaliencyComputed) {
         double minSaliency = data.saliency[0];
@@ -1093,20 +1099,20 @@ void FAFManager::colorizeDetailMesh()
  */
 void FAFManager::colorizeExtremes() {
     //Set default color
-    drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
-    drawableRestoredMesh.setFaceColor(cg3::Color(128,128,128));
+    drawableSmoothedMesh.setFaceColor(DEFAULTCOLOR);
+    drawableRestoredMesh.setFaceColor(DEFAULTCOLOR);
 
     unsigned int sliderValue = (unsigned int) ui->visualizationSlider->value();
 
     //Color the min and max extremes
     if (sliderValue == 0 || sliderValue == 1) {
         for (unsigned int i : data.minExtremes){
-            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,255), i);
+            drawableSmoothedMesh.setFaceColor(MAXCOLOR, i);
         }
     }
     if (sliderValue == 0 || sliderValue == 2) {
         for (unsigned int i : data.maxExtremes){
-            drawableSmoothedMesh.setFaceColor(cg3::Color(255,0,0), i);
+            drawableSmoothedMesh.setFaceColor(MINCOLOR, i);
         }
     }
 
@@ -1138,8 +1144,8 @@ void FAFManager::colorizeVisibility() {
     unsigned int showNonVisible = (unsigned int) ui->showNonVisibleCheck->isChecked();
 
     //Set default color
-    drawableSmoothedMesh.setFaceColor(cg3::Color(128,128,128));
-    drawableRestoredMesh.setFaceColor(cg3::Color(128,128,128));
+    drawableSmoothedMesh.setFaceColor(DEFAULTCOLOR);
+    drawableRestoredMesh.setFaceColor(DEFAULTCOLOR);
 
 
     //Information on visibility
@@ -1148,14 +1154,14 @@ void FAFManager::colorizeVisibility() {
     }
     else {
         //Subdivisions for colors
-        int subd = 255 / (data.directions.size()-1);
+        int subd = 255 / data.directions.size();
 
         //Get index of the current direction
         int chosenDirectionIndex = sliderValue - 1;
 
         //Set color for the current direction
         cg3::Color color;
-        color.setHsv(subd * chosenDirectionIndex, 255, 255);
+        color.setHsv(subd * chosenDirectionIndex, SCATTERSAT, SCATTERVAL);
 
         //Color the faces visible from that direction
         for (unsigned int j = 0; j < data.visibility.sizeY(); j++) {
@@ -1178,7 +1184,7 @@ void FAFManager::colorizeVisibility() {
     //Show non-visible faces
     if (showNonVisible) {
         for (unsigned int faceId : data.nonVisibleFaces) {
-            drawableSmoothedMesh.setFaceColor(cg3::Color(0,0,0), faceId);
+            drawableSmoothedMesh.setFaceColor(NONVISIBLECOLOR, faceId);
         }
     }
 
@@ -1243,10 +1249,13 @@ void FAFManager::colorizeAssociation(
 
     //Variables for colors
     cg3::Color color;
-    int subd = 255 / (data.targetDirections.size());
+    int subd = 255 / (data.targetDirections.size() - 2);
 
     //Set the color
-    drawableMesh.setFaceColor(cg3::Color(128,128,128));
+    drawableMesh.setFaceColor(DEFAULTCOLOR);
+
+    int minLabel = targetDirections[targetDirections.size()-2];
+    int maxLabel = targetDirections[targetDirections.size()-1];
 
     //For each face of the drawable mesh
     for (unsigned int faceId = 0; faceId < drawableMesh.numberFaces(); faceId++) {
@@ -1255,13 +1264,21 @@ void FAFManager::colorizeAssociation(
 
         //If it has an associated fabrication direction
         if (associatedDirectionIndex >= 0) {
-            //Find position in target directions to set the color
-            std::vector<unsigned int>::const_iterator it =
-                    std::find(targetDirections.begin(), targetDirections.end(), associatedDirectionIndex);
+            if (associatedDirectionIndex == minLabel) {
+                color = MINCOLOR;
+            }
+            else if (associatedDirectionIndex == maxLabel) {
+                color = MAXCOLOR;
+            }
+            else {
+                //Find position in target directions to set the color
+                std::vector<unsigned int>::const_iterator it =
+                        std::find(targetDirections.begin(), targetDirections.end(), associatedDirectionIndex);
 
-            int positionInTargetDirections = std::distance(targetDirections.begin(), it);
+                int positionInTargetDirections = std::distance(targetDirections.begin(), it);
 
-            color.setHsv(subd * positionInTargetDirections, 255, 255);
+                color.setHsv(subd * positionInTargetDirections, SCATTERSAT, SCATTERVAL);
+            }
 
             if (sliderValue == 0 ||
                     data.targetDirections[sliderValue-1] == (unsigned int) associatedDirectionIndex)
@@ -1275,7 +1292,7 @@ void FAFManager::colorizeAssociation(
     //Show non-visible faces
     if (showNonVisible) {
         for (unsigned int faceId : nonVisibleFaces) {
-            drawableMesh.setFaceColor(cg3::Color(0,0,0), faceId);
+            drawableMesh.setFaceColor(NONVISIBLECOLOR, faceId);
         }
     }
 }
