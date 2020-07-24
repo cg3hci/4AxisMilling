@@ -1154,7 +1154,7 @@ void FAFManager::colorizeVisibility() {
     }
     else {
         //Subdivisions for colors
-        int subd = 255 / data.directions.size();
+        int subd = data.directions.size() > 0 ? 255 / data.directions.size() : 2;
 
         //Get index of the current direction
         int chosenDirectionIndex = sliderValue - 1;
@@ -1249,7 +1249,8 @@ void FAFManager::colorizeAssociation(
 
     //Variables for colors
     cg3::Color color;
-    int subd = 255 / (data.targetDirections.size() - 2);
+
+    int subd = data.directions.size() > 2 ? 255 / (data.targetDirections.size() - 2) : 2;
 
     //Set the color
     drawableMesh.setFaceColor(defaultColor);
@@ -2069,10 +2070,9 @@ void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
 
             std::vector<double> vertexGeodesics;
 
-//            cg3::libigl::exactGeodesics(
+//            vertexGeodesics = cg3::libigl::exactGeodesics(
 //                        drawableDetailMesh,
-//                        sourceVertices,
-//                        vertexGeodesics);
+//                        sourceVertices);
 
             vertexGeodesics = cg3::libigl::heatGeodesics(
                         detailMeshGeodesicsData,
