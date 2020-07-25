@@ -25,8 +25,8 @@ const cg3::Color defaultColor(128,128,128);
 const cg3::Color minColor(200,60,60);
 const cg3::Color maxColor(60,60,200);
 const cg3::Color nonVisibleColor(20,20,20);
-const int scatterColorSat(static_cast<int>(255 * 0.35));
-const int scatterColorVal(static_cast<int>(255 * 0.8));
+const int scatterColorSat(static_cast<int>(255 * 0.45));
+const int scatterColorVal(static_cast<int>(255 * 0.9));
 const int scatterColorMaxHue(240);
 
 
