@@ -1154,7 +1154,7 @@ void FAFManager::colorizeVisibility() {
     }
     else {
         //Subdivisions for colors
-        int subd = data.directions.size() > 0 ? 255 / data.directions.size() : 2;
+        int subd = data.directions.size() > 0 ? 230 / data.directions.size() : 2;
 
         //Get index of the current direction
         int chosenDirectionIndex = sliderValue - 1;
@@ -1250,7 +1250,7 @@ void FAFManager::colorizeAssociation(
     //Variables for colors
     cg3::Color color;
 
-    int subd = data.directions.size() > 2 ? 255 / (data.targetDirections.size() - 2) : 2;
+    int subd = data.directions.size() > 2 ? 230 / (data.targetDirections.size() - 2) : 2;
 
     //Set the color
     drawableMesh.setFaceColor(defaultColor);
