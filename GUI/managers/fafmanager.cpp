@@ -19,12 +19,16 @@
 #include <cg3/algorithms/normalization.h>
 #include <cg3/algorithms/saliency.h>
 
+
+//Mesh color definition
 const cg3::Color defaultColor(128,128,128);
 const cg3::Color minColor(200,60,60);
 const cg3::Color maxColor(60,60,200);
 const cg3::Color nonVisibleColor(20,20,20);
-const int scatterColorSat(static_cast<int>(255 * 0.45));
-const int scatterColorVal(static_cast<int>(255 * 0.90));
+const int scatterColorSat(static_cast<int>(255 * 0.35));
+const int scatterColorVal(static_cast<int>(255 * 0.8));
+const int scatterColorMaxHue(240);
+
 
 /* ----- CONSTRUCTORS/DESTRUCTOR ------ */
 
@@ -1154,7 +1158,7 @@ void FAFManager::colorizeVisibility() {
     }
     else {
         //Subdivisions for colors
-        int subd = data.directions.size() > 0 ? 230 / data.directions.size() : 2;
+        int subd = data.directions.size() > 0 ? scatterColorMaxHue / data.directions.size() : 2;
 
         //Get index of the current direction
         int chosenDirectionIndex = sliderValue - 1;
@@ -1250,7 +1254,7 @@ void FAFManager::colorizeAssociation(
     //Variables for colors
     cg3::Color color;
 
-    int subd = data.directions.size() > 2 ? 230 / (data.targetDirections.size() - 2) : 2;
+    int subd = data.directions.size() > 2 ? scatterColorMaxHue / (data.targetDirections.size() - 2) : 2;
 
     //Set the color
     drawableMesh.setFaceColor(defaultColor);
