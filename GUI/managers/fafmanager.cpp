@@ -20,10 +20,10 @@
 #include <cg3/algorithms/saliency.h>
 
 const cg3::Color defaultColor(128,128,128);
-const cg3::Color minColor(200,50,50);
-const cg3::Color maxColor(50,50,200);
+const cg3::Color minColor(200,60,60);
+const cg3::Color maxColor(60,60,200);
 const cg3::Color nonVisibleColor(20,20,20);
-const int scatterColorSat(static_cast<int>(255 * 0.4));
+const int scatterColorSat(static_cast<int>(255 * 0.45));
 const int scatterColorVal(static_cast<int>(255 * 0.90));
 
 /* ----- CONSTRUCTORS/DESTRUCTOR ------ */
@@ -695,7 +695,7 @@ void FAFManager::addDrawableDetailMesh() {
     drawableDetailMesh = cg3::DrawableEigenMesh(data.mesh);
     drawableDetailMesh.setFlatShading();
 
-    cg3::libigl::heatGeodesicsPrecomputeData(drawableDetailMesh, detailMeshGeodesicsData);
+//    cg3::libigl::heatGeodesicsPrecomputeData(drawableDetailMesh, detailMeshGeodesicsData);
 
     mainWindow.pushDrawableObject(&drawableDetailMesh, "Detail mesh");
 
@@ -2070,13 +2070,13 @@ void FAFManager::facePicked(const cg3::PickableObject* obj, unsigned int f)
 
             std::vector<double> vertexGeodesics;
 
-//            vertexGeodesics = cg3::libigl::exactGeodesics(
-//                        drawableDetailMesh,
-//                        sourceVertices);
-
-            vertexGeodesics = cg3::libigl::heatGeodesics(
-                        detailMeshGeodesicsData,
+            vertexGeodesics = cg3::libigl::exactGeodesics(
+                        drawableDetailMesh,
                         sourceVertices);
+
+//            vertexGeodesics = cg3::libigl::heatGeodesics(
+//                        detailMeshGeodesicsData,
+//                        sourceVertices);
 
             for(uint fId = 0; fId < drawableDetailMesh.numberFaces(); ++fId) {
                 double dist = vertexGeodesics[drawableDetailMesh.face(fId).x()];

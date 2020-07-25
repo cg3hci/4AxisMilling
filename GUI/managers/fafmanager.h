@@ -54,7 +54,7 @@ private:
     cg3::DrawableEigenMesh drawableOriginalMesh;
 
     cg3::PickableEigenMesh drawableDetailMesh;
-    cg3::libigl::HeatGeodesicsData detailMeshGeodesicsData;
+//    cg3::libigl::HeatGeodesicsData detailMeshGeodesicsData;
 
     cg3::DrawableEigenMesh drawableSmoothedMesh;
     cg3::DrawableEigenMesh drawableStock;
