@@ -855,7 +855,8 @@ void extractResults(
     for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
         cg3::EigenMesh& result = tmpResults[rId];
-        cg3::EigenMesh& box = boxes[rId];
+        cg3::EigenMesh& box = boxes[rId];        
+        unsigned int resultLabel = tmpResultsAssociation[rId];
 
         unsigned int resultNFaces = result.numberFaces();
 
@@ -883,12 +884,16 @@ void extractResults(
             if (birthFace < nFirstFaces) {
                 unsigned int birthChartId = fourAxisChartData.faceChartMap.at(birthFace);
 
-                costMatrix(rId, chartToResult[birthChartId]) += result.faceArea(i);
+                unsigned int conflictLabel = tmpResultsAssociation[chartToResult[birthChartId]];
 
-                totalCost += result.faceArea(i);
+                if (conflictLabel != resultLabel) {
+                    costMatrix(rId, chartToResult[birthChartId]) += result.faceArea(i);
 
-                //Color other chart face of the mesh
-                box.setFaceColor(colorMap[fourAxisAssociation[birthFace]], i);
+                    totalCost += result.faceArea(i);
+
+                    //Color other chart face of the mesh
+                    box.setFaceColor(colorMap[fourAxisAssociation[birthFace]], i);
+                }
             }
         }
 
@@ -934,8 +939,10 @@ void extractResults(
     std::vector<double> gain(nResults, 0);
     for (size_t i = 0; i < nResults; i++) {
         for (size_t j = 0; j < nResults; j++) {
-            cost[i] += costMatrix(i,j);
-            gain[j] += costMatrix(i,j);
+            if (i != j) {
+                cost[i] += costMatrix(i,j);
+                gain[j] += costMatrix(i,j);
+            }
         }
     }
     std::cout << "Result\tCost\tGain" << std::endl;
