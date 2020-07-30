@@ -855,7 +855,7 @@ void extractResults(
     for (size_t rId = 0; rId < nResults; rId++) {
         //Copying the surface and getting its label
         cg3::EigenMesh& result = tmpResults[rId];
-        cg3::EigenMesh& box = boxes[rId];        
+        cg3::EigenMesh& box = boxes[rId];
         unsigned int resultLabel = tmpResultsAssociation[rId];
 
         unsigned int resultNFaces = result.numberFaces();
