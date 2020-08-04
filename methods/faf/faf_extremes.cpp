@@ -118,17 +118,20 @@ void selectExtremesOnXAxis(
 
     /* ----- MAX EXTREMES ----- */
 
+    //Order the vector by x-coordinate
+    std::sort(fIndices.begin(), fIndices.end(), internal::XMaxComparator(mesh));
+
     //Get max height-field faces
-    size_t iMax = fIndices.size()-1;
+    size_t iMax = 0;
     while(mesh.faceNormal(fIndices[iMax]).dot(maxDirection) >= heightFieldAngleLimit){
         maxHeightFieldSet.insert(fIndices[iMax]);
-        iMax--;
+        iMax++;
     }
 
     std::vector<bool> maxVisited(mesh.numberFaces(), false);
     std::queue<unsigned int> maxQueue;
 
-    maxQueue.push(fIndices[fIndices.size()-1]);
+    maxQueue.push(fIndices[0]);
 
     while (!maxQueue.empty()) {
         unsigned int fId = maxQueue.front();
