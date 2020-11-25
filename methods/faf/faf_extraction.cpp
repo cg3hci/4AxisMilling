@@ -954,23 +954,40 @@ void extractResults(
 
     std::cout << std::endl << "Result\tCost" << std::endl;
 
-    size_t minLabelResult = std::numeric_limits<size_t>::max(), maxLabelResult = std::numeric_limits<size_t>::max();
+    std::vector<size_t> minLabelResults, maxLabelResults;
     for (size_t i = 0; i < nResults; i++) {
         if (tmpResultsAssociation[i] == minLabel) {
-            minLabelResult = i;
+            minLabelResults.push_back(i);
         }
         if (tmpResultsAssociation[i] == maxLabel) {
-            maxLabelResult = i;
+            maxLabelResults.push_back(i);
         }
     }
 
     //X directions before
     if (!xDirectionsAfter) {
-        resultPosition[minFirst ? minLabelResult : maxLabelResult] = currentPosition;
-        currentPosition++;
+        if (minFirst) {
+            for (int l : minLabelResults) {
+                resultPosition[l] = currentPosition;
+                currentPosition++;
+            }
 
-        resultPosition[minFirst ? maxLabelResult : minLabelResult] = currentPosition;
-        currentPosition++;
+            for (int l : maxLabelResults) {
+                resultPosition[l] = currentPosition;
+                currentPosition++;
+            }
+        }
+        else {
+            for (int l : maxLabelResults) {
+                resultPosition[l] = currentPosition;
+                currentPosition++;
+            }
+
+            for (int l : minLabelResults) {
+                resultPosition[l] = currentPosition;
+                currentPosition++;
+            }
+        }
     }
 
     //Four axis result
@@ -978,11 +995,28 @@ void extractResults(
 
     //X directions after
     if (xDirectionsAfter) {
-        resultPosition[minFirst ? minLabelResult : maxLabelResult] = currentPosition;
-        currentPosition++;
+        if (minFirst) {
+            for (int l : minLabelResults) {
+                resultPosition[l] = currentPosition;
+                currentPosition++;
+            }
 
-        resultPosition[minFirst ? maxLabelResult : minLabelResult] = currentPosition;
-        currentPosition++;
+            for (int l : maxLabelResults) {
+                resultPosition[l] = currentPosition;
+                currentPosition++;
+            }
+        }
+        else {
+            for (int l : maxLabelResults) {
+                resultPosition[l] = currentPosition;
+                currentPosition++;
+            }
+
+            for (int l : minLabelResults) {
+                resultPosition[l] = currentPosition;
+                currentPosition++;
+            }
+        }
     }
 
     //Filling results

@@ -12,6 +12,7 @@ namespace FourAxisFabrication {
 bool rotateToOptimalOrientation(
         cg3::EigenMesh& mesh,
         cg3::EigenMesh& smoothedMesh,
+        const bool onlyHighestComponent,
         const double stockLength,
         const double stockDiameter,
         const unsigned int nDirs,

@@ -60,6 +60,7 @@ void rotateToPrincipalComponents(
 bool rotateToOptimalOrientation(
         cg3::EigenMesh& mesh,
         cg3::EigenMesh& smoothedMesh,
+        const bool onlyHighestComponent,
         const double stockLength,
         const double stockDiameter,
         const unsigned int nDirs,
@@ -184,7 +185,7 @@ bool rotateToOptimalOrientation(
             //Get extremes
             std::vector<unsigned int> minExtremes;
             std::vector<unsigned int> maxExtremes;
-            selectExtremesOnXAxis(copySmoothedMesh, heightFieldAngle, ffAdj, minExtremes, maxExtremes);
+            selectExtremesOnXAxis(copySmoothedMesh, heightFieldAngle, ffAdj, minExtremes, maxExtremes, onlyHighestComponent);
 
             std::set<unsigned int> extremesSet;
             extremesSet.insert(minExtremes.begin(), minExtremes.end());

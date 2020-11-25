@@ -12,14 +12,16 @@ namespace FourAxisFabrication {
 void selectExtremesOnXAxis(
         const cg3::EigenMesh& mesh,
         const double heightFieldAngle,
-        Data& data);
+        Data& data,
+        const bool onlyHighestComponent);
 
 void selectExtremesOnXAxis(
         const cg3::EigenMesh& mesh,
         const double heightFieldAngle,
         const std::vector<std::vector<int>> ffAdj,
         std::vector<unsigned int>& minExtremes,
-        std::vector<unsigned int>& maxExtremes);
+        std::vector<unsigned int>& maxExtremes,
+        const bool onlyHighestComponent);
 
 }
 

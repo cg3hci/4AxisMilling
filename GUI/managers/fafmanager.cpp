@@ -351,6 +351,7 @@ void FAFManager::optimalOrientation() {
         smoothing();
 
         //Get UI data
+        bool onlyHighestComponent = ui->extremeOnlyHighestComponent->isChecked();
         double stockLength = ui->stockLengthSpinBox->value();
         double stockDiameter = ui->stockDiameterSpinBox->value();
         unsigned int nOrientations = (unsigned int) ui->optimalOrientationOrientationsSpinBox->value();
@@ -364,6 +365,7 @@ void FAFManager::optimalOrientation() {
         bool res = FourAxisFabrication::rotateToOptimalOrientation(
                     data.mesh,
                     data.smoothedMesh,
+                    onlyHighestComponent,
                     stockLength,
                     stockDiameter,
                     nOrientations,
@@ -396,11 +398,12 @@ void FAFManager::selectExtremes() {
 
         //Get UI data
         double heightfieldAngle = ui->heightfieldAngleSpinBox->value() / 180.0 * M_PI;
+        bool onlyHighestComponent = ui->extremeOnlyHighestComponent->isChecked();
 
         cg3::Timer t(std::string("Select extremes"));
 
         //Get extremes on x-axis to be selected
-        FourAxisFabrication::selectExtremesOnXAxis(data.smoothedMesh, heightfieldAngle, data);
+        FourAxisFabrication::selectExtremesOnXAxis(data.smoothedMesh, heightfieldAngle, data, onlyHighestComponent);
 
         t.stopAndPrint();
 

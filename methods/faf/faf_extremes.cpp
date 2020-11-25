@@ -23,7 +23,8 @@ namespace FourAxisFabrication {
 void selectExtremesOnXAxis(
         const cg3::EigenMesh& mesh,
         const double heightFieldAngle,
-        Data& data)
+        Data& data,
+        const bool onlyHighestComponent)
 {
     //Faces adjacencies
     const std::vector<std::vector<int>> ffAdj = cg3::libigl::faceToFaceAdjacencies(mesh);
@@ -32,7 +33,7 @@ void selectExtremesOnXAxis(
     std::vector<unsigned int>& minExtremes = data.minExtremes;
     std::vector<unsigned int>& maxExtremes = data.maxExtremes;
 
-    selectExtremesOnXAxis(mesh, heightFieldAngle, ffAdj, minExtremes, maxExtremes);
+    selectExtremesOnXAxis(mesh, heightFieldAngle, ffAdj, minExtremes, maxExtremes, onlyHighestComponent);
 }
 
 /**
@@ -50,7 +51,8 @@ void selectExtremesOnXAxis(
         const double heightFieldAngle,
         const std::vector<std::vector<int>> ffAdj,
         std::vector<unsigned int>& minExtremes,
-        std::vector<unsigned int>& maxExtremes)
+        std::vector<unsigned int>& maxExtremes,
+        const bool onlyHighestComponent)
 {
     //Clearing current data (if any)
     minExtremes.clear();
@@ -82,35 +84,42 @@ void selectExtremesOnXAxis(
     //Get min height-field faces
     size_t iMin = 0;
     while(mesh.faceNormal(fIndices[iMin]).dot(minDirection) >= heightFieldAngleLimit){
-        minHeightFieldSet.insert(fIndices[iMin]);
+        if (!onlyHighestComponent) {
+            minExtremes.push_back(fIndices[iMin]);
+        }
+        else {
+            minHeightFieldSet.insert(fIndices[iMin]);
+        }
         iMin++;
     }
 
-    std::vector<bool> minVisited(mesh.numberFaces(), false);
-    std::queue<unsigned int> minQueue;
+    if (onlyHighestComponent) {
+        std::vector<bool> minVisited(mesh.numberFaces(), false);
+        std::queue<unsigned int> minQueue;
 
-    minQueue.push(fIndices[0]);
+        minQueue.push(fIndices[0]);
 
-    while (!minQueue.empty()) {
-        unsigned int fId = minQueue.front();
-        minQueue.pop();
+        while (!minQueue.empty()) {
+            unsigned int fId = minQueue.front();
+            minQueue.pop();
 
-        if (!minVisited[fId]) {
-            cg3::Point3i face = mesh.face(fId);
+            if (!minVisited[fId]) {
+                cg3::Point3i face = mesh.face(fId);
 
-            minVisited[fId] = true;
+                minVisited[fId] = true;
 
-            if (minHeightFieldSet.find(fId) != minHeightFieldSet.end()) {
-                minExtremes.push_back(fId);
+                if (minHeightFieldSet.find(fId) != minHeightFieldSet.end()) {
+                    minExtremes.push_back(fId);
 
-                const std::vector<int>& fAdj = ffAdj.at(fId);
+                    const std::vector<int>& fAdj = ffAdj.at(fId);
 
-                for (const int& adjId : fAdj) {
-                    if (!minVisited[adjId]) {
-                        minQueue.push(adjId);
+                    for (const int& adjId : fAdj) {
+                        if (!minVisited[adjId]) {
+                            minQueue.push(adjId);
+                        }
                     }
-                }
 
+                }
             }
         }
     }
@@ -123,36 +132,43 @@ void selectExtremesOnXAxis(
 
     //Get max height-field faces
     size_t iMax = 0;
-    while(mesh.faceNormal(fIndices[iMax]).dot(maxDirection) >= heightFieldAngleLimit){
-        maxHeightFieldSet.insert(fIndices[iMax]);
+    while(mesh.faceNormal(fIndices[iMax]).dot(maxDirection) >= heightFieldAngleLimit){        
+        if (!onlyHighestComponent) {
+            maxExtremes.push_back(fIndices[iMax]);
+        }
+        else {
+            maxHeightFieldSet.insert(fIndices[iMax]);
+        }
         iMax++;
     }
 
-    std::vector<bool> maxVisited(mesh.numberFaces(), false);
-    std::queue<unsigned int> maxQueue;
+    if (onlyHighestComponent) {
+        std::vector<bool> maxVisited(mesh.numberFaces(), false);
+        std::queue<unsigned int> maxQueue;
 
-    maxQueue.push(fIndices[0]);
+        maxQueue.push(fIndices[0]);
 
-    while (!maxQueue.empty()) {
-        unsigned int fId = maxQueue.front();
-        maxQueue.pop();
+        while (!maxQueue.empty()) {
+            unsigned int fId = maxQueue.front();
+            maxQueue.pop();
 
-        if (!maxVisited[fId]) {
-            cg3::Point3i face = mesh.face(fId);
+            if (!maxVisited[fId]) {
+                cg3::Point3i face = mesh.face(fId);
 
-            maxVisited[fId] = true;
+                maxVisited[fId] = true;
 
-            if (maxHeightFieldSet.find(fId) != maxHeightFieldSet.end()) {
-                maxExtremes.push_back(fId);
+                if (maxHeightFieldSet.find(fId) != maxHeightFieldSet.end()) {
+                    maxExtremes.push_back(fId);
 
-                const std::vector<int>& fAdj = ffAdj.at(fId);
+                    const std::vector<int>& fAdj = ffAdj.at(fId);
 
-                for (const int& adjId : fAdj) {
-                    if (!maxVisited[adjId]) {
-                        maxQueue.push(adjId);
+                    for (const int& adjId : fAdj) {
+                        if (!maxVisited[adjId]) {
+                            maxQueue.push(adjId);
+                        }
                     }
-                }
 
+                }
             }
         }
     }
