@@ -7,15 +7,17 @@ CONFIG(release, debug|release){
     CONFIG += FINAL_RELEASE
 }
 
+DEFINES += CGAL_HEADER_ONLY
+
 CONFIG += CG3_STATIC
-#CONFIG += c++14
+CONFIG += c++14
 
 CONFIG += ALL
 #CONFIG += SERVER_MODE
 #CONFIG += CONVERTER_MODE
 
-#VCGLIB_PATH = /usr/include/vcglib
-#LIBIGL_PATH = /usr/include/libigl
+#VCGLIB_PATH = /opt/vcglib
+#LIBIGL_PATH = /opt/libigl
 
 CONFIG += MULTI_LABEL_OPTIMIZATION
 CONFIG += CLIPPER
@@ -34,12 +36,12 @@ FINAL_RELEASE {
     }
 }
 
-!isEmpty(GUROBI_HOME):exists($$(GUROBI_HOME)){
-    message (Gurobi)
-    INCLUDEPATH += -I $$(GUROBI_HOME)/include
-    LIBS += -L$$(GUROBI_HOME)/lib -lgurobi_g++4.2 -lgurobi81
-    DEFINES += GUROBI_DEFINED
-}
+#!isEmpty(GUROBI_HOME):exists($$(GUROBI_HOME)){
+#    message (Gurobi)
+#    INCLUDEPATH += -I $$(GUROBI_HOME)/include
+#    LIBS += -L$$(GUROBI_HOME)/lib -lgurobi_g++5.3 -lgurobi90
+#    DEFINES += GUROBI_DEFINED
+#}
 
 
 MULTI_LABEL_OPTIMIZATION {
@@ -110,5 +112,3 @@ DISTFILES += \
 
 RESOURCES += \
     resources/resources.qrc
-
-
