@@ -46,13 +46,15 @@ FINAL_RELEASE {
 
 MULTI_LABEL_OPTIMIZATION {
     DEFINES += MULTI_LABEL_OPTIMIZATION_INCLUDED
+    DEFINES += GCO_ENERGYTYPE="double"
+    DEFINES += GCO_ENERGYTERMTYPE="float"
     INCLUDEPATH += $$PWD/lib/MultiLabelOptimization
     SOURCES += \
         lib/MultiLabelOptimization/GCoptimization.cpp \
-        lib/MultiLabelOptimization/graph.cpp \
+        lib/MultiLabelOptimization/graph.inl \
         lib/MultiLabelOptimization/LinkedBlockList.cpp \
-        lib/MultiLabelOptimization/maxflow.cpp \
-        lib/MultiLabelOptimization/example.cpp
+        lib/MultiLabelOptimization/maxflow.inl #\
+        #lib/MultiLabelOptimization/example.cpp
 }
 
 CLIPPER {
