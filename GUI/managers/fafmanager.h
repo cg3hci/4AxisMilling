@@ -24,7 +24,7 @@
 #include <QDebug>
 #include <QFrame>
 
-#include "methods/fouraxisfabrication.h"
+#include "../methods/fouraxisfabrication.h"
 
 namespace Ui {
 class FAFManager;

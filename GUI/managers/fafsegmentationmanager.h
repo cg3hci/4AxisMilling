@@ -19,8 +19,8 @@
 #include <QDebug>
 #include <QFrame>
 
-#include "methods/faf/faf_split.h"
-#include "methods/faf/faf_various.h"
+#include "../methods/faf/faf_split.h"
+#include "../methods/faf/faf_various.h"
 
 namespace Ui {
 class FAFSegmentationManager;

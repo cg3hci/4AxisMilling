@@ -21,7 +21,7 @@
 #include <cg3/libigl/booleans.h>
 #include <cg3/libigl/connected_components.h>
 
-#include <lib/clipper/clipper.hpp>
+#include "../lib/clipper/clipper.hpp"
 
 namespace FourAxisFabrication {
 

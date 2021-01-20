@@ -6,7 +6,7 @@
 
 #if defined(CG3_LIBIGL_DEFINED) && defined(MULTI_LABEL_OPTIMIZATION_INCLUDED)
 
-#include "lib/MultiLabelOptimization/GCoptimization.h"
+#include "../lib/MultiLabelOptimization/GCoptimization.h"
 
 #include "faf_charts.h"
 

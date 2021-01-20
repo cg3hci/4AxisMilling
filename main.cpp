@@ -9,8 +9,8 @@
 
 #include <cg3/viewer/managers/booleans_manager.h>
 #include <cg3/viewer/managers/eigenmesh_manager.h>
-#include <GUI/managers/fafmanager.h>
-#include <GUI/managers/fafsegmentationmanager.h>
+#include "GUI/managers/fafmanager.h"
+#include "GUI/managers/fafsegmentationmanager.h"
 
 using namespace cg3;
 
