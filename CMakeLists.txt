@@ -62,5 +62,5 @@ add_executable(
 target_link_libraries(
 	fourAxisMilling
 	PUBLIC 
-		cg3-algorithms cg3-core cg3-data-structures cg3-cgal cg3-libigl cg3-cinolib cg3-meshes cg3-viewer clipper gco gmp ${QGLVIEWER_LIBRARY}
+		${CG3_LINK_LIBRARIES} gco clipper
 	)
