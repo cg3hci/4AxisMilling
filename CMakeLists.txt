@@ -62,5 +62,5 @@ add_executable(
 target_link_libraries(
 	fourAxisMilling
 	PUBLIC 
-		${CG3_LINK_LIBRARIES} gco clipper
+		cg3lib gco clipper
 	)
