@@ -5,7 +5,10 @@ project(4AxisMilling)
 add_subdirectory(lib/MultiLabelOptimization)
 add_definitions(-DMULTI_LABEL_OPTIMIZATION_INCLUDED)
 add_subdirectory(lib/clipper)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cg3lib/cg3.cmake)
+add_subdirectory(cg3lib)
+#include(${CMAKE_CURRENT_SOURCE_DIR}/cg3lib/cg3.cmake)
+
+find_package(Qt5 COMPONENTS Widgets)
 
 set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_details.h
