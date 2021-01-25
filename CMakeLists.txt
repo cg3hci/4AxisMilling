@@ -5,7 +5,9 @@ project(4AxisMilling)
 add_subdirectory(lib/MultiLabelOptimization)
 add_definitions(-DMULTI_LABEL_OPTIMIZATION_INCLUDED)
 add_subdirectory(lib/clipper)
+set(CG3_STATIC ON)
 add_subdirectory(cg3lib)
+
 #include(${CMAKE_CURRENT_SOURCE_DIR}/cg3lib/cg3.cmake)
 
 find_package(Qt5 COMPONENTS Widgets)
