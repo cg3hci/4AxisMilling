@@ -35,9 +35,15 @@ int main(int argc, char *argv[]) {
 	if (clArguments.exists("input")){
 		inputFile = clArguments["input"];
 	}
-
 	if (inputFile.empty()){
 		std::cerr << "Error: Input file not specified.\n" << help;
+		return -1;
+	}
+	FourAxisFabrication::Data data;
+	bool loadOk = data.originalMesh.loadFromFile(inputFile);
+	if (!loadOk){
+		std::cerr << "Error: impossible to load input file.\n";
+		return -1;
 	}
 
 	return 0;
