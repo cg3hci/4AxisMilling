@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.9)
 project(4AxisMilling)
 
+option(BUILD_4_AXIS_MILLING_GUI "Build an application that allows to control parameters and view result" ON)
+option(BUILD_4_AXIS_MILLING_CLI "Build a CLI application to run the algorithm from command line" ON)
 
 add_subdirectory(lib/MultiLabelOptimization)
-add_definitions(-DMULTI_LABEL_OPTIMIZATION_INCLUDED)
 add_subdirectory(lib/clipper)
 set(CG3_STATIC ON)
 add_subdirectory(cg3lib)
@@ -28,12 +29,13 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_optimization.h
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_smoothing.h
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_various.h
-	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafmanager.h
-	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafsegmentationmanager.h
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.h)
 
+set(HEADERS_GUI
+	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafmanager.h
+	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafsegmentationmanager.h)
+
 set(SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_data.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_details.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_optimalrotation.cpp
@@ -48,10 +50,15 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_optimization.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_smoothing.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_various.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafmanager.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafsegmentationmanager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.cpp)
 
+set(SOURCES_CLI
+	${CMAKE_CURRENT_SOURCE_DIR}/main_cli.cpp)
+
+set(SOURCES_GUI
+	${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafmanager.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafsegmentationmanager.cpp)
 
 set(FORMS
 	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafsegmentationmanager.ui
@@ -60,12 +67,36 @@ set(FORMS
 set(RESOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/resources/resources.qrc)
 
-add_executable(
-	fourAxisMilling
-	${HEADERS} ${SOURCES} ${FORMS} ${RESOURCES})
+if (BUILD_4_AXIS_MILLING_GUI)
+	add_executable(
+		fourAxisMillingGui
+		${HEADERS} ${HEADERS_GUI} ${SOURCES} ${SOURCES_GUI} ${FORMS} ${RESOURCES})
+	
+	target_compile_definitions(
+		fourAxisMillingGui
+		PRIVATE
+			MULTI_LABEL_OPTIMIZATION_INCLUDED)
+	
+	target_link_libraries(
+		fourAxisMillingGui
+		PUBLIC 
+			cg3lib gco clipper
+		)
+endif()
 
-target_link_libraries(
-	fourAxisMilling
-	PUBLIC 
-		cg3lib gco clipper
-	)
+if (BUILD_4_AXIS_MILLING_CLI)
+	add_executable(
+		fourAxisMilling
+		${HEADERS} ${SOURCES} ${SOURCES_CLI})
+	
+	target_compile_definitions(
+		fourAxisMilling
+		PRIVATE
+			MULTI_LABEL_OPTIMIZATION_INCLUDED)
+	
+	target_link_libraries(
+		fourAxisMilling
+		PUBLIC 
+			cg3lib gco clipper
+		)
+endif()
