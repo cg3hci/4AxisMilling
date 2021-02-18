@@ -8,13 +8,15 @@
 
 #include <methods/faf/faf_data.h>
 
-const char* intro =
+const std::string intro =
 "This is the command line tool for the paper 'Automatic surface segmentation \n"
-"for seamless fabrication using 4-axis milling machines'.\n";
+"for seamless fabrication using 4-axis milling machines'.";
 
-const char* help =
+const std::string help =
 "Usage: \n"
-"./fourAxisMilling --input=file.obj --output=outDirectory [parameters]\n";
+"./fourAxisMilling --input=file.obj [--output=outDirectory] [parameters]";
+
+FourAxisFabrication::Data getDataFromArguments(const cg3::CommandLineArgumentManager& clArguments);
 
 int main(int argc, char *argv[]) {
 	cg3::CommandLineArgumentManager clArguments(argc, argv);
@@ -23,9 +25,45 @@ int main(int argc, char *argv[]) {
 		std::cerr << "Argument: " << p.first << "; Value: " << p.second << "\n";
 	}
 
+	FourAxisFabrication::Data data;
+	try {
+		data = getDataFromArguments(clArguments);
+	}
+	catch (const std::runtime_error& e) {
+		if (std::string(e.what()) == std::string("ok")) {
+			return 0;
+		}
+		else {
+			std::cerr << e.what();
+			return -1;
+		}
+	}
+
+	//run the algorithm...
+
+	//get the output dir and save
+	std::string outputDir; //meant to be left empty if no outpurDir argument was given
+	if (clArguments.exists("o")){
+		outputDir = clArguments["o"];
+	}
+	if (clArguments.exists("output")){
+		outputDir = clArguments["output"];
+	}
+
+	return 0;
+}
+
+/**
+ * Fills all the data with the input parameters or default values.
+ * Throws a std::runtime_error if some data is missing or invalid.
+ */
+FourAxisFabrication::Data getDataFromArguments(
+		const cg3::CommandLineArgumentManager& clArguments)
+{
+	FourAxisFabrication::Data data;
 	if (clArguments.size() == 0 || clArguments.exists("h") || clArguments.exists("help")) {
 		std::cout << intro << help;
-		return 0;
+		throw std::runtime_error("ok");
 	}
 
 	std::string inputFile;
@@ -36,15 +74,17 @@ int main(int argc, char *argv[]) {
 		inputFile = clArguments["input"];
 	}
 	if (inputFile.empty()){
-		std::cerr << "Error: Input file not specified.\n" << help;
-		return -1;
-	}
-	FourAxisFabrication::Data data;
-	bool loadOk = data.originalMesh.loadFromFile(inputFile);
-	if (!loadOk){
-		std::cerr << "Error: impossible to load input file.\n";
-		return -1;
+		throw std::runtime_error("Error: Input file not specified.\n" + help);
 	}
 
-	return 0;
+	bool loadOk = data.originalMesh.loadFromFile(inputFile);
+	if (!loadOk){
+		throw std::runtime_error(
+			"Error: impossible to load input file.\n"
+			"Known input formats: OBJ, PLY.");
+	}
+
+
+	return data;
 }
+
