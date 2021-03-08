@@ -19,7 +19,7 @@ struct FAFParameters {
 		modelLength(60.0),
 		stockLength(100.0),
 		stockDiameter(60.0),
-		smoothIterations(5500),
+		smoothIterations(500),
 		nOrientations(2000),
 		nVisibilityDirections(120),
 		detailMultiplier(25.0),

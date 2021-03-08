@@ -57,14 +57,14 @@ int main(int argc, char *argv[]) {
 		outputDir = clArguments["output"];
 	}
 
-	data.fourAxisComponent.saveOnObj(outputDir + "/segmentation.obj");
+	data.restoredMesh.saveOnPly(outputDir + "/segmentation.ply");
 	unsigned int i = 0;
 	for (const cg3::EigenMesh& s : data.stocks){
-		s.saveOnObj(outputDir + "/stock_" + std::to_string(i++) + ".obj");
+		s.saveOnPly(outputDir + "/stock_" + std::to_string(i++) + ".ply");
 	}
 	i = 0;
 	for (const cg3::EigenMesh& s : data.results){
-		s.saveOnObj(outputDir + "/result_" + std::to_string(i++) + ".obj");
+		s.saveOnPly(outputDir + "/result_" + std::to_string(i++) + ".ply");
 	}
 
 	return 0;
