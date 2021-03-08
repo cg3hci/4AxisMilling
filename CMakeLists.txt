@@ -29,7 +29,9 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_optimization.h
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_smoothing.h
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_various.h
-	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.h)
+	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.h
+	${CMAKE_CURRENT_SOURCE_DIR}/faf_parameters.h
+	${CMAKE_CURRENT_SOURCE_DIR}/faf_pipeline.h)
 
 set(HEADERS_GUI
 	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafmanager.h
@@ -50,7 +52,8 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_optimization.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_smoothing.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_various.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.cpp)
+	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/faf_pipeline.cpp)
 
 set(SOURCES_CLI
 	${CMAKE_CURRENT_SOURCE_DIR}/main_cli.cpp)
