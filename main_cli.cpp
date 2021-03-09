@@ -26,10 +26,6 @@ FourAxisFabrication::Data getDataFromArguments(
 int main(int argc, char *argv[]) {
 	cg3::CommandLineArgumentManager clArguments(argc, argv);
 
-	for (std::pair<std::string, std::string> p : clArguments){
-		std::cerr << "Argument: " << p.first << "; Value: " << p.second << "\n";
-	}
-
 	FourAxisFabrication::Data data;
 	FAFParameters params;
 	try {
@@ -44,6 +40,8 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 	}
+
+	params.print();
 
 	//run the algorithm...
 	FAFPipeline::pipeline(data, params);
