@@ -4,6 +4,7 @@
  */
 
 #include <iostream>
+#include <filesystem>
 #include <cg3/utilities/command_line_argument_manager.h>
 
 #include <methods/faf/faf_data.h>
@@ -43,9 +44,6 @@ int main(int argc, char *argv[]) {
 
 	params.print();
 
-	//run the algorithm...
-	FAFPipeline::pipeline(data, params);
-
 	//get the output dir and save
 	std::string outputDir; //meant to be left empty if no outpurDir argument was given
 	if (clArguments.exists("o")){
@@ -54,6 +52,17 @@ int main(int argc, char *argv[]) {
 	if (clArguments.exists("output")){
 		outputDir = clArguments["output"];
 	}
+
+	if (outputDir != ""){
+		if (!std::filesystem::exists(outputDir)) {
+			bool res = std::filesystem::create_directory(outputDir);
+			if (!res)
+				throw std::runtime_error("Cannot create " + outputDir);
+		}
+	}
+
+	//run the algorithm...
+	FAFPipeline::pipeline(data, params);
 
 	data.restoredMesh.saveOnPly(outputDir + "/segmentation.ply");
 	unsigned int i = 0;
