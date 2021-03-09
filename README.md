@@ -13,10 +13,13 @@ Source code is hosted on this GitHub repository.
 
 ### Download
 ```bash
-git clone --recursive https://github.com/muntonialessandro/HeightFieldDecomposition.git
+git clone --recursive TODO
 ```
-### Build and Run (Ubuntu 20.04)
+### Build
+**TODO**
 
+### Run (Ubuntu 20.04)
+**TODO**
 
 ## License
 [MPL2](LICENSE) licensed
