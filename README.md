@@ -1,6 +1,6 @@
 # Automatic Surface Segmentation for Seamless Fabrication Using 4-axis Milling Machines
 
-Stefano Nuvoli, Alessandro Tola, [Alessandro Muntoni](http://vcg.isti.cnr.it/~muntoni/), [Nico Pietroni](), [Enrico Gobbetti](), [Riccardo Scateni](http://people.unica.it/riccardoscateni/)<br/>
+Stefano Nuvoli, Alessandro Tola, [Alessandro Muntoni](http://vcg.isti.cnr.it/~muntoni/), [Nico Pietroni](https://profiles.uts.edu.au/Nico.Pietroni), [Enrico Gobbetti](https://www.crs4.it/it/peopledetails/8/enrico-gobbetti/), [Riccardo Scateni](http://people.unica.it/riccardoscateni/)<br/>
 *EuroGraphics 2021*<br/>
 
 ![alt text](misc/teaser.png)
