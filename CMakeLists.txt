@@ -29,13 +29,15 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_optimization.h
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_smoothing.h
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_various.h
-	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.h
-	${CMAKE_CURRENT_SOURCE_DIR}/faf_parameters.h
-	${CMAKE_CURRENT_SOURCE_DIR}/faf_pipeline.h)
+	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.h)
 
 set(HEADERS_GUI
 	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafmanager.h
 	${CMAKE_CURRENT_SOURCE_DIR}/GUI/managers/fafsegmentationmanager.h)
+
+set(HEADERS_CLI
+	${CMAKE_CURRENT_SOURCE_DIR}/faf_parameters.h
+	${CMAKE_CURRENT_SOURCE_DIR}/faf_pipeline.h)
 
 set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_data.cpp
@@ -52,10 +54,10 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_optimization.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_smoothing.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_various.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/faf_pipeline.cpp)
+	${CMAKE_CURRENT_SOURCE_DIR}/methods/faf/faf_split.cpp)
 
 set(SOURCES_CLI
+	${CMAKE_CURRENT_SOURCE_DIR}/faf_pipeline.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/main_cli.cpp)
 
 set(SOURCES_GUI
@@ -90,7 +92,7 @@ endif()
 if (BUILD_4_AXIS_MILLING_CLI)
 	add_executable(
 		fourAxisMilling
-		${HEADERS} ${SOURCES} ${SOURCES_CLI})
+		${HEADERS} ${HEADERS_CLI} ${SOURCES} ${SOURCES_CLI})
 	
 	target_compile_definitions(
 		fourAxisMilling

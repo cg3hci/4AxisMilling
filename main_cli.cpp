@@ -105,20 +105,52 @@ FourAxisFabrication::Data getDataFromArguments(
 	data.mesh = data.originalMesh;
 
 	//manage other parameters
-	const std::array<std::string, 13> str_params = {
+	const std::array<std::string, 11> strParams = {
 		"model_length",
 		"stock_length",
-		"stock_diameter"
+		"stock_diameter",
+		"scale_model",
+		"n_smooth_iterations",
+		"n_orientations",
+		"n_vis_directions",
+		"detail_multiplier",
+		"compactness",
+		"wall_angle",
+		"min_first"
 	};
 
-	if (clArguments.exists(str_params[0])){
-		params.modelLength = std::stod(clArguments[str_params[0]]);
+	if (clArguments.exists(strParams[0])){
+		params.modelLength = std::stod(clArguments[strParams[0]]);
 	}
-	if (clArguments.exists(str_params[1])){
-		params.stockLength = std::stod(clArguments[str_params[1]]);
+	if (clArguments.exists(strParams[1])){
+		params.stockLength = std::stod(clArguments[strParams[1]]);
 	}
-	if (clArguments.exists(str_params[2])){
-		params.stockDiameter = std::stod(clArguments[str_params[2]]);
+	if (clArguments.exists(strParams[2])){
+		params.stockDiameter = std::stod(clArguments[strParams[2]]);
+	}
+	if (clArguments.exists(strParams[3])){
+		params.scaleModel = (bool)std::stoi(clArguments[strParams[3]]);
+	}
+	if (clArguments.exists(strParams[4])){
+		params.smoothIterations = std::stoi(clArguments[strParams[4]]);
+	}
+	if (clArguments.exists(strParams[5])){
+		params.nOrientations = std::stoi(clArguments[strParams[5]]);
+	}
+	if (clArguments.exists(strParams[6])){
+		params.nVisibilityDirections = std::stoi(clArguments[strParams[6]]);
+	}
+	if (clArguments.exists(strParams[7])){
+		params.detailMultiplier = std::stod(clArguments[strParams[7]]);
+	}
+	if (clArguments.exists(strParams[8])){
+		params.compactness = std::stod(clArguments[strParams[8]]);
+	}
+	if (clArguments.exists(strParams[9])){
+		params.firstLayerAngle = std::stod(clArguments[strParams[9]]);
+	}
+	if (clArguments.exists(strParams[10])){
+		params.minFirst = (bool)std::stoi(clArguments[strParams[10]]);
 	}
 
 	return data;
