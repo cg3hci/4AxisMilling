@@ -6,12 +6,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(BUILD_4_AXIS_MILLING_GUI "Build an application that allows to control parameters and view result" ON)
+option(BUILD_4_AXIS_MILLING_GUI "Build an application that allows to control parameters and view result" OFF)
 option(BUILD_4_AXIS_MILLING_CLI "Build a CLI application to run the algorithm from command line" ON)
 
 add_subdirectory(lib/MultiLabelOptimization)
 add_subdirectory(lib/clipper)
 set(CG3_STATIC ON)
+if (NOT BUILD_4_AXIS_MILLING_GUI)
+	set(CG3_VIEWER OFF)
+endif()
 add_subdirectory(cg3lib)
 
 #include(${CMAKE_CURRENT_SOURCE_DIR}/cg3lib/cg3.cmake)
