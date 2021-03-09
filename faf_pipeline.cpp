@@ -58,6 +58,14 @@ const unsigned int nIterations = 50;
 const bool recheck = true;
 const bool reassign = false;
 
+//colorize
+const int scatterColorMaxHue(240);
+const int scatterColorSat(static_cast<int>(255 * 0.45));
+const int scatterColorVal(static_cast<int>(255 * 0.9));
+const cg3::Color defaultColor(128,128,128);
+const cg3::Color minColor(200,60,60);
+const cg3::Color maxColor(60,60,200);
+
 //cut components
 const bool cutComponents = false;
 
@@ -214,6 +222,48 @@ void FAFPipeline::restoreFrequencies(
 	data.areFrequenciesRestored = true;
 }
 
+void FAFPipeline::colorizeAssociation(
+		FourAxisFabrication::Data& data)
+{
+	cg3::Color color;
+
+	int subd = data.directions.size() > 2 ? scatterColorMaxHue / (data.targetDirections.size() - 2) : 2;
+
+	//Set the color
+	data.restoredMesh.setFaceColor(defaultColor);
+
+	int minLabel = data.targetDirections[data.targetDirections.size()-2];
+	int maxLabel = data.targetDirections[data.targetDirections.size()-1];
+
+	//For each face of the drawable mesh
+	for (unsigned int faceId = 0; faceId < data.restoredMesh.numberFaces(); faceId++) {
+		//Get direction index associated to the current face
+		int associatedDirectionIndex = data.association[faceId];
+
+		//If it has an associated fabrication direction
+		if (associatedDirectionIndex >= 0) {
+			if (associatedDirectionIndex == minLabel) {
+				color = minColor;
+			}
+			else if (associatedDirectionIndex == maxLabel) {
+				color = maxColor;
+			}
+			else {
+				//Find position in target directions to set the color
+				auto it =
+						std::find(data.targetDirections.begin(), data.targetDirections.end(), associatedDirectionIndex);
+
+				int positionInTargetDirections = std::distance(data.targetDirections.begin(), it);
+
+				color.setHsv(subd * positionInTargetDirections, scatterColorSat, scatterColorVal);
+			}
+
+			//Set the color
+			data.restoredMesh.setFaceColor(color, faceId);
+		}
+	}
+}
+
 void FAFPipeline::cutComponents(
 		FourAxisFabrication::Data& data)
 {
@@ -260,6 +310,7 @@ void FAFPipeline::pipeline(
 	optimizeAssociation(data);
 	smoothLines(data);
 	restoreFrequencies(data);
+	colorizeAssociation(data);
 	cutComponents(data);
 	extractResults(data, params.firstLayerAngle, params.minFirst, params.stockLength, params.stockDiameter);
 }

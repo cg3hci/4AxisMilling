@@ -47,6 +47,9 @@ void smoothLines(
 void restoreFrequencies(
 		FourAxisFabrication::Data& data);
 
+void colorizeAssociation(
+		FourAxisFabrication::Data& data);
+
 void cutComponents(
 		FourAxisFabrication::Data& data);
 
