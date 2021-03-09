@@ -278,6 +278,8 @@ void FAFPipeline::extractResults(
 		double stockLength,
 		double stockDiameter)
 {
+	firstLayerAngle = firstLayerAngle  / 180.0 * M_PI;
+
 	FourAxisFabrication::extractResults(
 				data,
 				stockLength,
