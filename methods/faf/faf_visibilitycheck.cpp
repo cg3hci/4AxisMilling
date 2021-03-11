@@ -10,11 +10,14 @@
 #include <cg3/geometry/triangle2.h>
 #include <cg3/geometry/triangle2_utils.h>
 
-#include "includes/view_renderer.h"
-
 #include <cg3/data_structures/trees/aabbtree.h>
 
 #include <cg3/cgal/aabb_tree3.h>
+
+#ifndef FAF_NO_GL_VISIBILITY
+#include "includes/view_renderer.h"
+#endif
+
 
 
 namespace FourAxisFabrication {
@@ -24,7 +27,7 @@ namespace FourAxisFabrication {
 
 namespace internal {
 
-
+#ifndef FAF_NO_GL_VISIBILITY
 /* Methods for computing visibility (GL) */
 
 void computeVisibilityGL(
@@ -46,7 +49,7 @@ void computeVisibilityGL(
         const std::vector<cg3::Vec3d>& faceNormals,
         const double heightfieldAngle,
         cg3::Array2D<int>& visibility);
-
+#endif
 
 /* Methods for computing visibility (Projection and RAY) */
 
@@ -157,7 +160,12 @@ void getVisibility(
         const CheckMode checkMode)
 {
     if (checkMode == OPENGL) {
+#ifndef FAF_NO_GL_VISIBILITY
         internal::computeVisibilityGL(mesh, nDirections, resolution, heightfieldAngle, includeXDirections, data.minExtremes, data.maxExtremes, data.directions, data.angles, data.visibility);
+#else
+        (void)resolution;
+        throw std::runtime_error("OpenGL visibility not supported. Use another check mode.");
+#endif
     }
     else {
         internal::computeVisibilityProjectionRay(mesh, nDirections, heightfieldAngle, includeXDirections, data.minExtremes, data.maxExtremes, data.directions, data.angles, data.visibility, checkMode);
@@ -172,7 +180,7 @@ void getVisibility(
 
 namespace internal {
 
-
+#ifndef FAF_NO_GL_VISIBILITY
 /* ----- METHODS FOR COMPUTING VISIBILITY (GL) ----- */
 
 /**
@@ -321,6 +329,7 @@ void computeVisibilityGL(
         }
     }
 }
+#endif
 
 /**
  * @brief Detect faces that are not visible

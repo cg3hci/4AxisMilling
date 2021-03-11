@@ -1,5 +1,5 @@
 #include "view_renderer.h"
-
+#ifndef FAF_NO_GL_VISIBILITY
 #include <QOpenGLBuffer>
 #include <QImage>
 #include <QDebug>
@@ -407,3 +407,4 @@ void ViewRenderer::saveImage(const cg3::Vec3d &dir)
     }
     openglf->glBindTexture(GL_TEXTURE_2D, 0);
 }
+#endif

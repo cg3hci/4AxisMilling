@@ -1,6 +1,7 @@
 #ifndef VIEWRENDERER_H
 #define VIEWRENDERER_H
 
+#ifndef FAF_NO_GL_VISIBILITY
 #include <cg3/geometry/bounding_box3.h>
 #include <cg3/meshes/eigenmesh/eigenmesh.h>
 
@@ -66,4 +67,5 @@ private:
     void saveImage(const cg3::Vec3d& dir);
 };
 
+#endif
 #endif // VIEWRENDERER_H

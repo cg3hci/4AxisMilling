@@ -109,7 +109,8 @@ if (BUILD_4_AXIS_MILLING_CLI)
 	target_compile_definitions(
 		fourAxisMilling
 		PRIVATE
-			MULTI_LABEL_OPTIMIZATION_INCLUDED)
+			MULTI_LABEL_OPTIMIZATION_INCLUDED
+			FAF_NO_GL_VISIBILITY)
 	
 	target_link_libraries(
 		fourAxisMilling
