@@ -13,13 +13,22 @@ Source code is hosted on this GitHub repository.
 
 ### Download
 ```bash
-git clone --recursive TODO
+git clone --recursive https://github.com/cg3hci/4AxisMilling
 ```
 ### Build
-**TODO**
 
-### Run (Ubuntu 20.04)
-**TODO**
+```
+mkdir build
+cd build
+cmake ..
+```
+
+### Run
+
+```
+./fourAxisMilling -i=input_mesh.obj -o=output_directory [parameters]
+```
+
 
 ## License
 [MPL2](LICENSE) licensed
