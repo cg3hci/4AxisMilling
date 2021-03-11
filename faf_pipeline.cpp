@@ -317,7 +317,7 @@ void FAFPipeline::extractResults(
 {
 	firstLayerAngle = firstLayerAngle  / 180.0 * M_PI;
 
-	std::cout << "Extract resultse...\n";
+	std::cout << "Extract results...\n";
 	cg3::Timer t(std::string("Extract results"));
 	FourAxisFabrication::extractResults(
 				data,
