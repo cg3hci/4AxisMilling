@@ -35,3 +35,4 @@ Makefile*
 
 # QtCtreator CMake
 CMakeLists.txt.user
+/build/
