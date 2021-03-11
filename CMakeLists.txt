@@ -4,6 +4,10 @@ project(4AxisMilling)
 option(BUILD_4_AXIS_MILLING_GUI "Build an application that allows to control parameters and view result" OFF)
 option(BUILD_4_AXIS_MILLING_CLI "Build a CLI application to run the algorithm from command line" ON)
 
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif()
+
 add_subdirectory(lib/MultiLabelOptimization)
 add_subdirectory(lib/clipper)
 
