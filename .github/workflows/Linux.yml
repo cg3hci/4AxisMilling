@@ -18,3 +18,11 @@ jobs:
     - name: Build 4AxisMilling
       run: |
         sh scripts/linux/1_build.sh
+    - name: Run 4AxisMilling
+      run: |
+        sh scripts/linux/2_run_paper_results.sh
+    - name: Upload Paper Results
+      uses: actions/upload-artifact@v1
+      with:
+        name: paper_results_linux
+        path: results
