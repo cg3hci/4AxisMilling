@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 project(4AxisMilling)
 
 option(BUILD_4_AXIS_MILLING_GUI "Build an application that allows to control parameters and view result" OFF)
