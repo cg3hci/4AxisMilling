@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Install dependencies
       run: |
         sh scripts/linux/0_install_ubuntu.sh
