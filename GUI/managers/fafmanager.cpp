@@ -15,9 +15,9 @@
 #include <cg3/utilities/timer.h>
 
 #include <cg3/libigl/mesh_distance.h>
+#include <cg3/libigl/saliency.h>
 
 #include <cg3/algorithms/normalization.h>
-#include <cg3/algorithms/saliency.h>
 
 
 //Mesh color definition

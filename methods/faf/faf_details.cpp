@@ -1,10 +1,10 @@
 #include "faf_details.h"
 
 #include <cg3/algorithms/mesh_function_smoothing.h>
-#include <cg3/algorithms/saliency.h>
 #include <cg3/algorithms/laplacian_smoothing.h>
 
 #include <cg3/libigl/mesh_adjacencies.h>
+#include <cg3/libigl/saliency.h>
 
 namespace FourAxisFabrication {
 
@@ -44,7 +44,7 @@ void findDetails(
         std::vector<std::vector<int>> vvAdj = cg3::libigl::vertexToVertexAdjacencies(scaledMesh);
 
         //Compute saliency
-        data.saliency = cg3::computeSaliencyMultiScale(scaledMesh, vvAdj, nRing, nScales, eps);
+        data.saliency = cg3::libigl::computeSaliencyMultiScale(scaledMesh, vvAdj, nRing, nScales, eps);
         for(unsigned int vId = 0; vId < scaledMesh.numberVertices(); vId++) {
             data.saliency[vId] /= nScales;
         }
