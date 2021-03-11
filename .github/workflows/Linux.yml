@@ -1,17 +1,17 @@
 name: Linux
 
-on: [push, pull_request]
+on:
+  [push, pull_request]
 
 jobs:
-  build:
-
+  linux_build:
+    name: Build ans Run (Linux)
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
       with:
         submodules: true
-    - name:
     - name: Install dependencies
       run: |
         sh scripts/linux/0_install_ubuntu.sh
