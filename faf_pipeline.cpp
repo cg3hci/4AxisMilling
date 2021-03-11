@@ -1,6 +1,7 @@
 #include "faf_pipeline.h"
 
 #include <cg3/libigl/mesh_distance.h>
+#include <cg3/utilities/timer.h>
 
 #include "methods/faf/faf_various.h"
 
@@ -87,6 +88,8 @@ void FAFPipeline::scaleAndStock(
 		double stockLength,
 		double stockDiameter)
 {
+	std::cout << "Scale and stock generation...\n";
+	cg3::Timer t(std::string("Scale and stock generation"));
 	FourAxisFabrication::centerAndScale(
 				data,
 				scaleModel,
@@ -96,11 +99,15 @@ void FAFPipeline::scaleAndStock(
 				data,
 				stockLength,
 				stockDiameter);
+	t.stopAndPrint();
+	data.isMeshScaledAndStockGenerated = true;
 }
 
 void FAFPipeline::saliency(
 		FourAxisFabrication::Data& data)
 {
+	std::cout << "Saliency details...\n";
+	cg3::Timer t(std::string("Saliency details"));
 	FourAxisFabrication::findDetails(
 				data,
 				unitScale,
@@ -110,17 +117,22 @@ void FAFPipeline::saliency(
 				computeBySaliency,
 				maxIterations,
 				laplacianIterations);
+	t.stopAndPrint();
+	data.isSaliencyComputed = true;
 }
 
 void FAFPipeline::smoothing(
 		FourAxisFabrication::Data& data,
 		unsigned int iterations)
 {
+	std::cout << "Smoothing...\n";
+	cg3::Timer t(std::string("Smoothing"));
 	FourAxisFabrication::smoothing(
 				data,
 				iterations,
 				lambda,
 				mu);
+	t.stopAndPrint();
 	data.isMeshSmoothed = true;
 }
 
@@ -130,6 +142,8 @@ void FAFPipeline::optimalOrientation(
 		double stockDiameter,
 		unsigned int nOrientations)
 {
+	std::cout << "Optimal orientation...\n";
+	cg3::Timer t(std::string("Optimal orientation"));
 	data.isMeshOriented = FourAxisFabrication::rotateToOptimalOrientation(
 				data.mesh,
 				data.smoothedMesh,
@@ -139,6 +153,7 @@ void FAFPipeline::optimalOrientation(
 				extremeWeight,
 				BBWeight,
 				deterministic);
+	t.stopAndPrint();
 	if (!data.isMeshOriented) {
 		throw std::runtime_error("Error: model cannot fit on stock!");
 	}
@@ -147,7 +162,10 @@ void FAFPipeline::optimalOrientation(
 void FAFPipeline::selectExtremes(
 		FourAxisFabrication::Data& data)
 {
+	std::cout << "Select extremes...\n";
+	cg3::Timer t(std::string("Select extremes"));
 	FourAxisFabrication::selectExtremesOnXAxis(data.smoothedMesh, heightfieldAngle, data);
+	t.stopAndPrint();
 	data.areExtremesSelected = true;
 }
 
@@ -155,6 +173,8 @@ void FAFPipeline::checkVisibility(
 		FourAxisFabrication::Data& data,
 		unsigned int nDirections)
 {
+	std::cout << "Visibility check...\n";
+	cg3::Timer t(std::string("Visibility check"));
 	FourAxisFabrication::getVisibility(
 				data.smoothedMesh,
 				nDirections,
@@ -163,7 +183,9 @@ void FAFPipeline::checkVisibility(
 				includeXDirections,
 				data,
 				checkMode);
+	t.stopAndPrint();
 	data.isVisibilityChecked = true;
+	std::cout << "Non-visible triangles: " << data.nonVisibleFaces.size() << std::endl;
 }
 
 void FAFPipeline::getAssociation(
@@ -171,6 +193,8 @@ void FAFPipeline::getAssociation(
 		double detailMultiplier,
 		double compactness)
 {
+	std::cout << "Get association...\n";
+	cg3::Timer t(std::string("Get association"));
 	FourAxisFabrication::getAssociation(
 				data.smoothedMesh,
 				dataSigma,
@@ -178,28 +202,35 @@ void FAFPipeline::getAssociation(
 				compactness,
 				fixExtremes,
 				data);
+	t.stopAndPrint();
 	data.isAssociationComputed = true;
 }
 
 void FAFPipeline::optimizeAssociation(
 		FourAxisFabrication::Data& data)
 {
+	std::cout << "Optimize association...\n";
+	cg3::Timer t(std::string("Optimize association"));
 	FourAxisFabrication::optimization(
 				data.smoothedMesh,
 				relaxHoles,
 				loseHoles,
 				minChartArea,
 				data);
+	t.stopAndPrint();
 	data.isAssociationOptimized = true;
 }
 
 void FAFPipeline::smoothLines(
 		FourAxisFabrication::Data& data)
 {
+	std::cout << "Smooth lines...\n";
+	cg3::Timer t(std::string("Smooth lines"));
 	FourAxisFabrication::smoothLines(
 				data.smoothedMesh,
 				smoothEdgeLines,
 				data);
+	t.stopAndPrint();
 	data.isLineSmoothed = true;
 }
 
@@ -211,13 +242,19 @@ void FAFPipeline::restoreFrequencies(
 	double haussDistanceBB = haussDistance/originalMeshBB.diag();
 	std::cout << "Smoothed -> Haussdorff distance: " << haussDistance << " (w.r.t. bounding box: " << haussDistanceBB << ")" << std::endl;
 
+	std::cout << "Restore frequencies...\n";
+	cg3::Timer t(std::string("Restore frequencies"));
 	FourAxisFabrication::restoreFrequencies(nIterations, heightfieldAngle, data.mesh, data.smoothedMesh, data);
+	t.stopAndPrint();
+
 	haussDistance = cg3::libigl::hausdorffDistance(data.mesh, data.restoredMesh);
 	originalMeshBB = data.mesh.boundingBox();
 	haussDistanceBB = haussDistance/originalMeshBB.diag();
 	std::cout << "Restored -> Haussdorff distance: " << haussDistance << " (w.r.t. bounding box: " << haussDistanceBB << ")" << std::endl;
 
+	cg3::Timer tCheck("Recheck visibility after frequencies have been restored");
 	FourAxisFabrication::recheckVisibilityAfterRestore(recheck, resolution, heightfieldAngle, includeXDirections, reassign, data, checkMode);
+	tCheck.stopAndPrint();
 	std::cout << "Non-visible triangles after recheck: " << data.restoredMeshNonVisibleFaces.size() << std::endl;
 	data.areFrequenciesRestored = true;
 }
@@ -280,6 +317,8 @@ void FAFPipeline::extractResults(
 {
 	firstLayerAngle = firstLayerAngle  / 180.0 * M_PI;
 
+	std::cout << "Extract resultse...\n";
+	cg3::Timer t(std::string("Extract results"));
 	FourAxisFabrication::extractResults(
 				data,
 				stockLength,
@@ -295,6 +334,7 @@ void FAFPipeline::extractResults(
 				xDirectionsAfter,
 				minFirst,
 				rotateResults);
+	t.stopAndPrint();
 	data.areResultsExtracted = true;
 }
 
