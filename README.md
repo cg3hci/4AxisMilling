@@ -31,7 +31,7 @@ cmake ..
 
 
 ## License
-[MPL2](LICENSE) licensed
+[GPL3](LICENSE) licensed
 ([FAQ](https://www.gnu.org/licenses/gpl-faq.html))
 
 
