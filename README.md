@@ -31,7 +31,7 @@ cmake ..
 
 where parameters can be:
 
-- `modelheight`: the height of the output model along the rotation axes, expressed in millimeters; default value: 60;
+- `model_height`: the height of the output model along the rotation axes, expressed in millimeters; default value: 60;
 - `stock_length`: the lenght of the raw cylinder stock, expressed in millimeters; default value: 100;
 - `stock_diameter`: the diameter of the raw cylinder stock, expressed in millimeters; default value: 60;
 - `prefiltering_smooth_iters`: number of Taubing smoothing iterations applied during prefiltering; default value: 500;

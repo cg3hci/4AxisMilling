@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	std::cout << "\n--- Parameter values: ---\n\n";
 	params.print();
 
 	//get the output dir and save
@@ -63,16 +64,16 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	std::cout << "################ BEGIN ################\n\n\n";
+	std::cout << "\n################ BEGIN ################\n\n\n";
 	std::cout << "Starting algorithm for " <<
 				 cg3::filenameWithExtension(params.filename) << "\n";
 
 	//run the algorithm...
 	FAFPipeline::pipeline(data, params);
 
-	std::cout << "Algorithm terminated. Saving results for " <<
+	std::cout << "\nAlgorithm terminated. Saving results for " <<
 				 cg3::filenameWithExtension(params.filename) << "\n";
-	std::cout << "################ END ################\n\n\n";
+	std::cout << "\n################ END ################\n\n\n";
 
 	data.restoredMesh.saveOnPly(outputDir + "/segmentation.ply");
 	if (!params.justSegmentation) {
