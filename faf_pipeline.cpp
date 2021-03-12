@@ -125,8 +125,8 @@ void FAFPipeline::smoothing(
 		FourAxisFabrication::Data& data,
 		unsigned int iterations)
 {
-	std::cout << "Smoothing...\n";
-	cg3::Timer t(std::string("Smoothing"));
+	std::cout << "Prefiltering...\n";
+	cg3::Timer t(std::string("Prefiltering"));
 	FourAxisFabrication::smoothing(
 				data,
 				iterations,
@@ -142,8 +142,8 @@ void FAFPipeline::optimalOrientation(
 		double stockDiameter,
 		unsigned int nOrientations)
 {
-	std::cout << "Optimal orientation...\n";
-	cg3::Timer t(std::string("Optimal orientation"));
+	std::cout << "Finding best axis...\n";
+	cg3::Timer t(std::string("Finding best axis"));
 	data.isMeshOriented = FourAxisFabrication::rotateToOptimalOrientation(
 				data.mesh,
 				data.smoothedMesh,
@@ -193,8 +193,8 @@ void FAFPipeline::getAssociation(
 		double detailMultiplier,
 		double compactness)
 {
-	std::cout << "Get association...\n";
-	cg3::Timer t(std::string("Get association"));
+	std::cout << "Computing Segmentation...\n";
+	cg3::Timer t(std::string("Computing Segmentation"));
 	FourAxisFabrication::getAssociation(
 				data.smoothedMesh,
 				dataSigma,
@@ -209,8 +209,8 @@ void FAFPipeline::getAssociation(
 void FAFPipeline::optimizeAssociation(
 		FourAxisFabrication::Data& data)
 {
-	std::cout << "Optimize association...\n";
-	cg3::Timer t(std::string("Optimize association"));
+	std::cout << "Charts optimization...\n";
+	cg3::Timer t(std::string("Charts optimization"));
 	FourAxisFabrication::optimization(
 				data.smoothedMesh,
 				relaxHoles,
@@ -224,8 +224,8 @@ void FAFPipeline::optimizeAssociation(
 void FAFPipeline::smoothLines(
 		FourAxisFabrication::Data& data)
 {
-	std::cout << "Smooth lines...\n";
-	cg3::Timer t(std::string("Smooth lines"));
+	std::cout << "Boundary smoothing...\n";
+	cg3::Timer t(std::string("Boundary smoothing"));
 	FourAxisFabrication::smoothLines(
 				data.smoothedMesh,
 				smoothEdgeLines,
@@ -242,8 +242,8 @@ void FAFPipeline::restoreFrequencies(
 	double haussDistanceBB = haussDistance/originalMeshBB.diag();
 	std::cout << "Smoothed -> Haussdorff distance: " << haussDistance << " (w.r.t. bounding box: " << haussDistanceBB << ")" << std::endl;
 
-	std::cout << "Restore frequencies...\n";
-	cg3::Timer t(std::string("Restore frequencies"));
+	std::cout << "Detail recovery...\n";
+	cg3::Timer t(std::string("Detail recovery"));
 	FourAxisFabrication::restoreFrequencies(nIterations, heightfieldAngle, data.mesh, data.smoothedMesh, data);
 	t.stopAndPrint();
 
@@ -252,7 +252,7 @@ void FAFPipeline::restoreFrequencies(
 	haussDistanceBB = haussDistance/originalMeshBB.diag();
 	std::cout << "Restored -> Haussdorff distance: " << haussDistance << " (w.r.t. bounding box: " << haussDistanceBB << ")" << std::endl;
 
-	cg3::Timer tCheck("Recheck visibility after frequencies have been restored");
+	cg3::Timer tCheck("Recheck visibility after detail recovery");
 	FourAxisFabrication::recheckVisibilityAfterRestore(recheck, resolution, heightfieldAngle, includeXDirections, reassign, data, checkMode);
 	tCheck.stopAndPrint();
 	std::cout << "Non-visible triangles after recheck: " << data.restoredMeshNonVisibleFaces.size() << std::endl;
@@ -317,8 +317,8 @@ void FAFPipeline::extractResults(
 {
 	firstLayerAngle = firstLayerAngle  / 180.0 * M_PI;
 
-	std::cout << "Extract results...\n";
-	cg3::Timer t(std::string("Extract results"));
+	std::cout << "Generating the fabrication sequence...\n";
+	cg3::Timer t(std::string("Generating the fabrication sequence"));
 	FourAxisFabrication::extractResults(
 				data,
 				stockLength,

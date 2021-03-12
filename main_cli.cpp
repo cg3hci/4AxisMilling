@@ -6,6 +6,7 @@
 #include <iostream>
 #include <filesystem>
 #include <cg3/utilities/command_line_argument_manager.h>
+#include <cg3/utilities/string.h>
 
 #include <methods/faf/faf_data.h>
 
@@ -53,6 +54,7 @@ int main(int argc, char *argv[]) {
 		outputDir = clArguments["output"];
 	}
 
+	params.outputDir = outputDir;
 	if (outputDir != ""){
 		if (!std::filesystem::exists(outputDir)) {
 			bool res = std::filesystem::create_directory(outputDir);
@@ -61,8 +63,16 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	std::cout << "################ BEGIN ################\n\n\n";
+	std::cout << "Starting algorithm for " <<
+				 cg3::filenameWithExtension(params.filename) << "\n";
+
 	//run the algorithm...
 	FAFPipeline::pipeline(data, params);
+
+	std::cout << "Algorithm terminated. Saving results for " <<
+				 cg3::filenameWithExtension(params.filename) << "\n";
+	std::cout << "################ END ################\n\n\n";
 
 	data.restoredMesh.saveOnPly(outputDir + "/segmentation.ply");
 	if (!params.justSegmentation) {
@@ -105,6 +115,7 @@ FourAxisFabrication::Data getDataFromArguments(
 	}
 
 	data.isMeshLoaded = data.originalMesh.loadFromFile(inputFile);
+	params.filename = inputFile;
 	if (!data.isMeshLoaded){
 		throw std::runtime_error(
 			"Error: impossible to load input file.\n"
@@ -119,7 +130,7 @@ FourAxisFabrication::Data getDataFromArguments(
 		"stock_length",
 		"stock_diameter",
 		"dont_scale_model",
-		"n_smooth_iterations",
+		"prefiltering_smooth_iters",
 		"n_best_axis_dirs",
 		"n_visibility_dirs",
 		"saliency_factor",

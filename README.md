@@ -34,7 +34,7 @@ where parameters can be:
 - `modelheight`: the height of the output model along the rotation axes, expressed in millimeters; default value: 60;
 - `stock_length`: the lenght of the raw cylinder stock, expressed in millimeters; default value: 100;
 - `stock_diameter`: the diameter of the raw cylinder stock, expressed in millimeters; default value: 60;
-- `n_smooth_iterations`: number of Taubing smoothing iterations applied to temporarily remove the high frequencies; default value: 500;
+- `prefiltering_smooth_iters`: number of Taubing smoothing iterations applied during prefiltering; default value: 500;
 - `n_best_axis_dirs`: number of candidate direction for finding the best axis; default value: 2000;
 - `n_visibility_dirs`: number of uniformly distributed visibility directions orthogonal of the rotation axis; default value: 120;
 - `saliency_factor`: the saliency factor used for finding the segmentation using the graph-cut algorithm; default value: 25.0;
@@ -49,7 +49,7 @@ Some examples of runs:
 ```
 ./fourAxisMilling -i=kitten.obj -o=kitten_res --model_height=70 --stock_length=88 --stock_diameter=72
 
-./fourAxisMilling -i=buddha.obj -o=buddha_res --model_height=70 --stock_diameter=72 --stock_length=86 --n_smooth_iterations=750
+./fourAxisMilling -i=buddha.obj -o=buddha_res --model_height=70 --stock_diameter=72 --stock_length=86 --prefiltering_smooth_iters=750
 ```
 
 ## License

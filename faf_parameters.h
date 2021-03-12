@@ -16,6 +16,8 @@ struct FAFParameters {
 	double firstLayerAngle;
 	bool minFirst;
 	bool justSegmentation;
+	std::string filename;
+	std::string outputDir;
 
 	FAFParameters():
 		scaleModel(true),
