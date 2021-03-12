@@ -34,7 +34,7 @@ wait
 echo "First four results computed."
 
 echo "Computing second four results..."
-./fourAxisMilling -i=$MODELS_PATH/dea.obj -o=$RESULTS_PATH/dea --just_segmentation > $RESULTS_PATH/dea.log 2>&1 &
+./fourAxisMilling -i=$MODELS_PATH/dea.obj -o=$RESULTS_PATH/dea --just_segmentation --prefiltering_smooth_iters=750 > $RESULTS_PATH/dea.log 2>&1 &
 ./fourAxisMilling -i=$MODELS_PATH/maneki_neko.obj -o=$RESULTS_PATH/maneki_neko --just_segmentation > $RESULTS_PATH/maneki_neko.log 2>&1 &
 ./fourAxisMilling -i=$MODELS_PATH/eros.obj -o=$RESULTS_PATH/eros --just_segmentation > $RESULTS_PATH/eros.log 2>&1 &
 ./fourAxisMilling -i=$MODELS_PATH/chinese_lion.obj -o=$RESULTS_PATH/chinese_lion --just_segmentation > $RESULTS_PATH/chinese_lion.log 2>&1 &
