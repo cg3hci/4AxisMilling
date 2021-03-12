@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPTS_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-BUILD_PATH=$(realpath $BUILD_PATH)
+BUILD_PATH=$SCRIPTS_PATH/../../build
 
 #create build path if necessary
 if ! [ -d $BUILD_PATH ]
