@@ -22,7 +22,7 @@ To compute the results shown in the paper, you can run the following line on a s
 sh scripts/[your platform]/make_it.sh
 ```
 
-The script will dowwnload and install the required dependencies (cmake and cgal), it will build the code in a directory named `build`, and it will run the algorithm with the meshes contained in `misc/input_meshes` and with the proper parameters. Results (in the form of ply files) will be saved in a directory named `results`.
+The script will download and install the required dependencies (cmake and cgal), it will build the code in a directory named `build`, and it will run the algorithm with the meshes contained in `misc/input_meshes` and with the proper parameters. Results (in the form of ply files) will be saved in a directory named `results`.
 
 ### Build
 
@@ -38,7 +38,7 @@ make sure to have installed cmake and CGAL in your machine. Inside the `build` d
 
 ### Run
 
-The algorithm requires at least an input mesh file as parameter. Other parameters are not mandatory and default values are listed bekiw.
+The algorithm requires at least an input mesh file as parameter. Other parameters are not mandatory and default values are listed below.
 To run the algorithm, from the `build` directory, just type in a shell:
 
 ```
