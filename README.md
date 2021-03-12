@@ -29,6 +29,26 @@ cmake ..
 ./fourAxisMilling -i=input_mesh.obj -o=output_directory [parameters]
 ```
 
+where parameters can be:
+
+- `model_length`: the length of the output model along the rotation axes, expressed in millimeters; default value: 60;
+- `stock_length`: the lenght of the raw cylinder stock, expressed in millimeters; default value: 100;
+- `stock_diameter`: the diameter of the raw cylinder stock, expressed in millimeters; default value: 60;
+- `n_smooth_iterations`: number of Taubing smoothing iterations applied to temporarily remove the high frequencies; default value: 500;
+- `n_best_axis_dirs`: number of candidate direction for finding the best axis; default value: 2000;
+- `n_visibility_dirs`: number of uniformly distributed visibility directions orthogonal of the rotation axis; default value: 120;
+- `saliency_factor`: the saliency factor used for finding the segmentation using the graph-cut algorithm; default value: 25.0;
+- `compactness_term`: the compactness term used for finding the segmentation using the graph-cut algorithm; default value: 30.0;
+- `wall_angle`: angle between walls and fabrication direction; default value: 25.0;
+- `max_first`: if this parameter is present, the block with +X direction will be considered as first block between top and bottom regions;
+- `dont_scale_model`: if this parameter is present; the input mesh will not be scaled to fit into the stock;
+- `just_segmentation`: if this parameter is present, the fabrication sequence (and the stocks-result shapes) won't be computed.
+
+Some examples of runs:
+
+```
+./fourAxisMilling -i=kitten.obj -o=kitten_res --model_length=70 --stock_length=88 --stock_diameter=72
+```
 
 ## License
 [GPL3](LICENSE) licensed

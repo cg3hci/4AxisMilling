@@ -15,6 +15,7 @@ struct FAFParameters {
 	double compactness;
 	double firstLayerAngle;
 	bool minFirst;
+	bool justSegmentation;
 
 	FAFParameters():
 		scaleModel(true),
@@ -27,7 +28,8 @@ struct FAFParameters {
 		detailMultiplier(25.0),
 		compactness(30.0),
 		firstLayerAngle(25.0),
-		minFirst(true)
+		minFirst(true),
+		justSegmentation(false)
 	{
 	}
 
@@ -44,6 +46,7 @@ struct FAFParameters {
 		std::cout << "Smoothness term: " << compactness << "\n";
 		std::cout << "Walls angle: " << firstLayerAngle << "\n";
 		std::cout << "Use -X as first extreme: " << (minFirst ? "true" : "false") << "\n";
+		std::cout << "Compute just segmentation: " << (justSegmentation ? "true" : "false") << "\n";
 	}
 };
 

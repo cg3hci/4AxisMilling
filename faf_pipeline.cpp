@@ -353,6 +353,8 @@ void FAFPipeline::pipeline(
 	smoothLines(data);
 	restoreFrequencies(data);
 	colorizeAssociation(data);
-	cutComponents(data);
-	extractResults(data, params.firstLayerAngle, params.minFirst, params.stockLength, params.stockDiameter);
+	if (!params.justSegmentation){
+		cutComponents(data);
+		extractResults(data, params.firstLayerAngle, params.minFirst, params.stockLength, params.stockDiameter);
+	}
 }

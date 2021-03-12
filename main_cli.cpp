@@ -65,13 +65,15 @@ int main(int argc, char *argv[]) {
 	FAFPipeline::pipeline(data, params);
 
 	data.restoredMesh.saveOnPly(outputDir + "/segmentation.ply");
-	unsigned int i = 0;
-	for (const cg3::EigenMesh& s : data.stocks){
-		s.saveOnPly(outputDir + "/stock_" + std::to_string(i++) + ".ply");
-	}
-	i = 0;
-	for (const cg3::EigenMesh& s : data.results){
-		s.saveOnPly(outputDir + "/result_" + std::to_string(i++) + ".ply");
+	if (!params.justSegmentation) {
+		unsigned int i = 0;
+		for (const cg3::EigenMesh& s : data.stocks){
+			s.saveOnPly(outputDir + "/stock_" + std::to_string(i++) + ".ply");
+		}
+		i = 0;
+		for (const cg3::EigenMesh& s : data.results){
+			s.saveOnPly(outputDir + "/result_" + std::to_string(i++) + ".ply");
+		}
 	}
 
 	return 0;
@@ -112,18 +114,19 @@ FourAxisFabrication::Data getDataFromArguments(
 	data.mesh = data.originalMesh;
 
 	//manage other parameters
-	const std::array<std::string, 11> strParams = {
+	const std::array<std::string, 12> strParams = {
 		"model_length",
 		"stock_length",
 		"stock_diameter",
-		"scale_model",
+		"dont_scale_model",
 		"n_smooth_iterations",
-		"n_orientations",
-		"n_vis_directions",
-		"detail_multiplier",
-		"compactness",
+		"n_best_axis_dirs",
+		"n_visibility_dirs",
+		"saliency_factor",
+		"compactness_term",
 		"wall_angle",
-		"min_first"
+		"max_first",
+		"just_segmentation"
 	};
 
 	if (clArguments.exists(strParams[0])){
@@ -136,7 +139,7 @@ FourAxisFabrication::Data getDataFromArguments(
 		params.stockDiameter = std::stod(clArguments[strParams[2]]);
 	}
 	if (clArguments.exists(strParams[3])){
-		params.scaleModel = (bool)std::stoi(clArguments[strParams[3]]);
+		params.scaleModel = false;
 	}
 	if (clArguments.exists(strParams[4])){
 		params.smoothIterations = std::stoi(clArguments[strParams[4]]);
@@ -157,7 +160,10 @@ FourAxisFabrication::Data getDataFromArguments(
 		params.firstLayerAngle = std::stod(clArguments[strParams[9]]);
 	}
 	if (clArguments.exists(strParams[10])){
-		params.minFirst = (bool)std::stoi(clArguments[strParams[10]]);
+		params.minFirst = false;
+	}
+	if (clArguments.exists(strParams[10])){
+		params.justSegmentation = true;
 	}
 
 	return data;
