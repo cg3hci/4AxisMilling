@@ -14,7 +14,7 @@ jobs:
         submodules: recursive
     - name: Install dependencies
       run: |
-        sh scripts/macOS/0_install_ubuntu.sh
+        sh scripts/macOS/0_install_macos.sh
     - name: Build 4AxisMilling
       run: |
         sh scripts/macOS/1_build.sh
