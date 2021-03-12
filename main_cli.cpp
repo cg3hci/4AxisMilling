@@ -174,7 +174,7 @@ FourAxisFabrication::Data getDataFromArguments(
 	if (clArguments.exists(strParams[10])){
 		params.minFirst = false;
 	}
-	if (clArguments.exists(strParams[10])){
+	if (clArguments.exists(strParams[11])){
 		params.justSegmentation = true;
 	}
 
