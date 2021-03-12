@@ -1,0 +1,28 @@
+name: MacOS
+
+on:
+  [push, pull_request]
+
+jobs:
+  linux_build:
+    name: Build ans Run (MacOS)
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: |
+        sh scripts/macOS/0_install_ubuntu.sh
+    - name: Build 4AxisMilling
+      run: |
+        sh scripts/macOS/1_build.sh
+    - name: Run 4AxisMilling
+      run: |
+        sh scripts/macOS/2_run_paper_results.sh
+    - name: Upload Paper Results
+      uses: actions/upload-artifact@v1
+      with:
+        name: paper_results_macos
+        path: results
