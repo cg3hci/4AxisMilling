@@ -115,7 +115,7 @@ FourAxisFabrication::Data getDataFromArguments(
 
 	//manage other parameters
 	const std::array<std::string, 12> strParams = {
-		"model_length",
+		"model_height",
 		"stock_length",
 		"stock_diameter",
 		"dont_scale_model",

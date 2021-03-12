@@ -31,7 +31,7 @@ cmake ..
 
 where parameters can be:
 
-- `model_length`: the length of the output model along the rotation axes, expressed in millimeters; default value: 60;
+- `modelheight`: the height of the output model along the rotation axes, expressed in millimeters; default value: 60;
 - `stock_length`: the lenght of the raw cylinder stock, expressed in millimeters; default value: 100;
 - `stock_diameter`: the diameter of the raw cylinder stock, expressed in millimeters; default value: 60;
 - `n_smooth_iterations`: number of Taubing smoothing iterations applied to temporarily remove the high frequencies; default value: 500;
@@ -47,7 +47,9 @@ where parameters can be:
 Some examples of runs:
 
 ```
-./fourAxisMilling -i=kitten.obj -o=kitten_res --model_length=70 --stock_length=88 --stock_diameter=72
+./fourAxisMilling -i=kitten.obj -o=kitten_res --model_height=70 --stock_length=88 --stock_diameter=72
+
+./fourAxisMilling -i=buddha.obj -o=buddha_res --model_height=70 --stock_diameter=72 --stock_length=86 --n_smooth_iterations=750
 ```
 
 ## License
