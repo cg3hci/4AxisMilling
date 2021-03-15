@@ -27,7 +27,7 @@ echo "Computing first four results..."
 ./fourAxisMilling -i=$MODELS_PATH/moai.obj -o=$RESULTS_PATH/moai --just_segmentation > $RESULTS_PATH/moai.log 2>&1 &
 ./fourAxisMilling -i=$MODELS_PATH/max_planck.obj -o=$RESULTS_PATH/max_planck --just_segmentation > $RESULTS_PATH/max_planck.log 2>&1 &
 ./fourAxisMilling -i=$MODELS_PATH/egea.obj -o=$RESULTS_PATH/egea --just_segmentation > $RESULTS_PATH/egea.log 2>&1 &
-./fourAxisMilling -i=$MODELS_PATH/pensatore.obj -o=$RESULTS_PATH/pensatore --just_segmentation > $RESULTS_PATH/pensatore.log 2>&1 &
+./fourAxisMilling -i=$MODELS_PATH/pensatore.obj -o=$RESULTS_PATH/pensatore --model_height=55 --just_segmentation > $RESULTS_PATH/pensatore.log 2>&1 &
 
 wait
 echo "First four results computed."
@@ -37,7 +37,6 @@ echo "Computing second four results..."
 ./fourAxisMilling -i=$MODELS_PATH/maneki_neko.obj -o=$RESULTS_PATH/maneki_neko --just_segmentation > $RESULTS_PATH/maneki_neko.log 2>&1 &
 ./fourAxisMilling -i=$MODELS_PATH/eros.obj -o=$RESULTS_PATH/eros --just_segmentation > $RESULTS_PATH/eros.log 2>&1 &
 ./fourAxisMilling -i=$MODELS_PATH/chinese_lion.obj -o=$RESULTS_PATH/chinese_lion --just_segmentation > $RESULTS_PATH/chinese_lion.log 2>&1 &
-
 
 wait
 echo "Second four results computed."
